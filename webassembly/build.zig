@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "game",
+        .name = "webassembly",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/root.zig"),
@@ -30,42 +30,11 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "game",
+        .name = "webassembly",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
-
-    // ---------------------
-
-    const raylib_dep = b.dependency("raylib-zig", .{
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const raylib = raylib_dep.module("raylib"); // main raylib module
-    const raygui = raylib_dep.module("raygui"); // raygui module
-    const raylib_artifact = raylib_dep.artifact("raylib"); // raylib C library
-
-    exe.linkLibrary(raylib_artifact);
-    exe.root_module.addImport("raylib", raylib);
-    exe.root_module.addImport("raygui", raygui);
-
-    // ---------------------
-
-    const box2d = @import("Box2D.zig/build.zig");
-
-    // This calls b.addModule, with the name as "box2d" and uses the binding for the source file
-    // It then adds all of Box2D's source files and the include directory to that module
-    const box2dModule = box2d.addModule(b, "Box2D.zig", .{}) catch |err| {
-        // Handle the error, for example:
-        std.debug.print("Error adding Box2D module: {}\n", .{err});
-        return; // Exit the build if the module fails to add
-    };
-
-    exe.root_module.addImport("box2d", box2dModule);
-
-    // ---------------------
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
