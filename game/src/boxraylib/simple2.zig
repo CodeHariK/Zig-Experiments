@@ -3,7 +3,16 @@ const rg = @import("raygui");
 const box2d = @import("box2d");
 
 const std = @import("std");
+
 const assert = std.debug.assert;
+
+const rand = std.crypto.random;
+
+const Entity = struct {
+    bodyId: box2d.BodyId,
+    extent: box2d.Vec2,
+    // texture: rl.Texture,
+};
 
 const Game = struct {
     screen_width: i32,
@@ -15,7 +24,23 @@ const Game = struct {
 
     paused: bool,
 
-    pub fn init() Game {
+    worldId: box2d.WorldId,
+
+    entities: std.ArrayList(Entity),
+
+    fn init(allocator: std.mem.Allocator) Game {
+        // 128 pixels per meter is appropriate for this scene. The boxes are 128 pixels wide.
+        const lengthUnitsPerMeter: f32 = 128.0;
+        box2d.setLengthUnitsPerMeter(lengthUnitsPerMeter);
+
+        // Create the world definition
+        var worldDef = box2d.WorldDef.default();
+        // Realistic gravity is achieved by multiplying gravity by the length unit.
+        worldDef.gravity.y = 9.8 * lengthUnitsPerMeter;
+
+        // Create the Box2D world
+        const worldId = box2d.WorldId.create(worldDef);
+
         return Game{
             .screen_width = 800,
             .screen_height = 450,
@@ -28,7 +53,26 @@ const Game = struct {
             .zoomMode = 0,
             .showMessageBox = false,
             .paused = false,
+
+            .worldId = worldId,
+            .entities = std.ArrayList(Entity).init(allocator),
         };
+    }
+
+    fn clear(self: *Game, allocator: std.mem.Allocator) Game {
+        self.entities.deinit();
+        return init(allocator);
+    }
+
+    fn appendEntity(self: *Game, entity: Entity) void {
+        // Append the entity, handling OutOfMemory error
+        self.entities.append(entity) catch |err| {
+            if (err == error.OutOfMemory) {
+                std.debug.print("Out of memory error!\n", .{});
+            }
+            std.debug.print("--> {}", .{err});
+        };
+        std.debug.print("entity bodyId: {}\n", .{entity.bodyId});
     }
 };
 
@@ -37,7 +81,13 @@ var ball_speed = rl.Vector2.init(5, 4);
 const ball_radius: f32 = 20;
 
 pub export fn run() void {
-    var game = Game.init();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    var game = Game.init(gpa.allocator());
+    defer game.entities.deinit();
+
+    std.debug.print("{}", .{game});
 
     rl.initWindow(
         game.screen_width,
@@ -46,12 +96,16 @@ pub export fn run() void {
     );
     defer rl.closeWindow(); // Close window and OpenGL context
 
+    defer box2d.WorldId.destroy(game.worldId);
+
     rl.setWindowState(rl.ConfigFlags{
         .window_resizable = true,
         .window_transparent = true,
     });
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+
+    groundInit(&game);
 
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
@@ -62,11 +116,19 @@ pub export fn run() void {
         } else rl.clearBackground(rl.Color.ray_white);
 
         if (rl.isKeyPressed(.key_r)) {
-            game = Game.init();
-            std.debug.print("Hello", .{});
+            box2d.WorldId.destroy(game.worldId);
+            game = game.clear(gpa.allocator());
+            std.debug.print("Init", .{});
+        }
+        if (rl.isKeyPressed(.key_p)) {
+            game.paused = !game.paused;
+            std.debug.print("pause", .{});
         }
 
         if (!game.paused) {
+            const deltaTime = rl.getFrameTime();
+            box2d.WorldId.step(game.worldId, deltaTime, 4);
+
             updateGame(&game);
         }
 
@@ -151,10 +213,30 @@ fn ui(game: *Game) void {
         }
     }
 }
+
 fn play(game: Game) void {
     ball();
 
     rl.drawCircle(@divTrunc(game.screen_width, @as(i32, 2)), @divTrunc(game.screen_height, @as(i32, 2)), 50, rl.Color.maroon);
+
+    for (game.entities.items) |entity| {
+        const p: box2d.Vec2 = box2d.BodyId.getWorldPoint(entity.bodyId, box2d.Vec2{
+            .x = -entity.extent.x,
+            .y = -entity.extent.y,
+        });
+
+        // const rotation: box2d.Rot = box2d.BodyId.getRotation(bodyId);
+        // const radians: f32 = rotation.toRadians();
+
+        // const ps = rl.Vector2{ .x = p.x, .y = p.y };
+
+        // rl.drawTextureEx(entity.texture, ps, radians * std.math.deg_per_rad, // Convert radians to degrees
+        //     1.0, // Scale
+        //     rl.Color.white // Color (assuming WHITE is defined in raylib)
+        // );
+
+        rl.drawRectangle(@as(i32, @intFromFloat(p.x / 2)), @as(i32, @intFromFloat(p.y / 2)), 50, 50, rl.Color.init(rand.int(u8), rand.int(u8), rand.int(u8), 255));
+    }
 }
 
 fn ball() void {
@@ -168,4 +250,32 @@ fn ball() void {
     }
 
     rl.drawCircleV(ball_position, ball_radius, rl.Color.maroon);
+}
+
+fn groundInit(game: *Game) void {
+    const groundExtent = box2d.Vec2{
+        .x = 0.5 * @as(f32, @floatFromInt(50)),
+        .y = 0.5 * @as(f32, @floatFromInt(50)),
+    };
+
+    const groundPolygon = box2d.Polygon.makeBox(groundExtent.x, groundExtent.y);
+
+    for (0..8) |i| {
+        var bodyDef = box2d.BodyDef.default();
+        bodyDef.position = box2d.Vec2{
+            .x = (2.0 * @as(f32, @floatFromInt(i)) + 2.0) * groundExtent.x,
+            .y = @as(f32, @floatFromInt(game.screen_height)) - groundExtent.y - 100.0,
+        };
+        bodyDef.type = box2d.BodyType.dynamic;
+
+        const bodyId = box2d.BodyId.create(game.worldId, bodyDef);
+
+        game.appendEntity(Entity{
+            .bodyId = bodyId,
+            .extent = groundExtent,
+        });
+
+        const shapeDef = box2d.ShapeDef.default();
+        _ = box2d.ShapeId.createPolygonShape(bodyId, shapeDef, groundPolygon);
+    }
 }
