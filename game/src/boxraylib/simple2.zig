@@ -8,10 +8,24 @@ const assert = std.debug.assert;
 
 const rand = std.crypto.random;
 
+const Circle = struct {
+    radius: f32,
+};
+const Rect = struct {
+    x: f32,
+    y: f32,
+};
+
+const Shape = union(enum) {
+    Circle: Circle,
+    Rect: Rect,
+};
+
 const Entity = struct {
     bodyId: box2d.BodyId,
-    extent: box2d.Vec2,
     // texture: rl.Texture,
+
+    shape: Shape,
 };
 
 const Game = struct {
@@ -36,7 +50,7 @@ const Game = struct {
         // Create the world definition
         var worldDef = box2d.WorldDef.default();
         // Realistic gravity is achieved by multiplying gravity by the length unit.
-        worldDef.gravity.y = 9.8 * lengthUnitsPerMeter;
+        worldDef.gravity.y = 5 * lengthUnitsPerMeter;
 
         // Create the Box2D world
         const worldId = box2d.WorldId.create(worldDef);
@@ -61,6 +75,7 @@ const Game = struct {
 
     fn clear(self: *Game, allocator: std.mem.Allocator) Game {
         self.entities.deinit();
+        // box2d.WorldId.destroy(self.worldId);
         return init(allocator);
     }
 
@@ -106,6 +121,8 @@ pub export fn run() void {
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
 
     groundInit(&game);
+    // ballInit(&game);
+    boxInit(&game);
 
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
@@ -199,7 +216,7 @@ fn updateGame(game: *Game) void {
 }
 
 fn ui(game: *Game) void {
-    if (rg.guiButton(rl.Rectangle.init(24, 24, 120, 30), "#191#Show Message") > 0) {
+    if (rg.guiButton(rl.Rectangle.init(24, 74, 120, 30), "#191#Show Message") > 0) {
         game.showMessageBox = true;
         game.paused = true;
     }
@@ -217,25 +234,50 @@ fn ui(game: *Game) void {
 fn play(game: Game) void {
     ball();
 
-    rl.drawCircle(@divTrunc(game.screen_width, @as(i32, 2)), @divTrunc(game.screen_height, @as(i32, 2)), 50, rl.Color.maroon);
+    rl.drawCircle(@divTrunc(game.screen_width, @as(i32, 3)), @divTrunc(game.screen_height, @as(i32, 3)), 50, rl.Color.maroon);
 
     for (game.entities.items) |entity| {
         const p: box2d.Vec2 = box2d.BodyId.getWorldPoint(entity.bodyId, box2d.Vec2{
-            .x = -entity.extent.x,
-            .y = -entity.extent.y,
+            .x = 0,
+            .y = 0,
         });
 
-        // const rotation: box2d.Rot = box2d.BodyId.getRotation(bodyId);
-        // const radians: f32 = rotation.toRadians();
+        std.debug.print("CirclePlay : {} {} \n", .{ p.x, p.y });
 
-        // const ps = rl.Vector2{ .x = p.x, .y = p.y };
+        if (entity.shape == Shape.Circle) {
 
-        // rl.drawTextureEx(entity.texture, ps, radians * std.math.deg_per_rad, // Convert radians to degrees
-        //     1.0, // Scale
-        //     rl.Color.white // Color (assuming WHITE is defined in raylib)
-        // );
+            // const rotation: box2d.Rot = box2d.BodyId.getRotation(bodyId);
+            // const radians: f32 = rotation.toRadians();
 
-        rl.drawRectangle(@as(i32, @intFromFloat(p.x / 2)), @as(i32, @intFromFloat(p.y / 2)), 50, 50, rl.Color.init(rand.int(u8), rand.int(u8), rand.int(u8), 255));
+            // const ps = rl.Vector2{ .x = p.x, .y = p.y };
+
+            // rl.drawTextureEx(entity.texture, ps, radians * std.math.deg_per_rad, // Convert radians to degrees
+            //     1.0, // Scale
+            //     rl.Color.white // Color (assuming WHITE is defined in raylib)
+            // );
+
+            rl.drawRectangleLines(@as(i32, @intFromFloat(p.x)), @as(i32, @intFromFloat(p.y)), @as(i32, @intFromFloat(2 * entity.shape.Circle.radius)), @as(i32, @intFromFloat(2 * entity.shape.Circle.radius)), rl.Color.green);
+
+            rl.drawCircleLines(@as(i32, @intFromFloat(p.x + entity.shape.Circle.radius)), @as(i32, @intFromFloat(p.y + entity.shape.Circle.radius)), entity.shape.Circle.radius, rl.Color.green);
+        }
+        if (entity.shape == Shape.Rect) {
+
+            // const rotation: box2d.Rot = box2d.BodyId.getRotation(bodyId);
+            // const radians: f32 = rotation.toRadians();
+
+            // const ps = rl.Vector2{ .x = p.x, .y = p.y };
+
+            // rl.drawTextureEx(entity.texture, ps, radians * std.math.deg_per_rad, // Convert radians to degrees
+            //     1.0, // Scale
+            //     rl.Color.white // Color (assuming WHITE is defined in raylib)
+            // );
+
+            rl.drawRectangleLines(@as(i32, @intFromFloat(p.x)), @as(i32, @intFromFloat(p.y)), @as(i32, @intFromFloat(entity.shape.Rect.x)), @as(i32, @intFromFloat(entity.shape.Rect.y)), rl.Color.blue);
+        }
+
+        const aabb = box2d.BodyId.computeAABB(entity.bodyId);
+
+        rl.drawRectangleLines(@as(i32, @intFromFloat(aabb.center().x)), @as(i32, @intFromFloat(aabb.center().y)), @as(i32, @intFromFloat(aabb.extents().x)), @as(i32, @intFromFloat(aabb.extents().y)), rl.Color.red);
     }
 }
 
@@ -253,29 +295,114 @@ fn ball() void {
 }
 
 fn groundInit(game: *Game) void {
-    const groundExtent = box2d.Vec2{
-        .x = 0.5 * @as(f32, @floatFromInt(50)),
-        .y = 0.5 * @as(f32, @floatFromInt(50)),
+    const rect = Rect{
+        .x = 50.0,
+        .y = 50.0,
     };
 
-    const groundPolygon = box2d.Polygon.makeBox(groundExtent.x, groundExtent.y);
+    const groundPolygon = box2d.Polygon.makeBox(rect.x, rect.y);
 
-    for (0..8) |i| {
+    for (0..1) |i| {
         var bodyDef = box2d.BodyDef.default();
         bodyDef.position = box2d.Vec2{
-            .x = (2.0 * @as(f32, @floatFromInt(i)) + 2.0) * groundExtent.x,
-            .y = @as(f32, @floatFromInt(game.screen_height)) - groundExtent.y - 100.0,
+            .x = 50 + 200.0 * @as(f32, @floatFromInt(i)),
+            .y = 400,
+            // .y = @as(f32, @floatFromInt(game.screen_height)) - rect.y - 100,
+        };
+
+        std.debug.print("Ground : {}", .{bodyDef.position});
+
+        const bodyId = box2d.BodyId.create(game.worldId, bodyDef);
+        // bodyDef.type = box2d.BodyType.dynamic;
+
+        game.appendEntity(Entity{
+            .bodyId = bodyId,
+            .shape = Shape{ .Rect = rect },
+        });
+
+        var shapeDef = box2d.ShapeDef.default();
+        shapeDef.density = 0.1;
+        shapeDef.restitution = 1;
+        shapeDef.friction = 0.1;
+        _ = box2d.ShapeId.createPolygonShape(bodyId, shapeDef, groundPolygon);
+    }
+}
+
+fn boxInit(game: *Game) void {
+    const rect = Rect{
+        .x = 50.0,
+        .y = 50.0,
+    };
+
+    const groundPolygon = box2d.Polygon.makeBox(rect.x, rect.y);
+
+    for (0..1) |i| {
+        var bodyDef = box2d.BodyDef.default();
+        bodyDef.position = box2d.Vec2{
+            .x = 50 + 200.0 * @as(f32, @floatFromInt(i)),
+            .y = 100,
+            // .y = @as(f32, @floatFromInt(game.screen_height)) - rect.y - 100,
+        };
+
+        std.debug.print("Ground : {}", .{bodyDef.position});
+
+        const bodyId = box2d.BodyId.create(game.worldId, bodyDef);
+        bodyDef.type = box2d.BodyType.dynamic;
+
+        game.appendEntity(Entity{
+            .bodyId = bodyId,
+            .shape = Shape{ .Rect = rect },
+        });
+
+        var shapeDef = box2d.ShapeDef.default();
+        shapeDef.density = 0.1;
+        shapeDef.restitution = 1;
+        shapeDef.friction = 0.1;
+        _ = box2d.ShapeId.createPolygonShape(bodyId, shapeDef, groundPolygon);
+    }
+}
+
+fn ballInit(game: *Game) void {
+    const circle = Circle{
+        .radius = 25.0,
+    };
+
+    for (0..1) |i| {
+        const circlePolygon = box2d.Circle{
+            .center = box2d.Vec2{
+                // .x = 2.0 * @as(f32, @floatFromInt(i)) * circle.radius + circle.radius,
+                // .y = @as(f32, @floatFromInt(game.screen_height)) - 400,
+                // .x = 50 + 200.0 * @as(f32, @floatFromInt(i)),
+                // .y = 100.0,
+                .x = 0,
+                .y = 0,
+            },
+            .radius = circle.radius,
+        };
+
+        var bodyDef = box2d.BodyDef.default();
+        // bodyDef.position = circlePolygon.center;
+        bodyDef.position = box2d.Vec2{
+            .x = 50 + 200.0 * @as(f32, @floatFromInt(i)),
+            .y = 100,
+            // .y = @as(f32, @floatFromInt(game.screen_height)) - rect.y - 100,
         };
         bodyDef.type = box2d.BodyType.dynamic;
+
+        std.debug.print("Circle : {}", .{bodyDef.position});
 
         const bodyId = box2d.BodyId.create(game.worldId, bodyDef);
 
         game.appendEntity(Entity{
             .bodyId = bodyId,
-            .extent = groundExtent,
+            .shape = Shape{ .Circle = circle },
         });
 
-        const shapeDef = box2d.ShapeDef.default();
-        _ = box2d.ShapeId.createPolygonShape(bodyId, shapeDef, groundPolygon);
+        var shapeDef = box2d.ShapeDef.default();
+        shapeDef.density = 0.1;
+        shapeDef.restitution = 1;
+        shapeDef.friction = 0.1;
+
+        _ = box2d.ShapeId.createCircleShape(bodyId, shapeDef, circlePolygon);
     }
 }
