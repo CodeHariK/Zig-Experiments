@@ -34,6 +34,12 @@ fn DrawEntity(entity: *const Entity) void {
     rl.drawRectangle(@as(i32, @intFromFloat(p.x / 2)), @as(i32, @intFromFloat(p.y / 2)), 50, 50, rl.Color.blue);
 
     // rl.drawCircle(@as(i32, @intFromFloat(p.x / 2)), @as(i32, @intFromFloat(p.y / 2)), 50, rl.Color.maroon);
+
+    const aabb = box2d.BodyId.computeAABB(entity.bodyId);
+
+    std.debug.print("Play : {}\nLower : {}\nCenter : {}\nExtents : {}\n\n", .{ p, aabb.lowerBound, aabb.center(), aabb.extents() });
+
+    rl.drawRectangleLines(@as(i32, @intFromFloat(aabb.lowerBound.x)), @as(i32, @intFromFloat(aabb.lowerBound.y)), @as(i32, @intFromFloat(2 * aabb.extents().x)), @as(i32, @intFromFloat(2 * aabb.extents().y)), rl.Color.red);
 }
 
 pub export fn run() void {

@@ -11,7 +11,7 @@ const rl = @import("raylib");
 const screen_width = 800;
 const screen_height = 450;
 
-pub fn main() anyerror!void {
+pub fn main() void {
 
     // Initialization
     //--------------------------------------------------------------------------------------

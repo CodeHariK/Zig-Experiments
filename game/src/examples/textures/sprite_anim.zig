@@ -6,7 +6,7 @@ const rl = @import("raylib");
 const MAX_FRAME_SPEED = 15;
 const MIN_FRAME_SPEED = 1;
 
-pub fn main() anyerror!void {
+pub fn main() void {
     // Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 800;
