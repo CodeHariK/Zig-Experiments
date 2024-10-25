@@ -1,0 +1,28 @@
+{
+    "max_health": 10000,
+    "actions": [
+        {
+            "duration": 0,
+            "vulnerable_hitbox_groups": [
+                {
+                    "start_frame": 0,
+                    "duration": 1,
+                    "Hitboxes": [
+                        {
+                            "top": 0,
+                            "left": 0,
+                            "bottom": 0,
+                            "right": 0
+                        }
+                    ]
+                }
+            ],
+            "attack_hitbox_groups": []
+        },
+        {
+            "duration": 0,
+            "vulnerable_hitbox_groups": [],
+            "attack_hitbox_groups": []
+        }
+    ]
+}
