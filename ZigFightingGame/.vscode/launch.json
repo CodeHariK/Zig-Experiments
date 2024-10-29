@@ -16,7 +16,7 @@
             "name": "(lldb) launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zig-out/bin/ZigFightingGame",
+            "program": "${workspaceFolder}/zig-out/bin/zfg",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

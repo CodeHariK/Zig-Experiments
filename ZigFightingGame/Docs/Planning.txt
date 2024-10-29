@@ -1,0 +1,298 @@
+* Agenda *
+** 2022/3/19 **
+- Hello World program
+- Automated Build from Visual Studio Code
+- Setup Debugging
+
+** 2022/3/22 **
+- Setup a git repo [x]
+- Build and link raylib libraries [x]
+- Show a Window [x]
+- Add raylib to git repo [x]
+
+
+** 2022/3/23
+- Code Design Principles [x]
+- Draw a circle on screen. [x]
+- Add physics state for an object. [x]
+- Move object each frame. [x]
+- Reflect object position in the window. [x]
+- Discussed game code architecture [x]
+
+
+** 2022/3/25
+- Break out game simulation into its own module/source [x]
+- Create a physics component [x]
+- Create physics system [x]
+- Create 2D Vector struct. [x]
+- Support velocity and acceleration [x]
+
+** 2022/3/28
+- Diagram Character State machine [x]
+
+** 2022/3/30
+- Start first pass implemenation of character state machine [x]
+- Start using Zig test to verify functionality of the state machine [x]
+
+** 2022/3/31
+- Implement state transitions and test them [p]
+
+
+** 2022/4/1
+- Support state transitions in the state machine processor [x]
+
+** 2022/4/5
+- Add support for input commands. [x]
+- Implement first pass at character controller states [x]
+
+
+** 2022/4/8
+- World to Screen space coordinate conversion [x]
+- Implement a data store for character properties (attack properties, hitboxes, etc). [p]
+- Hitbox debug display
+- Hitbox collision
+- Add second character to test hits
+
+** 2022/4/11
+- Implement a data store for character properties (attack properties, hitboxes, etc). [p]
+
+2022/4/12
+- Begin work on collision system [x]
+
+** 2022/4/21
+- Free persistent memory store at the end of a game [x]
+- Implement a independent game loop function outside of main() [x]
+
+2022/4/25
+- Test that scratch hitbox data used in the collision system is cleared out each frame. []
+- Generate collision events and write tests to verify the required functionality. []
+- Prepare character properties to be stored in the game's persistent store. [p]
+
+2022/4/26
+- Create a path for setting up character properties in code (actions, hitbox, etc) for testing the collision system.
+- Create utility function for getting current active hitboxes from a character
+
+2022/5/16
+- Catch up on previous work.
+- Plan for future streams.
+- Test allocating character data with action and hitbox data [x]
+- Remove test hitbox data from the GameData struct. [x]
+
+2022/5/31
+- Reading/Writing text files from storage in Zig [x].
+- Research and test seraliazing data to JSON [x]
+
+2022/6/2
+- Attempt to read/write the game's Character Data from and to a JSON file [p].
+- Move test code into game code [x].
+
+2022/6/13
+- Write deserializer that decodes the JSON object [x]
+- Setup test character data and write it to a file [x]
+
+2022/6/17
+- Write a test that validates loading a json asset to a struct[x]
+
+2022/6/21
+- Create a action name map for looking up actions in the character data [x]
+- Write tests validating use of the action name map [x]
+- Used loaded character data when executing actions in the state machine [p].
+- Pipeline the hitboxes from the character data to the collision system [p]
+
+2022/6/23
+
+- Copy translated hitbox data into the scratch hitbox memory for the collison system [x].
+- Reset the number of items in the collision system scratch data every frame [x].
+- Used loaded character data when executing actions in the state machine [p].
+- Pipeline the hitboxes from the character data to the collision system [p]
+
+2022/6/24
+- Initialize the collision system in the game simulation [x]
+- Create a character asset. Load it when starting the game [x]
+
+2022/6/28
+- Prototype 2 characters on the screen, each with at atleast one hitbox. Fire off
+    a debug message when the two collide, and only when they initially overlap. [x]
+
+
+
+2022/7/2
+- Trigger an attack action with a button press  [x]
+- Implemented a timeline component for dealing with action state active times [x]
+
+2022/7/6
+- Implement a hit reaction state. [x]
+- Hit stun support [x]
+- Return to idle when hit stun is over. [x]
+- Create reaction transition [x]
+- Add reaction action data to the character data file [x]
+- Create the reaction system [x]
+- Create Hit events [x]
+- Clear out hit events each frame [x]
+- Create a reaction component [x]
+- Make sure hit events are only generated for the frame they first occurred. [x]
+
+2022/7/7
+- Support debug pause / frame step [x]
+- Backup State [x]
+- Jump State [x]
+- Jump Physics [x]
+- Colliding with ground triggers return to idle [x]
+- Hit stop support for reacting player. [x]
+- Hit stop support for attacking player. [x]
+- Stop physics update during hitstop [x]
+- Stop timeline updates during hitstop
+
+2022/7/12
+- Knockback Physics
+
+2022/7/14
+- Implement flipping characters to face their opponent
+
+
+2022/9/1
+- Review offstream changes [x]
+- Prioritize what to do next [x]
+- Support drawing flipped sprites [x]
+- Support flipped knockback physics [x]
+
+2022/9/6
+- Review changes [x]
+- Fix a bug where an action with vulnerable hitboxes cannot hit an opponent even if it has attack boxes. [x]
+- Make it so characters always face their opponent during idle actions [x]
+- Support flipped hitboxes [x]
+
+
+2022/9/8
+- Flip the character to face the attacking opponent on hit. [x]
+
+2022/9/27
+- Implement transitioning to actions directly instead of going through idle (standing/jumping) first. [x]
+- Show how this influences frame advantage. [x]
+
+
+2022/12/19
+- Fix diagonals on the game controller not causing diagonal jumps. [x]
+
+2022/12/22
+- Rename Left/Right input commands to Back/Forward. [x]
+
+2022/12/23
+- Make character return to idle after hit stun is over. [x]
+- Support guarding, a guard action and guard stun. [x]
+
+2022/12/27
+- Implement push boxes and push collision.
+
+
+2024/1/25
+- Adjusted the jump to feel less floaty.
+- Fixed an issue where keyboard left/right inputs were not updated to use the player character's facing direction
+- Fixed a bug where action transitions could occur on the same frame as a collision, characters would not continue showing the same attack frame during hitstop.
+- Fixed an issue where characters would not flip to face their opponent on landing.
+
+
+2024/1/27
+- Input history buffer
+- Implement first non-button holding input commands (positive edge button presses).
+- Special attack input motion detection.
+
+2024/1/30
+- Supported special move motion inputs.
+
+
+2024/2/5
+- Support a "Special" action type
+- Support canceling on hit
+- Supported buffered positive edge inputs
+
+
+2024/*/*
+- Support per-character cancels
+- Support a per-action cancels
+- Support a launch reaction and launch hit property
+- Support juggle hit properties
+- Support an air hit reaction. 
+- Make it so that the flip to face opponent function uses the current positions of the character and their opponent to determine the direction they should face.
+
+
+================== BACKLOG ==================
+
+2022/12/*
+- Refactor Back/Forward input to be determined by a utility function.
+
+
+2022/9/*
+- Hit trades
+- Launch reaction
+- Launch physics
+- Avoid reloading textures with hot reload. Or make 2 reloads, with one forcing a texture reload.
+- Implement hit properties in character data
+- Knockdowns
+
+2022/10/*
+- Input history buffer
+- Implement first non-button holding input commands (positive edge button presses).
+- Special attack input motion detection.
+- Implement special attacks
+
+2022/11/*
+- Match state (Round Start, During Match, Round End, Rematch, etc)
+- Combo damage and hit stun scaling.
+- Throws and the a locking mechanism.
+- Super Freeze.
+- Camera tracking
+
+2022/12/*
+- Network session support.
+- Lock-step synchronization 
+- Rollbacks
+
+2024/*/*
+- Making the asset loading code use streaming reads instead of loading into a fixed sized buffer.
+- Save/Load attack data from/to individual files
+- In game hitbox editing.
+- Cinematics
+- Training Mode / Debug tools
+- Separate components and system state to avoid circular dependencies. 
+
+** TODO **
+- See if deinit() the asset allocators works properly when reloading assets.
+- How do we free textures? How can we avoid reloading textures each time? 
+
+- Setup character data that will be used in the collision system.
+- Run the hitbox data through the collision system
+- Create a collision event structure
+- Generated hit events when hitboxes overlap
+
+- Create test hitbox data to test collision system. 
+- Test hitbox collision event generation
+
+- Create a bunch of hitbox data for our character
+- Create a second character to test hit interactions
+- Create an attack action
+- Create a reaction action 
+- Implement a timeline data structure
+
+
+- Move the TranslateHitbox function to common.zig
+- Implement function for getting active attack boxes offset by the character position.
+- Verify what we're doing with the character data in the test "Test clearing out scratch hitbox data each frame"
+
+
+** TBD **
+- Create hit properties struct
+- Implement reaction system
+- Implement more character states (Attack, Reaction, Jump)
+- Support action state variables (action time, hit stop)
+- projectiles discussion
+- animation discussion
+- Make new run-time structure for storing hitboxes for the collision system.
+
+** The Back Burner **
+- Look into how to deal with parsing large files with JSON.
+- Look into memory allocation tradeoffs for dealing with loading data.
+- What do we do about allocated memory inside of deep struct hierarchies such as strings and ArrayLists?
+- Support flipped physics (What did I intend with this again?)
+
+
