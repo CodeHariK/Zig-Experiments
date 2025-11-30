@@ -36,3 +36,4 @@ zig-out/
 .zig-cache/
 .zig-out/
 
+vendor
