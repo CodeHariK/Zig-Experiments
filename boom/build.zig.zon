@@ -1,0 +1,21 @@
+.{
+    .name = .boom,
+    .version = "0.0.0",
+    .fingerprint = 0x2286060453b07053,
+    .minimum_zig_version = "0.15.2",
+
+    .dependencies = .{
+        .zig_objc = .{
+            .path = "lib/zig-objc",
+        },
+        .TrueType = .{
+            .path = "lib/TrueType",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
