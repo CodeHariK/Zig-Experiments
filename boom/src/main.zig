@@ -67,15 +67,23 @@ fn handleScroll(e: ScrollEvent) void {
 // Main
 // =============================================================================
 
-fn tesst(out: *std.Io.Writer, img_width: f32, img_height: f32) anyerror!void {
-    try image.createGradientMap(out, img_width, img_height, 0, 0, img_width, img_height);
+fn tesst(img: *image.Image, img_width: usize, img_height: usize) anyerror!void {
+    // full gradient
+    img.drawGradient(0, 0, img_width, img_height);
+
+    // smaller gradient in corner
+    img.drawGradient(50, 50, img_width - 50, img_height - 50);
+
+    img.drawRect(100, 100, 200, 20, .{ 1, 0, 0 });
+
+    img.drawCircle(100, 100, 20, .{ 0, 1, 0 });
 }
 
 pub fn main() !void {
-    try font.load(@embedFile("assets/GoNotoCurrent-Regular.ttf"));
+    // try font.load(@embedFile("assets/GoNotoCurrent-Regular.ttf"));
     // try font.testBitmapRendering(@embedFile("assets/GoNotoCurrent-Regular.ttf"));
 
-    try image.writePPMImage(10.0, 10.0, tesst);
+    // try image.writePPMImage(256.0, 256.0, tesst);
 
     std.debug.print("Starting Boom...\n", .{});
     std.debug.print("Press ESC or Q to quit\n\n", .{});
