@@ -3,5 +3,5 @@
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "files.associations": {
         "*.ts": "typescript"
-    }
+    },
 }

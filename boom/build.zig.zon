@@ -6,10 +6,10 @@
 
     .dependencies = .{
         .zig_objc = .{
-            .path = "lib/zig-objc",
+            .path = "../library/zig-objc",
         },
         .TrueType = .{
-            .path = "lib/TrueType",
+            .path = "../library/TrueType",
         },
     },
 
