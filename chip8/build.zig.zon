@@ -4,4 +4,9 @@
     .minimum_zig_version = "0.15.2",
     .paths = .{""},
     .fingerprint = 0xa61914abf0ad5af4,
+    .dependencies = .{
+        .raylib_zig = .{
+            .path = "../library/raylib-zig",
+        },
+    },
 }
