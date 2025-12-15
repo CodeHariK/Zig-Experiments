@@ -3,8 +3,6 @@
 const std = @import("std");
 const types = @import("types/mod.zig");
 const win = @import("window.zig");
-const font = @import("types/font.zig");
-const image = @import("types/image/ppm.zig");
 
 const Window = win.Window;
 const Color = types.Color;
@@ -67,24 +65,7 @@ fn handleScroll(e: ScrollEvent) void {
 // Main
 // =============================================================================
 
-fn tesst(img: *image.Image, img_width: usize, img_height: usize) anyerror!void {
-    // full gradient
-    img.drawGradient(0, 0, img_width, img_height);
-
-    // smaller gradient in corner
-    img.drawGradient(50, 50, img_width - 50, img_height - 50);
-
-    img.drawRect(100, 100, 200, 20, .{ 1, 0, 0 });
-
-    img.drawCircle(100, 100, 20, .{ 0, 1, 0 });
-}
-
 pub fn main() !void {
-    // try font.load(@embedFile("assets/GoNotoCurrent-Regular.ttf"));
-    // try font.testBitmapRendering(@embedFile("assets/GoNotoCurrent-Regular.ttf"));
-
-    // try image.writePPMImage(256.0, 256.0, tesst);
-
     std.debug.print("Starting Boom...\n", .{});
     std.debug.print("Press ESC or Q to quit\n\n", .{});
 

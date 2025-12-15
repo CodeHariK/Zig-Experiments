@@ -1,0 +1,14 @@
+[project]
+name = "demohdl"
+version = "0.1.0"
+
+[build]
+sources = ["src"]
+target = {type = "directory", path = "target"}
+
+[test]
+simulator = "verilator"
+waveform_target = {type = "directory", path = "vcd"}
+
+[test.verilator]
+compile_args = ["-Wno-DECLFILENAME", "-Wno-TIMESCALEMOD"]

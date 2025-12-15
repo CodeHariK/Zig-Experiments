@@ -1,0 +1,6 @@
+CompileFlags:
+  Add:
+    - -I/Users/Shared/Code/Zig-Experiments/demohdl/obj_dir
+    - -I/opt/homebrew/Cellar/verilator/5.042/share/verilator/include
+    - -I/opt/homebrew/Cellar/verilator/5.042/share/verilator/include/vltstd
+    - -std=c++17

@@ -22,13 +22,6 @@ pub fn build(b: *std.Build) void {
     // Add objc module import
     exe.root_module.addImport("objc", objc_dep.module("objc"));
 
-    // Add TrueType module import
-    const tt_dep = b.dependency("TrueType", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("TrueType", tt_dep.module("TrueType"));
-
     // Link frameworks
     exe.linkFramework("Cocoa");
     exe.linkFramework("CoreGraphics");

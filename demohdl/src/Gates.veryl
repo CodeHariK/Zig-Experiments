@@ -1,0 +1,206 @@
+/// # Logic Gates Module
+/// 
+/// Demonstrates basic combinational logic gates in Veryl.
+/// These are the fundamental building blocks of digital circuits.
+/// 
+/// ## Truth Tables
+/// 
+/// | a | b | AND | OR | XOR | NAND | NOR | XNOR |
+/// |---|---|-----|----|----|------|-----|------|
+/// | 0 | 0 |  0  | 0  | 0  |  1   |  1  |  1   |
+/// | 0 | 1 |  0  | 1  | 1  |  1   |  0  |  0   |
+/// | 1 | 0 |  0  | 1  | 1  |  1   |  0  |  0   |
+/// | 1 | 1 |  1  | 1  | 0  |  0   |  0  |  1   |
+pub module Gates (
+    // === Inputs ===
+    a: input logic,  // First input bit
+    b: input logic,  // Second input bit
+
+    // === Outputs ===
+    and_out:  output logic,  // AND:  true if BOTH inputs are 1
+    or_out:   output logic,  // OR:   true if ANY input is 1
+    xor_out:  output logic,  // XOR:  true if inputs are DIFFERENT
+    not_a:    output logic,  // NOT:  inverts input a
+    nand_out: output logic,  // NAND: NOT-AND (opposite of AND)
+    nor_out:  output logic,  // NOR:  NOT-OR (opposite of OR)
+    xnor_out: output logic,  // XNOR: true if inputs are SAME
+) {
+    // =========================================
+    // Combinational Logic Block
+    // =========================================
+    // `always_comb` means: recalculate outputs whenever inputs change
+    // No clock needed - outputs update immediately (in simulation)
+    // In real hardware, there's a tiny propagation delay (nanoseconds)
+
+    always_comb {
+        // ----- Basic Gates -----
+        
+        // AND gate: output is 1 only when BOTH inputs are 1
+        // Symbol: & (ampersand)
+        // Use case: checking if multiple conditions are ALL true
+        and_out = a & b;
+
+        // OR gate: output is 1 when AT LEAST ONE input is 1
+        // Symbol: | (pipe)
+        // Use case: checking if ANY condition is true
+        or_out = a | b;
+
+        // XOR gate (exclusive OR): output is 1 when inputs DIFFER
+        // Symbol: ^ (caret)
+        // Use case: parity checking, addition without carry
+        xor_out = a ^ b;
+
+        // NOT gate (inverter): flips the bit
+        // Symbol: ~ (tilde)
+        // Use case: creating opposite signal
+        not_a = ~a;
+
+        // ----- Compound Gates -----
+
+        // NAND gate: NOT-AND, opposite of AND
+        // Universal gate - can build ANY other gate from NANDs
+        nand_out = ~(a & b);
+
+        // NOR gate: NOT-OR, opposite of OR  
+        // Also universal - can build ANY other gate from NORs
+        nor_out = ~(a | b);
+
+        // XNOR gate: NOT-XOR, true when inputs are THE SAME
+        // Symbol: ~^ or ^~ (both work)
+        // Use case: equality comparison
+        xnor_out = ~(a ^ b);  // or: a ~^ b
+    }
+}
+
+/// # Multi-bit Bitwise Operations
+/// 
+/// When using logic<N>, operators work on each bit independently.
+/// Example: 8-bit AND performs 8 separate AND operations in parallel.
+pub module BitwiseGates #(
+    param WIDTH: u32 = 8,  // Configurable bit width
+) (
+    a: input  logic<WIDTH>,
+    b: input  logic<WIDTH>,
+
+    and_out: output logic<WIDTH>,
+    or_out:  output logic<WIDTH>,
+    xor_out: output logic<WIDTH>,
+    not_out: output logic<WIDTH>,
+) {
+    always_comb {
+        // Each bit is operated on independently:
+        // and_out[0] = a[0] & b[0]
+        // and_out[1] = a[1] & b[1]
+        // ... and so on for all WIDTH bits
+        and_out = a & b;
+        or_out  = a | b;
+        xor_out = a ^ b;
+        not_out = ~a;
+    }
+}
+
+/// # Reduction Operators
+/// 
+/// Reduce a multi-bit value to a single bit by applying
+/// the operation across all bits.
+pub module ReductionGates #(
+    param WIDTH: u32 = 8,
+) (
+    a: input logic<WIDTH>,
+
+    and_all: output logic,  // 1 if ALL bits are 1
+    or_any:  output logic,  // 1 if ANY bit is 1
+    xor_odd: output logic,  // 1 if ODD number of 1s (parity)
+) {
+    always_comb {
+        // Reduction AND: are ALL bits 1?
+        // Equivalent to: a[0] & a[1] & a[2] & ... & a[WIDTH-1]
+        and_all = &a;
+
+        // Reduction OR: is ANY bit 1?
+        // Equivalent to: a[0] | a[1] | a[2] | ... | a[WIDTH-1]
+        or_any = |a;
+
+        // Reduction XOR: odd number of 1s? (parity bit)
+        // Equivalent to: a[0] ^ a[1] ^ a[2] ^ ... ^ a[WIDTH-1]
+        xor_odd = ^a;
+    }
+}
+
+// =========================================
+// Integrated Test for Gates
+// =========================================
+#[test(test_gates)]
+embed (inline) sv{{{
+module test_gates;
+    // Test signals for Gates module
+    logic a, b;
+    logic and_out, or_out, xor_out, not_a, nand_out, nor_out, xnor_out;
+    
+    // Instantiate the Gates module
+    demohdl_Gates dut (
+        .a(a), .b(b),
+        .and_out(and_out),
+        .or_out(or_out),
+        .xor_out(xor_out),
+        .not_a(not_a),
+        .nand_out(nand_out),
+        .nor_out(nor_out),
+        .xnor_out(xnor_out)
+    );
+    
+    initial begin
+        $info("Starting Gates truth table test...");
+        
+        // Test case: a=0, b=0
+        a = 0; b = 0; #10;
+        $info("a=0, b=0: AND=%b OR=%b XOR=%b NOT_A=%b NAND=%b NOR=%b XNOR=%b",
+              and_out, or_out, xor_out, not_a, nand_out, nor_out, xnor_out);
+        assert (and_out == 0)  else $error("AND(0,0) should be 0");
+        assert (or_out == 0)   else $error("OR(0,0) should be 0");
+        assert (xor_out == 0)  else $error("XOR(0,0) should be 0");
+        assert (not_a == 1)    else $error("NOT(0) should be 1");
+        assert (nand_out == 1) else $error("NAND(0,0) should be 1");
+        assert (nor_out == 1)  else $error("NOR(0,0) should be 1");
+        assert (xnor_out == 1) else $error("XNOR(0,0) should be 1");
+        
+        // Test case: a=0, b=1
+        a = 0; b = 1; #10;
+        $info("a=0, b=1: AND=%b OR=%b XOR=%b NOT_A=%b NAND=%b NOR=%b XNOR=%b",
+              and_out, or_out, xor_out, not_a, nand_out, nor_out, xnor_out);
+        assert (and_out == 0)  else $error("AND(0,1) should be 0");
+        assert (or_out == 1)   else $error("OR(0,1) should be 1");
+        assert (xor_out == 1)  else $error("XOR(0,1) should be 1");
+        assert (nand_out == 1) else $error("NAND(0,1) should be 1");
+        assert (nor_out == 0)  else $error("NOR(0,1) should be 0");
+        assert (xnor_out == 0) else $error("XNOR(0,1) should be 0");
+        
+        // Test case: a=1, b=0
+        a = 1; b = 0; #10;
+        $info("a=1, b=0: AND=%b OR=%b XOR=%b NOT_A=%b NAND=%b NOR=%b XNOR=%b",
+              and_out, or_out, xor_out, not_a, nand_out, nor_out, xnor_out);
+        assert (and_out == 0)  else $error("AND(1,0) should be 0");
+        assert (or_out == 1)   else $error("OR(1,0) should be 1");
+        assert (xor_out == 1)  else $error("XOR(1,0) should be 1");
+        assert (not_a == 0)    else $error("NOT(1) should be 0");
+        assert (nand_out == 1) else $error("NAND(1,0) should be 1");
+        assert (nor_out == 0)  else $error("NOR(1,0) should be 0");
+        assert (xnor_out == 0) else $error("XNOR(1,0) should be 0");
+        
+        // Test case: a=1, b=1
+        a = 1; b = 1; #10;
+        $info("a=1, b=1: AND=%b OR=%b XOR=%b NOT_A=%b NAND=%b NOR=%b XNOR=%b",
+              and_out, or_out, xor_out, not_a, nand_out, nor_out, xnor_out);
+        assert (and_out == 1)  else $error("AND(1,1) should be 1");
+        assert (or_out == 1)   else $error("OR(1,1) should be 1");
+        assert (xor_out == 0)  else $error("XOR(1,1) should be 0");
+        assert (nand_out == 0) else $error("NAND(1,1) should be 0");
+        assert (nor_out == 0)  else $error("NOR(1,1) should be 0");
+        assert (xnor_out == 1) else $error("XNOR(1,1) should be 1");
+        
+        $info("All Gates tests PASSED!");
+        $finish;
+    end
+endmodule
+}}}
+

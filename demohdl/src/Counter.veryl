@@ -1,0 +1,73 @@
+module Counter #(
+    param WIDTH: u32 = 1,
+)(
+    i_clk: input clock,
+    i_rst: input reset,
+    o_cnt: output logic<WIDTH>,
+){
+    var r_cnt: logic<WIDTH>;
+    always_ff {
+        if_reset {
+            r_cnt = 0;
+        } else {
+            r_cnt += 2;
+        }
+    }
+    always_comb {
+        o_cnt = r_cnt;
+    }
+}
+
+// =========================================
+// Integrated Test for Counter
+// =========================================
+#[test(test_counter)]
+embed (inline) sv{{{
+module test_counter;
+    // Test signals
+    logic clk = 0;
+    logic rst = 0;  // Active-low reset: 0 = RESET ACTIVE
+    logic [7:0] cnt;
+    
+    // Instantiate counter with 8-bit width
+    demohdl_Counter #(.WIDTH(8)) dut (
+        .i_clk(clk),
+        .i_rst(rst),
+        .o_cnt(cnt)
+    );
+    
+    // Generate 100MHz clock (10ns period)
+    always #5 clk = ~clk;
+    
+    initial begin
+        $info("Starting Counter test...");
+        
+        // Hold reset for a few cycles (rst=0 means reset is active)
+        #25;
+        
+        // Check counter is 0 during reset
+        assert (cnt == 0) else $error("Counter should be 0 during reset, got %d", cnt);
+        $info("Reset check passed: cnt = %d", cnt);
+        
+        // Release reset (active-low: set to 1 to release)
+        rst = 1;
+        $info("Released reset");
+        
+        // Wait a few clock cycles (5 cycles = 50ns at 10ns/cycle)
+        #50;
+        
+        // Counter increments by 2 each cycle, so after 5 cycles: 5*2 = 10
+        $info("After 5 cycles: cnt = %d", cnt);
+        assert (cnt > 0) else $error("Counter should have incremented!");
+        assert (cnt == 10) else $error("Counter should be 10 (5 cycles * 2), got %d", cnt);
+        
+        // Wait more and check it keeps incrementing
+        #100;
+        $info("After more cycles: cnt = %d", cnt);
+        assert (cnt > 10) else $error("Counter should keep incrementing!");
+        
+        $info("All Counter tests PASSED!");
+        $finish;
+    end
+endmodule
+}}}

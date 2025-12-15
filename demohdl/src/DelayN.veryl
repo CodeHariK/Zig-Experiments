@@ -1,0 +1,26 @@
+pub module DelayN #(
+    param WIDTH: u32 = 1,
+    param DEPTH: u32 = 2,    // How many cycles to delay
+) (
+    i_clk : input  clock,
+    i_rst : input  reset,
+    i_data: input  logic<WIDTH>,
+    o_data: output logic<WIDTH>,
+) {
+    var pipeline: logic<WIDTH> [DEPTH];  // Array of registers
+
+    always_ff {
+        if_reset {
+            for i: u32 in 0..DEPTH {
+                pipeline[i] = '0;
+            }
+        } else {
+            pipeline[0] = i_data;
+            for i: u32 in 1..DEPTH {
+                pipeline[i] = pipeline[i-1];
+            }
+        }
+    }
+
+    assign o_data = pipeline[DEPTH-1];
+}
