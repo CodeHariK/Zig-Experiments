@@ -134,6 +134,9 @@ pub const Logic = struct {
 test "LOGIC TEST" {
     _ = @import("mux.zig");
     _ = @import("adder.zig");
+    _ = @import("utils.zig");
+    _ = @import("two_complement.zig");
+    _ = @import("alu.zig");
 
     const NOT_OUT = [2]u1{ 1, 0 };
     const AND_OUT = [4]u1{ 0, 0, 0, 1 };

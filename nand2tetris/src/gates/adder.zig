@@ -77,6 +77,14 @@ pub inline fn RIPPLE_ADDER_16(in1: [16]u1, in0: [16]u1) RippleAdderResult(16) {
     return RIPPLE_ADDER(16, in1, in0);
 }
 
+pub inline fn INCN(comptime N: u8, in: [N]u1) RippleAdderResult(N) {
+    return RIPPLE_ADDER(N, in, u.toBits(N, 1));
+}
+
+pub inline fn INC16(in: [16]u1) RippleAdderResult(16) {
+    return INCN(16, in);
+}
+
 // ============================================================================
 // Integer versions - suffix _I
 // ============================================================================
@@ -112,6 +120,14 @@ pub inline fn RIPPLE_ADDER_I(comptime N: u8, in1: UIntN(N), in0: UIntN(N)) Rippl
 /// 16-bit ripple adder convenience function (integer version)
 pub inline fn RIPPLE_ADDER_16_I(in1: u16, in0: u16) RippleAdderResult_I(16) {
     return RIPPLE_ADDER_I(16, in1, in0);
+}
+
+pub inline fn INCN_I(comptime N: u8, in: u.UIntN(N)) RippleAdderResult_I(N) {
+    return RIPPLE_ADDER_I(N, in, 1);
+}
+
+pub inline fn INC16_I(in: u16) RippleAdderResult_I(16) {
+    return INCN_I(16, in);
 }
 
 test "ADDER TEST" {
@@ -184,5 +200,24 @@ test "ADDER TEST" {
         try t.expectEqual(r_i.carry, tc.carry);
 
         std.debug.print("{} + {} = {} (carry={})\n", .{ tc.a, tc.b, r_i.sum, r_i.carry });
+    }
+
+    std.debug.print("\nINC16------------------\n", .{});
+    const tests16_inc = [_]struct { in: u16, out: u16, carry: u1 }{
+        .{ .in = 0, .out = 1, .carry = 0 },
+        .{ .in = 1, .out = 2, .carry = 0 },
+        .{ .in = 0b1111111111111011, .out = 0b1111111111111100, .carry = 0 },
+        .{ .in = 65535, .out = 0, .carry = 1 },
+    };
+    for (tests16_inc) |tc| {
+        const out = INC16(b16(tc.in));
+        try t.expectEqual(out.sum, b16(tc.out));
+        try t.expectEqual(out.carry, tc.carry);
+
+        const out_i = INC16_I(tc.in);
+        try t.expectEqual(out_i.sum, tc.out);
+        try t.expectEqual(out_i.carry, tc.carry);
+
+        std.debug.print("{} + 1 = {} (carry={})\n", .{ tc.in, out_i.sum, out_i.carry });
     }
 }
