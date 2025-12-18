@@ -1,3 +1,22 @@
+## Nand2Tetris
+
+### Note
+
+Nand2Tetris uses LSB (Least Significant Bit) first encoding.
+1 -> 1000
+2 -> 0100
+3 -> 0010
+4 -> 0001
+
+In this project, we will use MSB (Most Significant Bit) first encoding.
+All inputs and outputs are in MSB first encoding.
+1 -> 0001
+2 -> 0010
+3 -> 0011
+4 -> 0100
+
+## Resources
+
 ## Hardware
 
 * [Veritasium: Why The First Computers Were Made Out Of Light Bulbs](https://www.youtube.com/watch?v=FU_YFpfDqqA)
