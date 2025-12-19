@@ -2,31 +2,16 @@
 
 ### Note
 
-Nand2Tetris uses LSB (Least Significant Bit) first encoding.
-1 -> 1000
-2 -> 0100
-3 -> 0010
-4 -> 0001
+* Nand2Tetris uses LSB (Least Significant Bit) first encoding.
+* 1 -> 1000
+* 2 -> 0100
+* 4 -> 0010
 
-In this project, we will use MSB (Most Significant Bit) first encoding.
-All inputs and outputs are in MSB first encoding.
-1 -> 0001
-2 -> 0010
-3 -> 0011
-4 -> 0100
-
-## Resources
-
-## Hardware
-
-* [Veritasium: Why The First Computers Were Made Out Of Light Bulbs](https://www.youtube.com/watch?v=FU_YFpfDqqA)
-
-* [Semiconductor Physics](https://www.youtube.com/playlist?list=PLU_bYajZW2XIY7085o-EQhOuJ4VUywPbH)
-* [DIY Semiconductor Fabrication](https://www.youtube.com/playlist?list=PLU_bYajZW2XKMx1givUr7FS9XPA947jKH)
-
-## Computer Science
-
-* [Computer Science 101 - The First Video YOU Should Watch](youtube.com/watch?v=pDELW2pIvWw)
+* In this project, we will use MSB (Most Significant Bit) first encoding.
+* All inputs and outputs are in MSB first encoding.
+* 1 -> 0001
+* 2 -> 0010
+* 4 -> 0100
 
 ## Nand2Tetris
 
@@ -45,11 +30,9 @@ All inputs and outputs are in MSB first encoding.
 
 * [Computer architecture from scratch](https://www.youtube.com/playlist?list=PL9vTTBa7QaQOoMfpP3ztvgyQkPWDPfJez)
 
-
 ## Computer Science
 
 * [CMU: Digital Design and Computer Architecture](https://www.youtube.com/playlist?list=PL5Q2soXY2Zi9Eo29LMgKVcaydS7V1zZW3)
-
 
 ## Ben Eater
 
@@ -64,6 +47,7 @@ All inputs and outputs are in MSB first encoding.
 
 ## Electronics
 
+* [Core Dumped: HOW TRANSISTORS RUN CODE?](https://www.youtube.com/watch?v=HjneAhCy2N4)
 * [Ben Eater: Making logic gates from transistors](https://www.youtube.com/watch?v=sTu3LwpF6XI)
 
 * [Fabian Schuiki: Homebrew Arithmetic Logic Unit](https://www.youtube.com/playlist?list=PLyR4neQXqQo7XaHvyBsNL7STw9ZB_8R69)
@@ -73,9 +57,34 @@ All inputs and outputs are in MSB first encoding.
 
 * [Ben Eater: Twos complement: Negative numbers in binary](https://www.youtube.com/watch?v=4qH4unVtJkE)
 
+* [Core Dumped: HOW TRANSISTORS REMEMBER DATA](https://www.youtube.com/watch?v=rM9BjciBLmg)
+* [Core Dumped: Capacitors are terrible at remembering data. But for this reason we continue doing it.](https://www.youtube.com/watch?v=7WnbIeMgWYA)
+* [Branch Education: How does Computer Memory Work? 💻🛠](https://www.youtube.com/watch?v=7J7X7aZvMXQ)
+* [Registers and RAM: Crash Course Computer Science #6](https://www.youtube.com/watch?v=fpnE6UAfbtU&list=PL8dPuuaLjXtNlUrzyH5r6jN9ulIgZBpdo&index=7)
+
+* [Core Dumped: How the Clock Tells the CPU to "Move Forward"](https://www.youtube.com/watch?v=PVNAPWUxZ0g)
+
+* [Core Dumped: CRAFTING A CPU TO RUN PROGRAMS](https://www.youtube.com/watch?v=GYlNoAMBY6o)
+* [Core Dumped: How computer processors run conditions and loops](https://www.youtube.com/watch?v=Ui6QyzcD3_E)
+
 * [Ben Eater: Binary to decimal can’t be that hard, right?](https://www.youtube.com/watch?v=v3-a-zqKfgA)
 
 
 ## RISC-V
 
 * [RV32I Base Integer Instruction Set, Version 2.1](https://docs.riscv.org/reference/isa/unpriv/rv32.html)
+
+## Hardware
+
+* [Veritasium: Why The First Computers Were Made Out Of Light Bulbs](https://www.youtube.com/watch?v=FU_YFpfDqqA)
+
+* [Semiconductor Physics](https://www.youtube.com/playlist?list=PLU_bYajZW2XIY7085o-EQhOuJ4VUywPbH)
+* [DIY Semiconductor Fabrication](https://www.youtube.com/playlist?list=PLU_bYajZW2XKMx1givUr7FS9XPA947jKH)
+
+* [Branch Education: How do Transistors Build into a CPU? 🖥️🤔 How do Transistors Work? 🖥️🤔](https://www.youtube.com/watch?v=_Pqfjer8-O4)
+
+## Computer Science
+
+* [Computer Science 101 - The First Video YOU Should Watch](youtube.com/watch?v=pDELW2pIvWw)
+
+* [Branch Education: The Engineering that Runs the Digital World 🛠️⚙️💻 How do CPUs Work?](https://www.youtube.com/watch?v=16zrEPOsIcI)

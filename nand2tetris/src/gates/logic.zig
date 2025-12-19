@@ -1,35 +1,56 @@
+//! Logic Gates
+//!
+//! Fundamental logic gates built from NAND (the universal gate).
+//! All gates can be constructed using only NAND, demonstrating that NAND is
+//! functionally complete. The implementations here use Zig's native operators
+//! for efficiency, but NAND-based equivalents are documented.
+//!
+//! Gate naming follows HDL convention (SCREAMING_CASE).
+
 const std = @import("std");
-const t = std.testing;
+const testing = std.testing;
 
 const mux = @import("mux.zig");
 const adder = @import("adder.zig");
 
-const u = @import("utils.zig");
-const b8 = u.b8;
-const b16 = u.b16;
+const utils = @import("utils.zig");
+const b8 = utils.b8;
+const b16 = utils.b16;
 
+/// Logic gates namespace - contains all basic and compound gates.
 pub const Logic = struct {
-    pub inline fn NAND(in1: u1, in0: u1) u1 {
-        return ~(in1 & in0);
+
+    // ========================================================================
+    // Single-Bit Gates
+    // ========================================================================
+
+    /// NAND gate - the universal gate from which all others can be built.
+    /// Truth table: 00→1, 01→1, 10→1, 11→0
+    pub inline fn NAND(a: u1, b: u1) u1 {
+        return ~(a & b);
     }
 
-    pub inline fn NOT(in: u1) u1 {
-        return ~in;
-        // return Logic.NAND(in, in);
+    /// NOT gate (inverter).
+    /// NAND equivalent: NAND(a, a)
+    pub inline fn NOT(a: u1) u1 {
+        return ~a;
     }
 
-    pub inline fn AND(in1: u1, in0: u1) u1 {
-        return in1 & in0;
-        // return Logic.NOT(Logic.NAND(in1, in0));
+    /// AND gate.
+    /// NAND equivalent: NOT(NAND(a, b))
+    pub inline fn AND(a: u1, b: u1) u1 {
+        return a & b;
     }
 
-    pub inline fn OR(in1: u1, in0: u1) u1 {
-        return in1 | in0;
-        // return Logic.NAND(Logic.NOT(in1), Logic.NOT(in0));
+    /// OR gate.
+    /// NAND equivalent: NAND(NOT(a), NOT(b))
+    pub inline fn OR(a: u1, b: u1) u1 {
+        return a | b;
     }
 
-    pub inline fn XOR(in1: u1, in0: u1) u1 {
-        return in1 ^ in0;
+    /// XOR gate (exclusive or).
+    pub inline fn XOR(a: u1, b: u1) u1 {
+        return a ^ b;
 
         // return Logic.OR(
         //     Logic.AND(in1, Logic.NOT(in0)),
@@ -40,49 +61,59 @@ pub const Logic = struct {
         // return Logic.NAND(Logic.NAND(in1, d), Logic.NAND(in0, d));
     }
 
-    pub inline fn NOR(in1: u1, in0: u1) u1 {
-        return ~(in1 | in0);
-        // return Logic.NOT(Logic.OR(in1, in0));
+    /// NOR gate (not or).
+    /// NAND equivalent: NOT(OR(a, b))
+    pub inline fn NOR(a: u1, b: u1) u1 {
+        return ~(a | b);
     }
 
-    pub inline fn XNOR(in1: u1, in0: u1) u1 {
-        return ~(in1 ^ in0);
-        // return Logic.NOT(Logic.XOR(in1, in0));
+    /// XNOR gate (exclusive nor / equivalence).
+    /// NAND equivalent: NOT(XOR(a, b))
+    pub inline fn XNOR(a: u1, b: u1) u1 {
+        return ~(a ^ b);
     }
 
+    /// Simple clock signal generator - returns true on even ticks.
     pub inline fn CLOCK(tick: u32) bool {
         return (tick & 1) == 0;
     }
 
-    // ========== Bit-array versions ==========
+    // ========================================================================
+    // 16-Bit Gates (Bit-Array Version)
+    // ========================================================================
 
+    /// 16-bit NOT - inverts each bit.
     pub inline fn NOT16(in: [16]u1) [16]u1 {
         var out: [16]u1 = undefined;
         inline for (0..16) |i| out[i] = ~in[i];
         return out;
     }
 
-    pub inline fn AND16(in1: [16]u1, in0: [16]u1) [16]u1 {
+    /// 16-bit AND - bitwise AND of two 16-bit values.
+    pub inline fn AND16(a: [16]u1, b: [16]u1) [16]u1 {
         var out: [16]u1 = undefined;
-        inline for (0..16) |i| out[i] = in1[i] & in0[i];
+        inline for (0..16) |i| out[i] = a[i] & b[i];
         return out;
     }
 
-    pub inline fn OR16(in1: [16]u1, in0: [16]u1) [16]u1 {
+    /// 16-bit OR - bitwise OR of two 16-bit values.
+    pub inline fn OR16(a: [16]u1, b: [16]u1) [16]u1 {
         var out: [16]u1 = undefined;
-        inline for (0..16) |i| out[i] = in1[i] | in0[i];
+        inline for (0..16) |i| out[i] = a[i] | b[i];
         return out;
     }
 
+    /// 8-way OR - returns 1 if any input bit is 1.
     pub inline fn OR8WAY(in: [8]u1) u1 {
         var out: u1 = 0;
-        inline for (0..8) |i| {
-            out |= in[i];
-        }
+        inline for (0..8) |i| out |= in[i];
         return out;
     }
 
-    // Bit-array versions (sel/inputs are [N]u1)
+    // ========================================================================
+    // Re-exported MUX/DMUX (Bit-Array Version)
+    // ========================================================================
+
     pub const MUX = mux.MUX;
     pub const MUX16 = mux.MUX16;
     pub const MUX4WAY16 = mux.MUX4WAY16;
@@ -91,33 +122,43 @@ pub const Logic = struct {
     pub const DMUX4WAY = mux.DMUX4WAY;
     pub const DMUX8WAY = mux.DMUX8WAY;
 
-    // Adder (single-bit)
+    // ========================================================================
+    // Re-exported Adders (Bit-Array Version)
+    // ========================================================================
+
     pub const HALF_ADDER = adder.HALF_ADDER;
     pub const FULL_ADDER = adder.FULL_ADDER;
-
-    // Bit-array versions
     pub const RIPPLE_ADDER = adder.RIPPLE_ADDER;
     pub const RIPPLE_ADDER_16 = adder.RIPPLE_ADDER_16;
 
-    // ========== Integer versions (_I) ==========
+    // ========================================================================
+    // 16-Bit Gates (Integer Version) - Suffix _I
+    // ========================================================================
 
+    /// 16-bit NOT (integer version).
     pub inline fn NOT16_I(in: u16) u16 {
         return ~in;
     }
 
-    pub inline fn AND16_I(in1: u16, in0: u16) u16 {
-        return in1 & in0;
+    /// 16-bit AND (integer version).
+    pub inline fn AND16_I(a: u16, b: u16) u16 {
+        return a & b;
     }
 
-    pub inline fn OR16_I(in1: u16, in0: u16) u16 {
-        return in1 | in0;
+    /// 16-bit OR (integer version).
+    pub inline fn OR16_I(a: u16, b: u16) u16 {
+        return a | b;
     }
 
+    /// 8-way OR (integer version) - returns 1 if any bit is set.
     pub inline fn OR8WAY_I(in: u8) u1 {
         return if (in != 0) 1 else 0;
     }
 
-    // Integer versions (sel is u2, u3, etc.)
+    // ========================================================================
+    // Re-exported MUX/DMUX (Integer Version)
+    // ========================================================================
+
     pub const MUX_I = mux.MUX_I;
     pub const MUX16_I = mux.MUX16_I;
     pub const MUX4WAY16_I = mux.MUX4WAY16_I;
@@ -126,81 +167,90 @@ pub const Logic = struct {
     pub const DMUX4WAY_I = mux.DMUX4WAY_I;
     pub const DMUX8WAY_I = mux.DMUX8WAY_I;
 
-    // Integer versions
+    // ========================================================================
+    // Re-exported Adders (Integer Version)
+    // ========================================================================
+
     pub const RIPPLE_ADDER_I = adder.RIPPLE_ADDER_I;
     pub const RIPPLE_ADDER_16_I = adder.RIPPLE_ADDER_16_I;
 };
 
-test "LOGIC TEST" {
+// ============================================================================
+// Tests
+// ============================================================================
+
+test "run all gate tests" {
     _ = @import("mux.zig");
     _ = @import("adder.zig");
     _ = @import("utils.zig");
     _ = @import("two_complement.zig");
     _ = @import("alu.zig");
+}
 
-    const NOT_OUT = [2]u1{ 1, 0 };
-    const AND_OUT = [4]u1{ 0, 0, 0, 1 };
-    const OR_OUT = [4]u1{ 0, 1, 1, 1 };
-    const XOR_OUT = [4]u1{ 0, 1, 1, 0 };
-    const NAND_OUT = [4]u1{ 1, 1, 1, 0 };
-    const NOR_OUT = [4]u1{ 1, 0, 0, 0 };
-    const XNOR_OUT = [4]u1{ 1, 0, 0, 1 };
+test "single-bit gates follow truth tables" {
+    // Expected outputs indexed by [a * 2 + b] for 2-input gates
+    const NOT_EXPECTED = [2]u1{ 1, 0 };
+    const AND_EXPECTED = [4]u1{ 0, 0, 0, 1 };
+    const OR_EXPECTED = [4]u1{ 0, 1, 1, 1 };
+    const XOR_EXPECTED = [4]u1{ 0, 1, 1, 0 };
+    const NAND_EXPECTED = [4]u1{ 1, 1, 1, 0 };
+    const NOR_EXPECTED = [4]u1{ 1, 0, 0, 0 };
+    const XNOR_EXPECTED = [4]u1{ 1, 0, 0, 1 };
 
-    try t.expectEqual(Logic.NOT16(b16(0xffff)), b16(0));
-    try t.expectEqual(Logic.OR16(b16(0xffff), b16(0)), b16(0xffff));
-    try t.expectEqual(Logic.AND16(b16(0xffff), b16(0)), b16(0));
-    try t.expectEqual(Logic.OR8WAY(b8(0b10101010)), 1);
-    try t.expectEqual(Logic.OR8WAY(b8(0)), 0);
+    std.debug.print("\nLOGIC GATES TEST------------------\n", .{});
+    std.debug.print("a  b  | NOT  AND  OR  XOR  NAND  NOR  XNOR\n", .{});
 
-    // Test integer versions
-    try t.expect(Logic.NOT16_I(0xffff) == 0);
-    try t.expect(Logic.OR16_I(0xffff, 0) == 0xffff);
-    try t.expect(Logic.AND16_I(0xffff, 0) == 0);
-    try t.expect(Logic.OR8WAY_I(0b10101010) == 1);
-    try t.expect(Logic.OR8WAY_I(0) == 0);
+    for (0..2) |i| {
+        const a: u1 = @intCast(i);
+        try testing.expectEqual(NOT_EXPECTED[i], Logic.NOT(a));
 
-    std.debug.print("\nTEST------------------\n", .{});
-    std.debug.print("S  In1  In0  AND  OR  XOR  NAND  NOR  XNOR\n", .{});
+        for (0..2) |j| {
+            const b: u1 = @intCast(j);
+            const idx = i * 2 + j;
 
-    var isel: u8 = 0;
-    while (isel < 2) : (isel += 1) {
-        const S: u1 = @intCast(isel);
+            const and_out = Logic.AND(a, b);
+            const or_out = Logic.OR(a, b);
+            const xor_out = Logic.XOR(a, b);
+            const nand_out = Logic.NAND(a, b);
+            const nor_out = Logic.NOR(a, b);
+            const xnor_out = Logic.XNOR(a, b);
 
-        var idx1: u8 = 0;
-        while (idx1 < 2) : (idx1 += 1) {
-            var idx0: u8 = 0;
-            while (idx0 < 2) : (idx0 += 1) {
-                const IN1: u1 = @intCast(idx1);
-                const IN0: u1 = @intCast(idx0);
+            try testing.expectEqual(AND_EXPECTED[idx], and_out);
+            try testing.expectEqual(OR_EXPECTED[idx], or_out);
+            try testing.expectEqual(XOR_EXPECTED[idx], xor_out);
+            try testing.expectEqual(NAND_EXPECTED[idx], nand_out);
+            try testing.expectEqual(NOR_EXPECTED[idx], nor_out);
+            try testing.expectEqual(XNOR_EXPECTED[idx], xnor_out);
 
-                const A_NOT = Logic.NOT(IN1);
-                const A_AND_B = Logic.AND(IN1, IN0);
-                const A_OR_B = Logic.OR(IN1, IN0);
-                const A_XOR_B = Logic.XOR(IN1, IN0);
-                const A_NAND_B = Logic.NAND(IN1, IN0);
-                const A_NOR_B = Logic.NOR(IN1, IN0);
-                const A_XNOR_B = Logic.XNOR(IN1, IN0);
-
-                try t.expect(A_NOT == NOT_OUT[idx1]);
-                try t.expect(A_AND_B == AND_OUT[idx1 * 2 + idx0]);
-                try t.expect(A_OR_B == OR_OUT[idx1 * 2 + idx0]);
-                try t.expect(A_XOR_B == XOR_OUT[idx1 * 2 + idx0]);
-                try t.expect(A_NAND_B == NAND_OUT[idx1 * 2 + idx0]);
-                try t.expect(A_NOR_B == NOR_OUT[idx1 * 2 + idx0]);
-                try t.expect(A_XNOR_B == XNOR_OUT[idx1 * 2 + idx0]);
-
-                std.debug.print("{d}   {d}    {d}    {d}   {d}    {d}    {d}     {d}    {d}\n", .{
-                    S,
-                    IN1,
-                    IN0,
-                    A_AND_B,
-                    A_OR_B,
-                    A_XOR_B,
-                    A_NAND_B,
-                    A_NOR_B,
-                    A_XNOR_B,
-                });
-            }
+            std.debug.print("{d}  {d}  |  {d}    {d}   {d}    {d}    {d}     {d}    {d}\n", .{
+                a, b, Logic.NOT(a), and_out, or_out, xor_out, nand_out, nor_out, xnor_out,
+            });
         }
     }
+}
+
+test "16-bit gates (bit-array version)" {
+    try testing.expectEqual(b16(0x0000), Logic.NOT16(b16(0xFFFF)));
+    try testing.expectEqual(b16(0xFFFF), Logic.NOT16(b16(0x0000)));
+    try testing.expectEqual(b16(0xFFFF), Logic.OR16(b16(0xFFFF), b16(0x0000)));
+    try testing.expectEqual(b16(0x0000), Logic.AND16(b16(0xFFFF), b16(0x0000)));
+    try testing.expectEqual(b16(0x00FF), Logic.AND16(b16(0xFFFF), b16(0x00FF)));
+}
+
+test "16-bit gates (integer version)" {
+    try testing.expectEqual(@as(u16, 0x0000), Logic.NOT16_I(0xFFFF));
+    try testing.expectEqual(@as(u16, 0xFFFF), Logic.NOT16_I(0x0000));
+    try testing.expectEqual(@as(u16, 0xFFFF), Logic.OR16_I(0xFFFF, 0x0000));
+    try testing.expectEqual(@as(u16, 0x0000), Logic.AND16_I(0xFFFF, 0x0000));
+    try testing.expectEqual(@as(u16, 0x00FF), Logic.AND16_I(0xFFFF, 0x00FF));
+}
+
+test "OR8WAY returns 1 if any bit is set" {
+    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY(b8(0b10101010)));
+    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY(b8(0b00000001)));
+    try testing.expectEqual(@as(u1, 0), Logic.OR8WAY(b8(0b00000000)));
+
+    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY_I(0b10101010));
+    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY_I(0b00000001));
+    try testing.expectEqual(@as(u1, 0), Logic.OR8WAY_I(0b00000000));
 }
