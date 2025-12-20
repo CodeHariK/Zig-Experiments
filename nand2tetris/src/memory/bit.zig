@@ -89,3 +89,137 @@
 // And so on...
 //
 
+const std = @import("std");
+const testing = std.testing;
+
+const dff = @import("dff.zig");
+// Use gates module import (available because memory module has gates as dependency)
+const logic = @import("gates").Logic;
+
+/// Bit - a 1-bit register with load control.
+///
+/// A Bit adds the CONTROL concept to memory - we can decide WHEN to store,
+/// not just store every cycle like a raw DFF.
+///
+/// Behavior:
+///   if load(t-1) == 1: out(t) = in(t-1)    // store new value
+///   else:              out(t) = out(t-1)   // maintain current value
+pub const Bit = struct {
+    dff: dff.DFF = .{},
+
+    /// Update the Bit with new input and load signal.
+    /// Returns the current output.
+    ///
+    /// This function represents one clock cycle:
+    /// - If load=1: stores the new input value
+    /// - If load=0: maintains the current stored value
+    pub fn tick(self: *Bit, input: u1, load: u1) u1 {
+        const dff_out = self.dff.peek();
+        // MUX selects: in when load=1, dff_out when load=0
+        const mux_out = logic.MUX(input, dff_out, load);
+        return self.dff.tick(mux_out);
+    }
+
+    /// Get the current output without advancing time.
+    pub fn peek(self: *const Bit) u1 {
+        return self.dff.peek();
+    }
+
+    /// Reset the Bit to initial state (outputs 0).
+    pub fn reset(self: *Bit) void {
+        self.dff.reset();
+    }
+};
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+test "Bit: load=1 stores new value" {
+    var bit = Bit{};
+
+    // First tick: load=1, in=1 → stores 1
+    try testing.expectEqual(0, bit.tick(1, 1));
+
+    // Second tick: load=1, in=0 → stores 0, outputs previous (1)
+    try testing.expectEqual(1, bit.tick(0, 1));
+
+    // Third tick: load=1, in=1 → stores 1, outputs previous (0)
+    try testing.expectEqual(0, bit.tick(1, 1));
+}
+
+test "Bit: load=0 maintains current value" {
+    var bit = Bit{};
+
+    // Set initial value
+    _ = bit.tick(1, 1);
+    try testing.expectEqual(1, bit.peek());
+
+    // load=0, in changes but value is maintained
+    try testing.expectEqual(1, bit.tick(0, 0));
+    try testing.expectEqual(1, bit.tick(1, 0));
+    try testing.expectEqual(1, bit.tick(0, 0));
+    try testing.expectEqual(1, bit.peek());
+}
+
+test "Bit: sequence matches expected timeline" {
+    var bit = Bit{};
+
+    // Timeline from documentation:
+    // Time:     t0   t1   t2   t3   t4   t5   t6
+    // in:        1    0    1    1    0    1    0
+    // load:      1    0    0    1    1    0    0
+    // out:       ?    1    1    1    1    0    0
+
+    const inputs = [_]u1{ 1, 0, 1, 1, 0, 1, 0 };
+    const loads = [_]u1{ 1, 0, 0, 1, 1, 0, 0 };
+    const expected_outputs = [_]u1{ 0, 1, 1, 1, 1, 0, 0 };
+
+    for (inputs, loads, expected_outputs) |input, load, expected| {
+        const output = bit.tick(input, load);
+        try testing.expectEqual(expected, output);
+    }
+}
+
+test "Bit: alternating load behavior" {
+    var bit = Bit{};
+
+    // Store 1
+    try testing.expectEqual(0, bit.tick(1, 1));
+    try testing.expectEqual(1, bit.peek());
+
+    // Hold (load=0, in=0 doesn't matter)
+    try testing.expectEqual(1, bit.tick(0, 0));
+    try testing.expectEqual(1, bit.peek());
+
+    // Store 0
+    try testing.expectEqual(1, bit.tick(0, 1));
+    try testing.expectEqual(0, bit.peek());
+
+    // Hold (load=0, in=1 doesn't matter)
+    try testing.expectEqual(0, bit.tick(1, 0));
+    try testing.expectEqual(0, bit.peek());
+}
+
+test "Bit: peek does not advance state" {
+    var bit = Bit{};
+
+    _ = bit.tick(1, 1);
+    try testing.expectEqual(1, bit.peek());
+    try testing.expectEqual(1, bit.peek()); // Still same value
+
+    _ = bit.tick(0, 1);
+    try testing.expectEqual(0, bit.peek());
+}
+
+test "Bit: reset clears state" {
+    var bit = Bit{};
+
+    _ = bit.tick(1, 1);
+    _ = bit.tick(1, 1);
+    try testing.expectEqual(1, bit.peek());
+
+    bit.reset();
+    try testing.expectEqual(0, bit.peek());
+    try testing.expectEqual(0, bit.tick(0, 0));
+}

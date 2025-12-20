@@ -1,3 +1,4 @@
+All 0 tests passed.
 1/23 logic.test.run all gate tests...OK
 2/23 logic.test.single-bit gates follow truth tables...
 LOGIC GATES TEST------------------
@@ -188,3 +189,28 @@ ALU TEST------------------
 | 0000000000010001 | 0000000000000011 | 0 | 1 | 0 | 1 | 0 | 1 | 0000000000010011 | 0 | 0 |
 OK
 All 23 tests passed.
+1/10 dff.test.DFF: basic behavior - out(t) = in(t-1)...OK
+2/10 dff.test.DFF: reset clears state...OK
+3/10 dff.test.DFF: debug print - demonstrates out(t) = in(t-1)...
+=== DFF Debug Test: out(t) = in(t-1) ===
+Time | Input | Output (previous input) | State
+-----|-------|------------------------|-------
+  t0 |   1   |          0              |   1
+  t1 |   0   |          1              |   0
+  t2 |   1   |          0              |   1
+  t3 |   1   |          1              |   1
+  t4 |   0   |          1              |   0
+  t5 |   1   |          0              |   1
+
+Key insight: Output at time t equals input at time t-1
+Example: At t1, input=0 but output=1 (from t0's input)
+
+OK
+4/10 dff.test.memory module: include all memory tests...OK
+5/10 bit.test.Bit: load=1 stores new value...OK
+6/10 bit.test.Bit: load=0 maintains current value...OK
+7/10 bit.test.Bit: sequence matches expected timeline...OK
+8/10 bit.test.Bit: alternating load behavior...OK
+9/10 bit.test.Bit: peek does not advance state...OK
+10/10 bit.test.Bit: reset clears state...OK
+All 10 tests passed.

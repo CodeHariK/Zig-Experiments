@@ -45,7 +45,7 @@
 * [Build a Superscalar CPU](https://www.youtube.com/playlist?list=PLyR4neQXqQo5nPdEiMbaEJxWiy_UuyNN4)
 * [Assembler from Scratch](https://www.youtube.com/playlist?list=PLyR4neQXqQo6zHnja5rwdyrByXFyZHSul)
 
-## Electronics
+## Course
 
 * [Core Dumped: HOW TRANSISTORS RUN CODE?](https://www.youtube.com/watch?v=HjneAhCy2N4)
 * [Ben Eater: Making logic gates from transistors](https://www.youtube.com/watch?v=sTu3LwpF6XI)
@@ -57,12 +57,19 @@
 
 * [Ben Eater: Twos complement: Negative numbers in binary](https://www.youtube.com/watch?v=4qH4unVtJkE)
 
+* [Ben Eater: SR latch](https://www.youtube.com/watch?v=KM0DdEaY5sY)
+* [How Flip Flops Work - The Learning Circuit](https://www.youtube.com/watch?v=Hi7rK0hZnfc)
+* [Ben Eater:JK flip-flop](https://www.youtube.com/watch?v=rXHSB5w7CyE)
+* [Ben Eater: D latch](https://www.youtube.com/watch?v=peCh_859q7Q)
+* [Ben Eater: D flip-flop](https://www.youtube.com/watch?v=YW-_GkUguMM)
 * [Core Dumped: HOW TRANSISTORS REMEMBER DATA](https://www.youtube.com/watch?v=rM9BjciBLmg)
 * [Core Dumped: Capacitors are terrible at remembering data. But for this reason we continue doing it.](https://www.youtube.com/watch?v=7WnbIeMgWYA)
 * [Branch Education: How does Computer Memory Work? 💻🛠](https://www.youtube.com/watch?v=7J7X7aZvMXQ)
 * [Registers and RAM: Crash Course Computer Science #6](https://www.youtube.com/watch?v=fpnE6UAfbtU&list=PL8dPuuaLjXtNlUrzyH5r6jN9ulIgZBpdo&index=7)
 
 * [Core Dumped: How the Clock Tells the CPU to "Move Forward"](https://www.youtube.com/watch?v=PVNAPWUxZ0g)
+
+* [Ben Eater: Program counter design](https://www.youtube.com/watch?v=g_1HyxBzjl0)
 
 * [Core Dumped: CRAFTING A CPU TO RUN PROGRAMS](https://www.youtube.com/watch?v=GYlNoAMBY6o)
 * [Core Dumped: How computer processors run conditions and loops](https://www.youtube.com/watch?v=Ui6QyzcD3_E)

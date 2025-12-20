@@ -12,6 +12,8 @@ const testing = std.testing;
 
 const mux = @import("mux.zig");
 const adder = @import("adder.zig");
+const alu = @import("alu.zig");
+const two_complement = @import("two_complement.zig");
 
 const utils = @import("utils.zig");
 const b8 = utils.b8;
