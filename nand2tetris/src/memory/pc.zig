@@ -157,3 +157,129 @@
 // ripple-carry chain of half-adders instead of full adders.
 //
 
+const std = @import("std");
+const testing = std.testing;
+
+const logic = @import("gates").Logic;
+
+const register = @import("register.zig");
+const types = @import("types");
+const b16 = types.b16;
+const fb16 = types.fb16;
+
+// =============================================================================
+// PC - Program Counter (Bit-Array Version)
+// =============================================================================
+
+/// Program Counter - holds the address of the next instruction to execute.
+///
+/// Priority order: reset > load > inc > hold
+pub const PC = struct {
+    register: register.Register16 = .{},
+
+    const Self = @This();
+
+    /// Update PC with new input and control signals.
+    /// Returns the current PC value (before update).
+    ///
+    /// Priority order:
+    ///   1. reset_signal: set to 0
+    ///   2. load: set to input value
+    ///   3. inc: increment by 1
+    ///   4. else: hold current value
+    pub fn tick(self: *Self, input: [16]u1, load: u1, inc: u1, reset_signal: u1) [16]u1 {
+        // Get current value (output of register)
+        const current = self.register.peek();
+
+        // Step 1: Increment current value
+        const inc_result = logic.INC16(current);
+        const inc_val = inc_result.sum;
+
+        // Step 2: Choose between current and incremented value based on inc
+        // MUX16(in1, in0, sel): sel==0 → in0, sel==1 → in1
+        // If inc==1, we want inc_val; if inc==0, we want current
+        const after_inc = logic.MUX16(inc_val, current, inc);
+
+        // Step 3: Choose between after_inc and input based on load
+        // If load==1, we want input; if load==0, we want after_inc
+        const after_load = logic.MUX16(input, after_inc, load);
+
+        // Step 4: Choose between after_load and 0 based on reset_signal
+        // If reset_signal==1, we want 0; if reset_signal==0, we want after_load
+        const new_value = logic.MUX16(b16(0), after_load, reset_signal);
+
+        // Step 5: Store new value in register (always load, since we computed the value)
+        // Register.tick() returns the current value (before update) and stores new_value
+        _ = self.register.tick(new_value, 1);
+
+        // Return current value (before update) - this is what was in the register before we stored new_value
+        return current;
+    }
+
+    /// Get the current PC value without advancing time.
+    pub fn peek(self: *const Self) [16]u1 {
+        return self.register.peek();
+    }
+
+    /// Reset PC to 0.
+    pub fn reset(self: *Self) void {
+        self.register.reset();
+    }
+};
+
+// =============================================================================
+// PC_I - Program Counter (Integer Version)
+// =============================================================================
+
+/// Program Counter (Integer Version) - holds the address of the next instruction.
+///
+/// Priority order: reset > load > inc > hold
+pub const PC_I = struct {
+    register: register.Register16_I = .{},
+
+    const Self = @This();
+
+    /// Update PC_I with new input and control signals.
+    /// Returns the current PC value (before update).
+    ///
+    /// Priority order:
+    ///   1. reset_signal: set to 0
+    ///   2. load: set to input value
+    ///   3. inc: increment by 1
+    ///   4. else: hold current value
+    pub fn tick(self: *Self, input: u16, load: u1, inc: u1, reset_signal: u1) u16 {
+        // Get current value (output of register)
+        const current = self.register.peek();
+
+        // Step 1: Increment current value
+        const inc_result = logic.INC16_I(current);
+        const inc_val = inc_result.sum;
+
+        // Step 2: Choose between current and incremented value based on inc
+        // MUX16_I(in1, in0, sel): sel==0 → in0, sel==1 → in1
+        const after_inc = logic.MUX16_I(inc_val, current, inc);
+
+        // Step 3: Choose between after_inc and input based on load
+        const after_load = logic.MUX16_I(input, after_inc, load);
+
+        // Step 4: Choose between after_load and 0 based on reset_signal
+        // If reset_signal==1, we want 0; if reset_signal==0, we want after_load
+        const new_value = logic.MUX16_I(0, after_load, reset_signal);
+
+        // Step 5: Store new value in register (always load, since we computed the value)
+        _ = self.register.tick(new_value, 1);
+
+        // Return current value (before update)
+        return current;
+    }
+
+    /// Get the current PC value without advancing time.
+    pub fn peek(self: *const Self) u16 {
+        return self.register.peek();
+    }
+
+    /// Reset PC to 0.
+    pub fn reset(self: *Self) void {
+        self.register.reset();
+    }
+};

@@ -1,13 +1,21 @@
-//! Bit Conversion Utilities
+//! Type Utilities and Bit Conversion
 //!
-//! Provides functions for converting between integer types and bit arrays.
+//! Provides type-level utilities and functions for converting between integer types and bit arrays.
 //! All bit arrays use MSB-first ordering to match the project convention.
 
 const std = @import("std");
 const testing = std.testing;
 
 /// Returns an unsigned integer type with exactly N bits.
-/// Example: `UIntN(4)` returns `u4`
+///
+/// This is a type-level function that generates the appropriate unsigned integer
+/// type for a given bit width at compile time.
+///
+/// Example:
+/// ```zig
+/// const U4 = UIntN(4);  // Returns u4
+/// const value: U4 = 15;  // Maximum value for 4 bits
+/// ```
 pub fn UIntN(comptime N: u8) type {
     return std.meta.Int(.unsigned, N);
 }
@@ -46,6 +54,11 @@ pub fn b3(value: usize) [3]u1 {
     return toBits(3, @truncate(value));
 }
 
+/// Converts to 6-bit array
+pub fn b6(value: usize) [6]u1 {
+    return toBits(6, @truncate(value));
+}
+
 /// Converts to 4-bit array
 pub fn b4(value: usize) [4]u1 {
     return toBits(4, @truncate(value));
@@ -54,6 +67,21 @@ pub fn b4(value: usize) [4]u1 {
 /// Converts to 8-bit array
 pub fn b8(value: usize) [8]u1 {
     return toBits(8, @truncate(value));
+}
+
+/// Converts to 8-bit array
+pub fn b9(value: usize) [9]u1 {
+    return toBits(9, @truncate(value));
+}
+
+/// Converts to 12-bit array
+pub fn b12(value: usize) [12]u1 {
+    return toBits(12, @truncate(value));
+}
+
+/// Converts to 15-bit array
+pub fn b14(value: usize) [14]u1 {
+    return toBits(14, @truncate(value));
 }
 
 /// Converts to 16-bit array

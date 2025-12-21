@@ -54,10 +54,10 @@ const testing = std.testing;
 
 const adder = @import("adder.zig");
 
-const utils = @import("utils.zig");
-const UIntN = utils.UIntN;
-const b4 = utils.b4;
-const b16 = utils.b16;
+const types = @import("types");
+const UIntN = types.UIntN;
+const b4 = types.b4;
+const b16 = types.b16;
 
 // Two's complement is a way to represent negative numbers in binary.
 // Modular arithmetic

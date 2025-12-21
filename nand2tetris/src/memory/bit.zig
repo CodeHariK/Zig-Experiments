@@ -93,7 +93,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const dff = @import("dff.zig");
-// Use gates module import (available because memory module has gates as dependency)
+
 const logic = @import("gates").Logic;
 
 /// Bit - a 1-bit register with load control.

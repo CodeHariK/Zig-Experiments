@@ -10,10 +10,11 @@
 const std = @import("std");
 const testing = std.testing;
 
-const utils = @import("utils.zig");
-const UIntN = utils.UIntN;
-const b4 = utils.b4;
-const b16 = utils.b16;
+const types = @import("types");
+const UIntN = types.UIntN;
+const b4 = types.b4;
+const b16 = types.b16;
+const toBits = types.toBits;
 
 /// Result of a single-bit addition.
 pub const AdderResult = struct {
@@ -98,7 +99,7 @@ pub inline fn RIPPLE_ADDER_16(a: [16]u1, b: [16]u1) RippleAdderResult(16) {
 
 /// N-bit incrementer: adds 1 to the input.
 pub inline fn INCN(comptime N: u8, in: [N]u1) RippleAdderResult(N) {
-    return RIPPLE_ADDER(N, in, utils.toBits(N, 1));
+    return RIPPLE_ADDER(N, in, toBits(N, 1));
 }
 
 /// 16-bit incrementer.

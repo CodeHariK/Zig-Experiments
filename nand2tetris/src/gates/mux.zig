@@ -8,13 +8,14 @@
 const std = @import("std");
 const testing = std.testing;
 
-const utils = @import("utils.zig");
-const b2 = utils.b2;
-const b3 = utils.b3;
-const b4 = utils.b4;
-const b8 = utils.b8;
-const b16 = utils.b16;
-const fb2 = utils.fb2;
+const types = @import("types");
+const b2 = types.b2;
+const b3 = types.b3;
+const b4 = types.b4;
+const b8 = types.b8;
+const b16 = types.b16;
+const fb2 = types.fb2;
+const fb16 = types.fb16;
 
 // ============================================================================
 // Multiplexers (Bit-Array Version)
@@ -224,7 +225,7 @@ test "MUX8WAY16" {
         const result_i = MUX8WAY16_I(128, 64, 32, 16, 8, 4, 2, 1, sel);
         try testing.expectEqual(expected, result_i);
 
-        std.debug.print("128, 64, 32, 16, 8, 4, 2, 1  sel={b:0>3}:{d} -> {d}\n", .{ i, i, result_i });
+        std.debug.print("128, 64, 32, 16, 8, 4, 2, 1  sel={b:0>3}:{d} -> {d} {d}\n", .{ i, i, fb16(result), result_i });
     }
 }
 
@@ -256,8 +257,9 @@ test "DMUX8WAY" {
         try testing.expectEqual(b8(expected), dmux8way);
 
         try testing.expectEqual(@as(u8, 0), DMUX8WAY_I(0, sel));
-        try testing.expectEqual(expected, DMUX8WAY_I(1, sel));
+        const dmux8way_i = DMUX8WAY_I(1, sel);
+        try testing.expectEqual(expected, dmux8way_i);
 
-        std.debug.print("sel={b:0>3}:{d} -> {any}\n", .{ i, i, dmux8way });
+        std.debug.print("sel={b:0>3}:{d} -> {any} {d}\n", .{ i, i, dmux8way, dmux8way_i });
     }
 }

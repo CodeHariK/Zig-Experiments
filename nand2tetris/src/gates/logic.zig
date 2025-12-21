@@ -15,9 +15,9 @@ const adder = @import("adder.zig");
 const alu = @import("alu.zig");
 const two_complement = @import("two_complement.zig");
 
-const utils = @import("utils.zig");
-const b8 = utils.b8;
-const b16 = utils.b16;
+const types = @import("types");
+const b8 = types.b8;
+const b16 = types.b16;
 
 /// Logic gates namespace - contains all basic and compound gates.
 pub const Logic = struct {
@@ -132,6 +132,8 @@ pub const Logic = struct {
     pub const FULL_ADDER = adder.FULL_ADDER;
     pub const RIPPLE_ADDER = adder.RIPPLE_ADDER;
     pub const RIPPLE_ADDER_16 = adder.RIPPLE_ADDER_16;
+    pub const INCN = adder.INCN;
+    pub const INC16 = adder.INC16;
 
     // ========================================================================
     // 16-Bit Gates (Integer Version) - Suffix _I
@@ -175,6 +177,8 @@ pub const Logic = struct {
 
     pub const RIPPLE_ADDER_I = adder.RIPPLE_ADDER_I;
     pub const RIPPLE_ADDER_16_I = adder.RIPPLE_ADDER_16_I;
+    pub const INCN_I = adder.INCN_I;
+    pub const INC16_I = adder.INC16_I;
 };
 
 // ============================================================================
@@ -184,7 +188,6 @@ pub const Logic = struct {
 test "run all gate tests" {
     _ = @import("mux.zig");
     _ = @import("adder.zig");
-    _ = @import("utils.zig");
     _ = @import("two_complement.zig");
     _ = @import("alu.zig");
 }

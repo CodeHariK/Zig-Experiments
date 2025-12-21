@@ -57,8 +57,8 @@ const testing = std.testing;
 const logic = @import("logic.zig").Logic;
 const adder = @import("adder.zig");
 
-const utils = @import("utils.zig");
-const b16 = utils.b16;
+const types = @import("types");
+const b16 = types.b16;
 
 //
 //  ALU (Arithmetic Logic Unit):

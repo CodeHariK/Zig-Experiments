@@ -181,12 +181,3 @@ test "DFF: debug print - demonstrates out(t) = in(t-1)" {
     std.debug.print("\nKey insight: Output at time t equals input at time t-1\n", .{});
     std.debug.print("Example: At t1, input=0 but output=1 (from t0's input)\n\n", .{});
 }
-
-test "memory module: include all memory tests" {
-    // Import other memory files to ensure their tests are included in the memory module
-    _ = @import("bit.zig");
-    // Add other memory files here as they're implemented
-    // _ = @import("register.zig");
-    // _ = @import("ram.zig");
-    // _ = @import("pc.zig");
-}

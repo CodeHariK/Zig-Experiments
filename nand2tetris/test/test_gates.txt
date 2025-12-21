@@ -1,6 +1,6 @@
-All 0 tests passed.
-1/23 logic.test.run all gate tests...OK
-2/23 logic.test.single-bit gates follow truth tables...
+1/21 mod.test.gates module: include all gate tests...OK
+2/21 logic.test.run all gate tests...OK
+3/21 logic.test.single-bit gates follow truth tables...
 LOGIC GATES TEST------------------
 a  b  | NOT  AND  OR  XOR  NAND  NOR  XNOR
 0  0  |  1    0   0    0    1     1    1
@@ -8,10 +8,10 @@ a  b  | NOT  AND  OR  XOR  NAND  NOR  XNOR
 1  0  |  0    0   1    1    1     0    0
 1  1  |  0    1   1    0    0     0    1
 OK
-3/23 logic.test.16-bit gates (bit-array version)...OK
-4/23 logic.test.16-bit gates (integer version)...OK
-5/23 logic.test.OR8WAY returns 1 if any bit is set...OK
-6/23 mux.test.MUX/DMUX...
+4/21 logic.test.16-bit gates (bit-array version)...OK
+5/21 logic.test.16-bit gates (integer version)...OK
+6/21 logic.test.OR8WAY returns 1 if any bit is set...OK
+7/21 mux.test.MUX/DMUX...
 MUX TEST------------------
 sel  in1  in0  MUX   DMUX
  0    0    0    0    0,0
@@ -23,44 +23,44 @@ sel  in1  in0  MUX   DMUX
  1    1    0    1    1,0
  1    1    1    1    1,0
 OK
-7/23 mux.test.MUX16...OK
-8/23 mux.test.MUX4WAY16...
+8/21 mux.test.MUX16...OK
+9/21 mux.test.MUX4WAY16...
 MUX4WAY16------------------
 8, 4, 2, 1  sel=00:0 -> 1
 8, 4, 2, 1  sel=01:1 -> 2
 8, 4, 2, 1  sel=10:2 -> 4
 8, 4, 2, 1  sel=11:3 -> 8
 OK
-9/23 mux.test.MUX8WAY16...
+10/21 mux.test.MUX8WAY16...
 MUX8WAY16------------------
-128, 64, 32, 16, 8, 4, 2, 1  sel=000:0 -> 1
-128, 64, 32, 16, 8, 4, 2, 1  sel=001:1 -> 2
-128, 64, 32, 16, 8, 4, 2, 1  sel=010:2 -> 4
-128, 64, 32, 16, 8, 4, 2, 1  sel=011:3 -> 8
-128, 64, 32, 16, 8, 4, 2, 1  sel=100:4 -> 16
-128, 64, 32, 16, 8, 4, 2, 1  sel=101:5 -> 32
-128, 64, 32, 16, 8, 4, 2, 1  sel=110:6 -> 64
-128, 64, 32, 16, 8, 4, 2, 1  sel=111:7 -> 128
+128, 64, 32, 16, 8, 4, 2, 1  sel=000:0 -> 1 1
+128, 64, 32, 16, 8, 4, 2, 1  sel=001:1 -> 2 2
+128, 64, 32, 16, 8, 4, 2, 1  sel=010:2 -> 4 4
+128, 64, 32, 16, 8, 4, 2, 1  sel=011:3 -> 8 8
+128, 64, 32, 16, 8, 4, 2, 1  sel=100:4 -> 16 16
+128, 64, 32, 16, 8, 4, 2, 1  sel=101:5 -> 32 32
+128, 64, 32, 16, 8, 4, 2, 1  sel=110:6 -> 64 64
+128, 64, 32, 16, 8, 4, 2, 1  sel=111:7 -> 128 128
 OK
-10/23 mux.test.DMUX4WAY...
+11/21 mux.test.DMUX4WAY...
 DMUX4WAY------------------
 sel=00:0 -> { 0, 0, 0, 1 }
 sel=01:1 -> { 0, 0, 1, 0 }
 sel=10:2 -> { 0, 1, 0, 0 }
 sel=11:3 -> { 1, 0, 0, 0 }
 OK
-11/23 mux.test.DMUX8WAY...
+12/21 mux.test.DMUX8WAY...
 DMUX8WAY------------------
-sel=000:0 -> { 0, 0, 0, 0, 0, 0, 0, 1 }
-sel=001:1 -> { 0, 0, 0, 0, 0, 0, 1, 0 }
-sel=010:2 -> { 0, 0, 0, 0, 0, 1, 0, 0 }
-sel=011:3 -> { 0, 0, 0, 0, 1, 0, 0, 0 }
-sel=100:4 -> { 0, 0, 0, 1, 0, 0, 0, 0 }
-sel=101:5 -> { 0, 0, 1, 0, 0, 0, 0, 0 }
-sel=110:6 -> { 0, 1, 0, 0, 0, 0, 0, 0 }
-sel=111:7 -> { 1, 0, 0, 0, 0, 0, 0, 0 }
+sel=000:0 -> { 0, 0, 0, 0, 0, 0, 0, 1 } 1
+sel=001:1 -> { 0, 0, 0, 0, 0, 0, 1, 0 } 2
+sel=010:2 -> { 0, 0, 0, 0, 0, 1, 0, 0 } 4
+sel=011:3 -> { 0, 0, 0, 0, 1, 0, 0, 0 } 8
+sel=100:4 -> { 0, 0, 0, 1, 0, 0, 0, 0 } 16
+sel=101:5 -> { 0, 0, 1, 0, 0, 0, 0, 0 } 32
+sel=110:6 -> { 0, 1, 0, 0, 0, 0, 0, 0 } 64
+sel=111:7 -> { 1, 0, 0, 0, 0, 0, 0, 0 } 128
 OK
-12/23 adder.test.HALF_ADDER...
+13/21 adder.test.HALF_ADDER...
 HALF_ADDER------------------
 a b -> carry sum
 0 0 ->   0    0
@@ -68,7 +68,7 @@ a b -> carry sum
 1 0 ->   0    1
 1 1 ->   1    0
 OK
-13/23 adder.test.FULL_ADDER...
+14/21 adder.test.FULL_ADDER...
 FULL_ADDER------------------
 a b cin -> cout sum
 0 0  0  ->  0   0
@@ -80,14 +80,14 @@ a b cin -> cout sum
 1 1  0  ->  1   0
 1 1  1  ->  1   1
 OK
-14/23 adder.test.RIPPLE_ADDER 4-bit...
+15/21 adder.test.RIPPLE_ADDER 4-bit...
 RIPPLE_ADDER u4------------------
 5 + 3 = 8 (carry=0)
 10 + 5 = 15 (carry=0)
 15 + 1 = 0 (carry=1)
 9 + 9 = 2 (carry=1)
 OK
-15/23 adder.test.RIPPLE_ADDER 16-bit...
+16/21 adder.test.RIPPLE_ADDER 16-bit...
 RIPPLE_ADDER u16------------------
 1000 + 2000 = 3000 (carry=0)
 65535 + 1 = 0 (carry=1)
@@ -95,60 +95,14 @@ RIPPLE_ADDER u16------------------
 12345 + 54321 = 1130 (carry=1)
 4660 + 39030 = 43690 (carry=0)
 OK
-16/23 adder.test.INC16...
+17/21 adder.test.INC16...
 INC16------------------
 0 + 1 = 1 (carry=0)
 1 + 1 = 2 (carry=0)
 65531 + 1 = 65532 (carry=0)
 65535 + 1 = 0 (carry=1)
 OK
-17/23 utils.test.toBits converts integers to MSB-first bit arrays...OK
-18/23 utils.test.fromBits converts MSB-first bit arrays to integers...OK
-19/23 utils.test.roundtrip: toBits and fromBits are inverses...OK
-20/23 two_complement.test.TWO_COMPLEMENT_4...
-TWO_COMPLEMENT_4------------------
--0 = 0 (binary: 0000)
--1 = 15 (binary: 1111)
--2 = 14 (binary: 1110)
--3 = 13 (binary: 1101)
--4 = 12 (binary: 1100)
--5 = 11 (binary: 1011)
--6 = 10 (binary: 1010)
--7 = 9 (binary: 1001)
--8 = 8 (binary: 1000)
--9 = 7 (binary: 0111)
--10 = 6 (binary: 0110)
--11 = 5 (binary: 0101)
--12 = 4 (binary: 0100)
--13 = 3 (binary: 0011)
--14 = 2 (binary: 0010)
--15 = 1 (binary: 0001)
-OK
-21/23 two_complement.test.TWO_COMPLEMENT_16...
-TWO_COMPLEMENT_16------------------
--0 = 0 (hex: 0x0000)
--1 = 65535 (hex: 0xFFFF)
--2 = 65534 (hex: 0xFFFE)
--100 = 65436 (hex: 0xFF9C)
--1000 = 64536 (hex: 0xFC18)
--32767 = 32769 (hex: 0x8001)
--32768 = 32768 (hex: 0x8000)
--65535 = 1 (hex: 0x0001)
--65534 = 2 (hex: 0x0002)
--4660 = 60876 (hex: 0xEDCC)
-OK
-22/23 two_complement.test.double negation returns original value...
-DOUBLE NEGATION------------------
--(-0) = 0
--(-1) = 1
--(-2) = 2
--(-100) = 100
--(-1000) = 1000
--(-32767) = 32767
--(-65535) = 65535
--(-65534) = 65534
-OK
-23/23 alu.test.ALU...
+18/21 alu.test.ALU...
 ALU TEST------------------
 |        x         |        y         |zx |nx |zy |ny | f |no |       out        |zr |ng |
 | 0000000000000000 | 1111111111111111 | 1 | 0 | 1 | 0 | 1 | 0 | 0000000000000000 | 1 | 0 |
@@ -188,29 +142,47 @@ ALU TEST------------------
 | 0000000000010001 | 0000000000000011 | 0 | 0 | 0 | 0 | 0 | 0 | 0000000000000001 | 0 | 0 |
 | 0000000000010001 | 0000000000000011 | 0 | 1 | 0 | 1 | 0 | 1 | 0000000000010011 | 0 | 0 |
 OK
-All 23 tests passed.
-1/10 dff.test.DFF: basic behavior - out(t) = in(t-1)...OK
-2/10 dff.test.DFF: reset clears state...OK
-3/10 dff.test.DFF: debug print - demonstrates out(t) = in(t-1)...
-=== DFF Debug Test: out(t) = in(t-1) ===
-Time | Input | Output (previous input) | State
------|-------|------------------------|-------
-  t0 |   1   |          0              |   1
-  t1 |   0   |          1              |   0
-  t2 |   1   |          0              |   1
-  t3 |   1   |          1              |   1
-  t4 |   0   |          1              |   0
-  t5 |   1   |          0              |   1
-
-Key insight: Output at time t equals input at time t-1
-Example: At t1, input=0 but output=1 (from t0's input)
-
+19/21 two_complement.test.TWO_COMPLEMENT_4...
+TWO_COMPLEMENT_4------------------
+-0 = 0 (binary: 0000)
+-1 = 15 (binary: 1111)
+-2 = 14 (binary: 1110)
+-3 = 13 (binary: 1101)
+-4 = 12 (binary: 1100)
+-5 = 11 (binary: 1011)
+-6 = 10 (binary: 1010)
+-7 = 9 (binary: 1001)
+-8 = 8 (binary: 1000)
+-9 = 7 (binary: 0111)
+-10 = 6 (binary: 0110)
+-11 = 5 (binary: 0101)
+-12 = 4 (binary: 0100)
+-13 = 3 (binary: 0011)
+-14 = 2 (binary: 0010)
+-15 = 1 (binary: 0001)
 OK
-4/10 dff.test.memory module: include all memory tests...OK
-5/10 bit.test.Bit: load=1 stores new value...OK
-6/10 bit.test.Bit: load=0 maintains current value...OK
-7/10 bit.test.Bit: sequence matches expected timeline...OK
-8/10 bit.test.Bit: alternating load behavior...OK
-9/10 bit.test.Bit: peek does not advance state...OK
-10/10 bit.test.Bit: reset clears state...OK
-All 10 tests passed.
+20/21 two_complement.test.TWO_COMPLEMENT_16...
+TWO_COMPLEMENT_16------------------
+-0 = 0 (hex: 0x0000)
+-1 = 65535 (hex: 0xFFFF)
+-2 = 65534 (hex: 0xFFFE)
+-100 = 65436 (hex: 0xFF9C)
+-1000 = 64536 (hex: 0xFC18)
+-32767 = 32769 (hex: 0x8001)
+-32768 = 32768 (hex: 0x8000)
+-65535 = 1 (hex: 0x0001)
+-65534 = 2 (hex: 0x0002)
+-4660 = 60876 (hex: 0xEDCC)
+OK
+21/21 two_complement.test.double negation returns original value...
+DOUBLE NEGATION------------------
+-(-0) = 0
+-(-1) = 1
+-(-2) = 2
+-(-100) = 100
+-(-1000) = 1000
+-(-32767) = 32767
+-(-65535) = 65535
+-(-65534) = 65534
+OK
+All 21 tests passed.
