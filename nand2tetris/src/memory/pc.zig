@@ -283,3 +283,91 @@ pub const PC_I = struct {
         self.register.reset();
     }
 };
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+test "PC_I comprehensive test with print statements" {
+    const TestCase = struct {
+        time: []const u8,
+        input: i16,
+        reset: u1,
+        load: u1,
+        inc: u1,
+        expected_out: i16,
+    };
+
+    const test_cases = [_]TestCase{
+        .{ .time = "0+", .input = 0, .reset = 0, .load = 0, .inc = 0, .expected_out = 0 },
+        .{ .time = "1", .input = 0, .reset = 0, .load = 0, .inc = 0, .expected_out = 0 },
+        .{ .time = "1+", .input = 0, .reset = 0, .load = 0, .inc = 1, .expected_out = 0 },
+        .{ .time = "2", .input = 0, .reset = 0, .load = 0, .inc = 1, .expected_out = 1 },
+        .{ .time = "2+", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = 1 },
+        .{ .time = "3", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = 2 },
+        .{ .time = "3+", .input = -32123, .reset = 0, .load = 1, .inc = 1, .expected_out = 2 },
+        .{ .time = "4", .input = -32123, .reset = 0, .load = 1, .inc = 1, .expected_out = -32123 },
+        .{ .time = "4+", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = -32123 },
+        .{ .time = "5", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = -32122 },
+        .{ .time = "5+", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = -32122 },
+        .{ .time = "6", .input = -32123, .reset = 0, .load = 0, .inc = 1, .expected_out = -32121 },
+        .{ .time = "6+", .input = 12345, .reset = 0, .load = 1, .inc = 0, .expected_out = -32121 },
+        .{ .time = "7", .input = 12345, .reset = 0, .load = 1, .inc = 0, .expected_out = 12345 },
+        .{ .time = "7+", .input = 12345, .reset = 1, .load = 1, .inc = 0, .expected_out = 12345 },
+        .{ .time = "8", .input = 12345, .reset = 1, .load = 1, .inc = 0, .expected_out = 0 },
+        .{ .time = "8+", .input = 12345, .reset = 0, .load = 1, .inc = 1, .expected_out = 0 },
+        .{ .time = "9", .input = 12345, .reset = 0, .load = 1, .inc = 1, .expected_out = 12345 },
+        .{ .time = "9+", .input = 12345, .reset = 1, .load = 1, .inc = 1, .expected_out = 12345 },
+        .{ .time = "10", .input = 12345, .reset = 1, .load = 1, .inc = 1, .expected_out = 0 },
+        .{ .time = "10+", .input = 12345, .reset = 0, .load = 0, .inc = 1, .expected_out = 0 },
+        .{ .time = "11", .input = 12345, .reset = 0, .load = 0, .inc = 1, .expected_out = 1 },
+        .{ .time = "11+", .input = 12345, .reset = 1, .load = 0, .inc = 1, .expected_out = 1 },
+        .{ .time = "12", .input = 12345, .reset = 1, .load = 0, .inc = 1, .expected_out = 0 },
+        .{ .time = "12+", .input = 0, .reset = 0, .load = 1, .inc = 1, .expected_out = 0 },
+        .{ .time = "13", .input = 0, .reset = 0, .load = 1, .inc = 1, .expected_out = 0 },
+        .{ .time = "13+", .input = 0, .reset = 0, .load = 0, .inc = 1, .expected_out = 0 },
+        .{ .time = "14", .input = 0, .reset = 0, .load = 0, .inc = 1, .expected_out = 1 },
+        .{ .time = "14+", .input = 22222, .reset = 1, .load = 0, .inc = 0, .expected_out = 1 },
+        .{ .time = "15", .input = 22222, .reset = 1, .load = 0, .inc = 0, .expected_out = 0 },
+    };
+
+    var pc = PC{};
+    var pc_i = PC_I{};
+
+    std.debug.print("\n", .{});
+    std.debug.print("| time |   in   |reset|load | inc |  out   |  out_i  |\n", .{});
+    std.debug.print("|------|--------|-----|-----|-----|--------|--------|\n", .{});
+
+    for (test_cases) |tc| {
+        const is_tick = std.mem.endsWith(u8, tc.time, "+");
+        const input_u16: u16 = @bitCast(tc.input);
+
+        if (is_tick) {
+            const current_out: i16 = @bitCast(fb16(pc.tick(b16(input_u16), tc.load, tc.inc, tc.reset)));
+            const current_out_i: i16 = @bitCast(pc_i.tick(input_u16, tc.load, tc.inc, tc.reset));
+            std.debug.print("| {s:4} | {d:6} |  {d}  |  {d}  |  {d}  | {d:6} | {d:6} |\n", .{
+                tc.time,
+                tc.input,
+                tc.reset,
+                tc.load,
+                tc.inc,
+                current_out,
+                current_out_i,
+            });
+        } else {
+            const actual_out: i16 = @bitCast(fb16(pc.peek()));
+            const actual_out_i: i16 = @bitCast(pc_i.peek());
+            std.debug.print("| {s:4} | {d:6} |  {d}  |  {d}  |  {d}  | {d:6} | {d:6} |\n", .{
+                tc.time,
+                tc.input,
+                tc.reset,
+                tc.load,
+                tc.inc,
+                actual_out,
+                actual_out_i,
+            });
+
+            try testing.expectEqual(tc.expected_out, actual_out_i);
+        }
+    }
+}

@@ -1,7 +1,7 @@
-1/22 mod.test.memory module: include all memory tests...OK
-2/22 dff.test.DFF: basic behavior - out(t) = in(t-1)...OK
-3/22 dff.test.DFF: reset clears state...OK
-4/22 dff.test.DFF: debug print - demonstrates out(t) = in(t-1)...
+1/23 mod.test.memory module: include all memory tests...OK
+2/23 dff.test.DFF: basic behavior - out(t) = in(t-1)...OK
+3/23 dff.test.DFF: reset clears state...OK
+4/23 dff.test.DFF: debug print - demonstrates out(t) = in(t-1)...
 === DFF Debug Test: out(t) = in(t-1) ===
 Time | Input | Output (previous input) | State
 -----|-------|------------------------|-------
@@ -16,18 +16,18 @@ Key insight: Output at time t equals input at time t-1
 Example: At t1, input=0 but output=1 (from t0's input)
 
 OK
-5/22 bit.test.Bit: load=1 stores new value...OK
-6/22 bit.test.Bit: load=0 maintains current value...OK
-7/22 bit.test.Bit: sequence matches expected timeline...OK
-8/22 bit.test.Bit: alternating load behavior...OK
-9/22 bit.test.Bit: peek does not advance state...OK
-10/22 bit.test.Bit: reset clears state...OK
-11/22 register.test.Register16: basic behavior - stores and holds values...OK
-12/22 register.test.Register16: load=0 maintains current value...OK
-13/22 register.test.Register16: reset clears all bits...OK
-14/22 register.test.Register16: peek does not advance state...OK
-15/22 register.test.Register16: all bits operate independently...OK
-16/22 register.test.Register16: debug print - demonstrates register behavior...
+5/23 bit.test.Bit: load=1 stores new value...OK
+6/23 bit.test.Bit: load=0 maintains current value...OK
+7/23 bit.test.Bit: sequence matches expected timeline...OK
+8/23 bit.test.Bit: alternating load behavior...OK
+9/23 bit.test.Bit: peek does not advance state...OK
+10/23 bit.test.Bit: reset clears state...OK
+11/23 register.test.Register16: basic behavior - stores and holds values...OK
+12/23 register.test.Register16: load=0 maintains current value...OK
+13/23 register.test.Register16: reset clears all bits...OK
+14/23 register.test.Register16: peek does not advance state...OK
+15/23 register.test.Register16: all bits operate independently...OK
+16/23 register.test.Register16: debug print - demonstrates register behavior...
 === Register16 Debug Test ===
 Time | Load | Input    | Output (previous input)
 -----|------|----------|------------------------
@@ -41,8 +41,8 @@ Key insight: Output at time t equals input at time t-1 (when load=1)
 When load=0, the register maintains its current value
 
 OK
-17/22 register.test.Register: generic N-bit register works for different sizes...OK
-18/22 ram.test.RAM8: comprehensive test...
+17/23 register.test.Register: generic N-bit register works for different sizes...OK
+18/23 ram.test.RAM8: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -217,7 +217,7 @@ OK
 | 170  | +21845 |   0  |       6   |  +21845  | +21845  | +21845  | +21845  |
 | 171  | +21845 |   0  |       7   |  +21845  | +21845  | +21845  | +21845  |
 OK
-19/22 ram.test.RAM64: comprehensive test...
+19/23 ram.test.RAM64: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -539,7 +539,7 @@ OK
 | 317  | +21845 |   0  |      53   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |      61   |  +21845  | +21845  | +21845  | +21845  |
 OK
-20/22 ram.test.RAM512: comprehensive test...
+20/23 ram.test.RAM512: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -861,7 +861,7 @@ OK
 | 317  | +21845 |   0  |     426   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |     490   |  +21845  | +21845  | +21845  | +21845  |
 OK
-21/22 ram.test.RAM4K: comprehensive test...
+21/23 ram.test.RAM4K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -1183,7 +1183,7 @@ OK
 | 317  | +21845 |   0  |    3413   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |    3925   |  +21845  | +21845  | +21845  | +21845  |
 OK
-22/22 ram.test.RAM16K: comprehensive test...
+22/23 ram.test.RAM16K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -1505,4 +1505,38 @@ OK
 | 317  | +21845 |   0  |   13653   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |   15701   |  +21845  | +21845  | +21845  | +21845  |
 OK
-All 22 tests passed.
+23/23 pc.test.PC_I comprehensive test with print statements...
+| time |   in   |reset|load | inc |  out   |  out_i  |
+|------|--------|-----|-----|-----|--------|--------|
+|   0+ |     +0 |  0  |  0  |  0  |     +0 |     +0 |
+|    1 |     +0 |  0  |  0  |  0  |     +0 |     +0 |
+|   1+ |     +0 |  0  |  0  |  1  |     +0 |     +0 |
+|    2 |     +0 |  0  |  0  |  1  |     +1 |     +1 |
+|   2+ | -32123 |  0  |  0  |  1  |     +1 |     +1 |
+|    3 | -32123 |  0  |  0  |  1  |     +2 |     +2 |
+|   3+ | -32123 |  0  |  1  |  1  |     +2 |     +2 |
+|    4 | -32123 |  0  |  1  |  1  | -32123 | -32123 |
+|   4+ | -32123 |  0  |  0  |  1  | -32123 | -32123 |
+|    5 | -32123 |  0  |  0  |  1  | -32122 | -32122 |
+|   5+ | -32123 |  0  |  0  |  1  | -32122 | -32122 |
+|    6 | -32123 |  0  |  0  |  1  | -32121 | -32121 |
+|   6+ | +12345 |  0  |  1  |  0  | -32121 | -32121 |
+|    7 | +12345 |  0  |  1  |  0  | +12345 | +12345 |
+|   7+ | +12345 |  1  |  1  |  0  | +12345 | +12345 |
+|    8 | +12345 |  1  |  1  |  0  |     +0 |     +0 |
+|   8+ | +12345 |  0  |  1  |  1  |     +0 |     +0 |
+|    9 | +12345 |  0  |  1  |  1  | +12345 | +12345 |
+|   9+ | +12345 |  1  |  1  |  1  | +12345 | +12345 |
+|   10 | +12345 |  1  |  1  |  1  |     +0 |     +0 |
+|  10+ | +12345 |  0  |  0  |  1  |     +0 |     +0 |
+|   11 | +12345 |  0  |  0  |  1  |     +1 |     +1 |
+|  11+ | +12345 |  1  |  0  |  1  |     +1 |     +1 |
+|   12 | +12345 |  1  |  0  |  1  |     +0 |     +0 |
+|  12+ |     +0 |  0  |  1  |  1  |     +0 |     +0 |
+|   13 |     +0 |  0  |  1  |  1  |     +0 |     +0 |
+|  13+ |     +0 |  0  |  0  |  1  |     +0 |     +0 |
+|   14 |     +0 |  0  |  0  |  1  |     +1 |     +1 |
+|  14+ | +22222 |  1  |  0  |  0  |     +1 |     +1 |
+|   15 | +22222 |  1  |  0  |  0  |     +0 |     +0 |
+OK
+All 23 tests passed.

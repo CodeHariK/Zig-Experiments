@@ -28,6 +28,14 @@ pub fn build(b: *std.Build) void {
     memory_mod.addImport("types", types_mod);
     memory_mod.addImport("gates", gates_mod);
 
+    // ---- machine_language module ----
+    const machine_language_mod = b.createModule(.{
+        .root_source_file = b.path("src/machine_language/mod.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    machine_language_mod.addImport("types", types_mod);
+
     // ---- root module (src/) ----
     const root_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
@@ -61,17 +69,21 @@ pub fn build(b: *std.Build) void {
     const types_tests = b.addTest(.{ .root_module = types_mod, .name = "test-types" });
     const gates_tests = b.addTest(.{ .root_module = gates_mod, .name = "test-gates" });
     const memory_tests = b.addTest(.{ .root_module = memory_mod, .name = "test-memory" });
+    const machine_language_tests = b.addTest(.{ .root_module = machine_language_mod, .name = "test-machine-language" });
 
     const run_types_tests = b.addRunArtifact(types_tests);
     const run_gates_tests = b.addRunArtifact(gates_tests);
     const run_memory_tests = b.addRunArtifact(memory_tests);
+    const run_machine_language_tests = b.addRunArtifact(machine_language_tests);
 
     const test_step = b.step("test", "Run all tests");
     test_step.dependOn(&run_types_tests.step);
     test_step.dependOn(&run_gates_tests.step);
     test_step.dependOn(&run_memory_tests.step);
+    test_step.dependOn(&run_machine_language_tests.step);
 
     b.installArtifact(types_tests);
     b.installArtifact(gates_tests);
     b.installArtifact(memory_tests);
+    b.installArtifact(machine_language_tests);
 }

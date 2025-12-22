@@ -1,0 +1,128 @@
+1/9 mod.test.machine_language module: include all machine language tests...OK
+2/9 memory_map.test.Memory map: RAM addresses...OK
+3/9 memory_map.test.Memory map: Screen addresses...OK
+4/9 memory_map.test.Memory map: Keyboard address...OK
+5/9 memory_map.test.Memory map: Screen address calculation...OK
+6/9 memory_map.test.Memory map: Screen address out of bounds...OK
+7/9 memory_map.test.Memory map: Screen row/col extraction...OK
+8/9 a_instruction.test.A-instruction: comprehensive tests...
+=== A-Instruction Comprehensive Tests ===
+
+[1/10] Input: 0 (0b0000000000000000)
+[2/10] Input: 5 (0b0000000000000101)
+[3/10] Input: 100 (0b0000000001100100)
+[4/10] Input: 1000 (0b0000001111101000)
+[5/10] Input: 10000 (0b0010011100010000)
+[6/10] Input: 12345 (0b0011000000111001)
+[7/10] Input: 16383 (0b0011111111111111)
+[8/10] Input: 32767 (0b0111111111111111)
+[9/10] Input: 32768 (0b1000000000000000)
+  ✓ Correctly rejected with error.NotAInstruction
+[10/10] Input: 65535 (0b1111111111111111)
+  ✓ Correctly rejected with error.NotAInstruction
+=== Test Summary ===
+Total: 10
+Passed: 10
+Failed: 0
+✓ All tests passed!
+
+OK
+9/9 a_instruction.test.A-instruction: assembly parsing and generation...
+=== A-Instruction Assembly Tests ===
+
+[1/22] parse numeric @0
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@0" -> "@R0"
+[2/22] parse numeric @5
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  ✓ Round-trip: "@5" -> "@R5"
+[3/22] parse numeric @100
+  ✓ getValue() = 100
+  ✓ toAssembly() = "@100"
+  ✓ Round-trip: "@100" -> "@100"
+[4/22] parse numeric @32767
+  ✓ getValue() = 32767
+  ✓ toAssembly() = "@32767"
+  ✓ Round-trip: "@32767" -> "@32767"
+[5/22] parse @R0
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@R0" -> "@R0"
+[6/22] parse @R15
+  ✓ getValue() = 15
+  ✓ toAssembly() = "@R15"
+  ✓ Round-trip: "@R15" -> "@R15"
+[7/22] parse @SP
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@SP" -> "@R0"
+[8/22] parse @LCL
+  ✓ getValue() = 1
+  ✓ toAssembly() = "@R1"
+  ✓ Round-trip: "@LCL" -> "@R1"
+[9/22] parse @ARG
+  ✓ getValue() = 2
+  ✓ toAssembly() = "@R2"
+  ✓ Round-trip: "@ARG" -> "@R2"
+[10/22] parse @THIS
+  ✓ getValue() = 3
+  ✓ toAssembly() = "@R3"
+  ✓ Round-trip: "@THIS" -> "@R3"
+[11/22] parse @THAT
+  ✓ getValue() = 4
+  ✓ toAssembly() = "@THAT"
+  ✓ Round-trip: "@THAT" -> "@THAT"
+[12/22] parse @SCREEN
+  ✓ getValue() = 16384
+  ✓ toAssembly() = "@SCREEN"
+  ✓ Round-trip: "@SCREEN" -> "@SCREEN"
+[13/22] parse @KBD
+  ✓ getValue() = 24576
+  ✓ toAssembly() = "@KBD"
+  ✓ Round-trip: "@KBD" -> "@KBD"
+[14/22] parse @LOOP label
+  Setup: Added label LOOP = 10
+  ✓ getValue() = 10
+  ✓ toAssembly() = "@LOOP"
+  ✓ Round-trip: "@LOOP" -> "@LOOP"
+[15/22] parse @END label
+  Setup: Added label END = 50
+  ✓ getValue() = 50
+  ✓ toAssembly() = "@END"
+  ✓ Round-trip: "@END" -> "@END"
+[16/22] parse @START label
+  Setup: Added label START = 0
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@START" -> "@R0"
+[17/22] parse @counter variable
+  Setup: Added variable counter = 16
+  ✓ getValue() = 16
+  ✓ toAssembly() = "@counter"
+  ✓ Round-trip: "@counter" -> "@counter"
+[18/22] parse @sum variable
+  Setup: Added variable sum = 17
+  ✓ getValue() = 17
+  ✓ toAssembly() = "@sum"
+  ✓ Round-trip: "@sum" -> "@sum"
+[19/22] parse @i variable
+  Setup: Added variable i = 18
+  ✓ getValue() = 18
+  ✓ toAssembly() = "@i"
+  ✓ Round-trip: "@i" -> "@i"
+[20/22] reject missing @
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[21/22] reject unknown symbol
+  ✓ Correctly rejected with error: error.SymbolNotFound
+[22/22] reject value too large
+  ✓ Correctly rejected with error: error.NotAInstruction
+=== Assembly Test Summary ===
+Total: 22
+Passed: 22
+Failed: 0
+
+✓ All assembly tests passed!
+OK
+All 9 tests passed.

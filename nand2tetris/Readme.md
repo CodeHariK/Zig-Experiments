@@ -19,7 +19,6 @@
 
 * https://nand2tetris.github.io/web-ide/about/
 * https://www.nand2tetris.org/
-* [Nand2Tetris Solutions](https://www.youtube.com/playlist?list=PLW5N7Qkyh5oaM2XhpJOkLsIZl0cs7wBTF)
 * [Nand2Tetris](https://www.youtube.com/playlist?list=PL0my2vWlgboylRwQeeIbi9t-KUNVXe0Vk)
 
 ## Sebastian Lague
@@ -55,7 +54,10 @@
 * [BenEater: Learn how computers add numbers and build a 4 bit adder circuit](https://www.youtube.com/watch?v=wvJc9CZcvBc)
 * [Hyperspace Pirate: 8-Bit Adder built from 152 Transistors](https://www.youtube.com/watch?v=X31B1pVow1o)
 
+
 * [Ben Eater: Twos complement: Negative numbers in binary](https://www.youtube.com/watch?v=4qH4unVtJkE)
+
+* [Core Dumped: Bit Shifting: The Hidden Trick Inside Your CPU](https://www.youtube.com/watch?v=Cc33wOBAKDM)
 
 * [Ben Eater: SR latch](https://www.youtube.com/watch?v=KM0DdEaY5sY)
 * [How Flip Flops Work - The Learning Circuit](https://www.youtube.com/watch?v=Hi7rK0hZnfc)

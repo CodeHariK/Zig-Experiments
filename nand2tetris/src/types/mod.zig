@@ -4,6 +4,8 @@
 //! This module contains type constructors and utilities for working with
 //! integer types and bit arrays.
 
+pub const Error = @import("errors.zig").Error;
+
 pub const uintn = @import("uintn.zig");
 
 // Re-export all public functions from uintn.zig for convenience
