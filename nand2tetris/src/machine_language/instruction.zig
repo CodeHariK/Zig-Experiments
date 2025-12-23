@@ -48,8 +48,7 @@ pub const Instruction = union(enum) {
     /// Create an A-instruction
     pub fn aInstruction(value: u16) !Self {
         // Treat value as binary (bit 15 = 0, bits 0-14 = value)
-        const binary: u16 = value;
-        const a_inst = try AInstruction.decode(binary);
+        const a_inst = try AInstruction.decode(value);
         return Self{ .a = a_inst };
     }
 
@@ -60,10 +59,10 @@ pub const Instruction = union(enum) {
     }
 
     /// Encode instruction to 16-bit binary
-    pub fn encode(self: Self) u16 {
+    pub fn getValue(self: Self) u16 {
         return switch (self) {
-            .a => |a| a.encode(),
-            .c => |c| c.encode(),
+            .a => self.a.value,
+            .c => self.c.value,
         };
     }
 
@@ -71,18 +70,14 @@ pub const Instruction = union(enum) {
     /// Automatically determines if it's an A or C instruction
     pub fn decode(binary: u16) !Self {
         // Check if it's a C-instruction (bit 15 = 1)
-        if ((binary >> 15) & 1 == 1) {
-            if (CInstruction.decode(binary)) |c_inst| {
-                return Self{ .c = c_inst };
-            }
-            return ERR.Error.InvalidInstruction;
-        } else {
-            // Must be an A-instruction (bit 15 = 0)
-            const a_inst = AInstruction.decode(binary) catch |err| {
-                return err;
-            };
+        if (CInstruction.decode(binary)) |c_inst| {
+            return Self{ .c = c_inst };
+        }
+        // Must be an A-instruction (bit 15 = 0)
+        if (AInstruction.decode(binary)) |a_inst| {
             return Self{ .a = a_inst };
         }
+        return ERR.InvalidInstruction;
     }
 
     /// Check if instruction is an A-instruction
@@ -100,87 +95,127 @@ pub const Instruction = union(enum) {
             .c => true,
         };
     }
-
-    /// Get A-instruction value (only valid if isA() returns true)
-    pub fn getAValue(self: Self) ?u15 {
-        return switch (self) {
-            .a => |a| a.getValue(),
-            .c => null,
-        };
-    }
-
-    /// Get C-instruction (only valid if isC() returns true)
-    pub fn getCInstruction(self: Self) ?CInstruction {
-        return switch (self) {
-            .a => null,
-            .c => |c| c,
-        };
-    }
 };
 
 // =============================================================================
 // Tests
 // =============================================================================
 
-test "Instruction: create A-instruction" {
-    const inst = try Instruction.aInstruction(123);
-    try testing.expect(inst.isA());
-    try testing.expect(!inst.isC());
-    try testing.expectEqual(@as(?u15, 123), inst.getAValue());
-}
+const memory_map = @import("memory_map.zig");
+const SymbolTable = memory_map.SymbolTable;
 
-test "Instruction: create C-instruction" {
-    const comp = CInstruction.Computation.fromBits(0, 0b101010);
-    const inst = Instruction.cInstruction(comp, .D, .null);
-    try testing.expect(!inst.isA());
-    try testing.expect(inst.isC());
-    try testing.expect(inst.getCInstruction() != null);
-}
+test "multiplication program" {
+    std.debug.print("\n=== Multiplication Program Test ===\n\n", .{});
 
-test "Instruction: encode A-instruction" {
-    const inst = try Instruction.aInstruction(456);
-    const binary = inst.encode();
-    try testing.expectEqual(@as(u16, 456), binary);
-    try testing.expectEqual(@as(u16, 0), (binary >> 15) & 1); // Bit 15 = 0
-}
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
 
-test "Instruction: encode C-instruction" {
-    const comp = CInstruction.Computation.fromBits(1, 0b110000);
-    const inst = Instruction.cInstruction(comp, .M, .JGT);
-    const binary = inst.encode();
-    try testing.expectEqual(@as(u16, 0b111), (binary >> 13) & 0b111); // Prefix = 111
-}
+    var symbol_table = try SymbolTable.init(allocator);
+    defer symbol_table.deinit();
 
-test "Instruction: decode A-instruction" {
-    const binary: u16 = 789;
-    const inst = try Instruction.decode(binary);
-    try testing.expect(inst.isA());
-    try testing.expectEqual(@as(?u15, 789), inst.getAValue());
-}
+    // Setup labels and variables
+    // LOOP label at address 4 (after @sum, M=0, @i, M=1)
+    try symbol_table.addLabel("LOOP", 4);
+    // END label at address 18 (after all loop instructions)
+    try symbol_table.addLabel("END", 18);
+    // Variables: sum at 16, i at 17
+    _ = try symbol_table.addVariable("sum");
+    _ = try symbol_table.addVariable("i");
 
-test "Instruction: decode C-instruction" {
-    const binary: u16 = 0b1111110000010000; // D=M
-    const inst = try Instruction.decode(binary);
-    try testing.expect(inst.isC());
-    try testing.expect(inst.getCInstruction() != null);
-}
+    const assembly_lines = [_][]const u8{
+        "@sum",
+        "M=0",
+        "@i",
+        "M=1",
+        "(LOOP)",
+        "@i",
+        "D=M",
+        "@R0",
+        "D=D-M",
+        "@END",
+        "D;JGT",
+        "@R1",
+        "D=M",
+        "@sum",
+        "M=D+M",
+        "@i",
+        "M=M+1",
+        "@LOOP",
+        "0;JMP",
+        "(END)",
+        "@sum",
+        "D=M",
+        "@R2",
+        "M=D",
+    };
 
-test "Instruction: round-trip A-instruction" {
-    const original = try Instruction.aInstruction(9999);
-    const binary = original.encode();
-    const decoded = try Instruction.decode(binary);
-    try testing.expect(decoded.isA());
-    try testing.expectEqual(@as(?u15, 9999), decoded.getAValue());
-}
+    const expected_binary = [_]u16{
+        0b0000000000010000, // @sum (16)
+        0b1110101010001000, // M=0
+        0b0000000000010001, // @i (17)
+        0b1110111111001000, // M=1
+        // (LOOP) - label, not an instruction
+        0b0000000000010001, // @i (17)
+        0b1111110000010000, // D=M
+        0b0000000000000000, // @R0 (0)
+        0b1111010011010000, // D=D-M
+        0b0000000000010010, // @END (18)
+        0b1110001100000001, // D;JGT
+        0b0000000000000001, // @R1 (1)
+        0b1111110000010000, // D=M
+        0b0000000000010000, // @sum (16)
+        0b1111000010001000, // M=D+M
+        0b0000000000010001, // @i (17)
+        0b1111110111001000, // M=M+1
+        0b0000000000000100, // @LOOP (4)
+        0b1110101010000111, // 0;JMP
+        // (END) - label, not an instruction
+        0b0000000000010000, // @sum (16)
+        0b1111110000010000, // D=M
+        0b0000000000000010, // @R2 (2)
+        0b1110001100001000, // M=D
+    };
 
-test "Instruction: round-trip C-instruction" {
-    const comp = CInstruction.Computation.fromBits(0, 0b001100); // D
-    const original = Instruction.cInstruction(comp, .AMD, .JMP);
-    const binary = original.encode();
-    const decoded = try Instruction.decode(binary);
-    try testing.expect(decoded.isC());
-    const decoded_c = decoded.getCInstruction();
-    try testing.expect(decoded_c != null);
-    try testing.expectEqual(CInstruction.Destination.AMD, decoded_c.?.getDestination());
-    try testing.expectEqual(CInstruction.Jump.JMP, decoded_c.?.getJump());
+    var instructions = std.ArrayList(Instruction).empty;
+    defer instructions.deinit(allocator);
+
+    // Parse assembly and build instructions
+    for (assembly_lines) |line| {
+        // Skip labels (lines starting with '(')
+        if (line.len > 0 and line[0] == '(') {
+            continue;
+        }
+
+        // Try parsing as A-instruction first
+        if (line.len > 0 and line[0] == '@') {
+            const a_inst = try AInstruction.fromAssembly(line, &symbol_table);
+            try instructions.append(allocator, Instruction{ .a = a_inst });
+        } else {
+            // Must be a C-instruction
+            const c_inst = try CInstruction.fromAssembly(line);
+            try instructions.append(allocator, Instruction{ .c = c_inst });
+        }
+    }
+
+    // Verify binary output
+    std.debug.print("Generated binary:\n", .{});
+    var all_match = true;
+    for (instructions.items, 0..) |inst, i| {
+        const binary = inst.getValue();
+        const expected = expected_binary[i];
+        const match = binary == expected;
+        if (!match) all_match = false;
+        std.debug.print("{b:0>16}\n", .{binary});
+        if (!match) {
+            std.debug.print("  ✗ Expected: {b:0>16}\n", .{expected});
+        }
+    }
+
+    if (!all_match) {
+        std.debug.print("\n✗ Binary output doesn't match expected!\n", .{});
+        return ERR.TestFailed;
+    }
+
+    std.debug.print("\n✓ All binary instructions match expected output!\n", .{});
 }

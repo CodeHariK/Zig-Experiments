@@ -28,32 +28,32 @@
 //
 // Addition:
 //   @x
-//   D=M        // D = x
+//   D=M        // D = RAM[x]
 //   @y
-//   D=D+M      // D = x + y
+//   D=D+M      // D = RAM[x] + RAM[y]
 //   @sum
-//   M=D        // sum = x + y
+//   M=D        // RAM[sum] = RAM[x] + RAM[y]
 //
 // Subtraction:
 //   @x
-//   D=M        // D = x
+//   D=M        // D = RAM[x]
 //   @y
-//   D=D-M      // D = x - y
+//   D=D-M      // D = RAM[x] - RAM[y]
 //
 // -----------------------------------------------------------------------------
 // Control Flow Patterns
 // -----------------------------------------------------------------------------
 //
-// Conditional:
+// Conditional: (if RAM[x] > 0, jump to POSITIVE)
 //   @x
 //   D=M
 //   @POSITIVE
-//   D;JGT      // if x > 0, jump to POSITIVE
+//   D;JGT      // if RAM[x] > 0, jump to POSITIVE
 //   // negative code
 //   (POSITIVE)
 //   // positive code
 //
-// Loop:
+// Loop: (loop from 0 to 10, incrementing i each time)
 //   @i
 //   M=0         // i = 0
 //   (LOOP)
@@ -78,7 +78,7 @@
 //   @arr
 //   D=A
 //   @i
-//   A=D+M       // A = arr + i
+//   A=D+M       // A = arr + RAM[i]
 //   D=M         // D = arr[i]
 //
 // Array Sum:
@@ -98,7 +98,7 @@
 //     @arr
 //     D=A
 //     @i
-//     A=D+M     // A = arr + i
+//     A=D+M     // A = arr + RAM[i]
 //     D=M       // D = arr[i]
 //     @sum
 //     M=M+D     // sum += arr[i]
@@ -116,27 +116,27 @@
 //   @SCREEN
 //   D=A
 //   @addr
-//   M=D         // addr = SCREEN
+//   M=D         // RAM[addr] = SCREEN
 //   @8192
 //   D=A
 //   @n
-//   M=D         // n = 8192
+//   M=D         // RAM[n] = 8192
 //   @i
-//   M=0
+//   M=0         // RAM[i] = 0
 //   (LOOP)
 //     @i
-//     D=M
+//     D=M       // D = RAM[i]
 //     @n
-//     D=D-M
+//     D=D-M     // D = RAM[i] - RAM[n]
 //     @END
-//     D;JGE
+//     D;JGE     // if RAM[i] >= RAM[n], exit
 //     @addr
-//     D=M
+//     D=M       // D = RAM[addr] = SCREEN
 //     @i
-//     A=D+M
-//     M=0       // Clear pixel
+//     A=D+M     // A = SCREEN + RAM[i]
+//     M=0       // RAM[SCREEN + RAM[i]] = 0 (clear pixel)
 //     @i
-//     M=M+1
+//     M=M+1     // RAM[i]++
 //     @LOOP
 //     0;JMP
 //   (END)
@@ -176,4 +176,3 @@ const CInstruction = @import("c_instruction.zig").CInstruction;
 // pub fn storeToMemory(address: u15) []Instruction { ... }
 // pub fn addValues() []Instruction { ... }
 // pub fn createLoop(init: u15, limit: u15, body: []Instruction) []Instruction { ... }
-

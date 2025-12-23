@@ -6,7 +6,7 @@
 
     .dependencies = .{
         .zig_objc = .{
-            .path = "lib/zig-objc",
+            .path = "../library/zig-objc",
         },
     },
 

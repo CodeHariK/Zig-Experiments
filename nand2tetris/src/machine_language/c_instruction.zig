@@ -191,25 +191,27 @@ pub const CInstruction = struct {
     comp: Computation,
     dest: Destination,
     jump: Jump,
+    value: u16,
 
     const Self = @This();
 
     /// Create a C-instruction
+    /// Format: 111accccccdddjjj
     pub fn create(comp: Computation, dest: Destination, jump: Jump) Self {
         return Self{
             .comp = comp,
             .dest = dest,
             .jump = jump,
+            .value = Self.encode(comp, dest, jump),
         };
     }
 
     /// Encode C-instruction to 16-bit binary
-    /// Format: 111accccccdddjjj
-    pub fn encode(self: Self) u16 {
+    pub fn encode(comp: Computation, dest: Destination, jump: Jump) u16 {
         const prefix: u16 = 0b111 << 13; // Bits 15-13 = 111
-        const a_comp: u16 = @as(u16, self.comp.getField()) << 6; // Bits 6-12
-        const dest_bits: u16 = @as(u16, @intFromEnum(self.dest)) << 3; // Bits 3-5
-        const jump_bits: u16 = @intFromEnum(self.jump); // Bits 0-2
+        const a_comp: u16 = @as(u16, comp.getField()) << 6; // Bits 6-12
+        const dest_bits: u16 = @as(u16, @intFromEnum(dest)) << 3; // Bits 3-5
+        const jump_bits: u16 = @intFromEnum(jump); // Bits 0-2
 
         return prefix | a_comp | dest_bits | jump_bits;
     }
@@ -235,6 +237,7 @@ pub const CInstruction = struct {
             .comp = comp,
             .dest = dest,
             .jump = jump,
+            .value = binary,
         };
     }
 
@@ -324,6 +327,7 @@ pub const CInstruction = struct {
             .comp = comp,
             .dest = dest,
             .jump = jump,
+            .value = Self.encode(comp, dest, jump),
         };
     }
 
@@ -474,7 +478,7 @@ test "C-instruction: comprehensive tests" {
 
         const comp = Computation.fromBits(tc.a, tc.comp);
         const inst = CInstruction.create(comp, tc.dest, tc.jump);
-        const inst_enc = inst.encode();
+        const inst_enc = inst.value;
 
         if (tc.exp_bin) |expected| {
             if (inst_enc != expected) {
@@ -500,7 +504,7 @@ test "C-instruction: comprehensive tests" {
         }
 
         // Test round-trip
-        const round_trip_binary = cinc.encode();
+        const round_trip_binary = cinc.value;
         if (round_trip_binary != inst_enc) {
             std.debug.print("  ✗ FAILED: Round-trip binary mismatch\n", .{});
             failed += 1;

@@ -1,0 +1,16 @@
+.{
+    .name = .raytracer,
+    .version = "0.0.0",
+    .fingerprint = 0x21c65cb5a624d4aa, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .raylib_zig = .{
+            .path = "../library/raylib-zig",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

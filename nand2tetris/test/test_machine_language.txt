@@ -1,11 +1,40 @@
-1/11 mod.test.machine_language module: include all machine language tests...OK
-2/11 memory_map.test.Memory map: RAM addresses...OK
-3/11 memory_map.test.Memory map: Screen addresses...OK
-4/11 memory_map.test.Memory map: Keyboard address...OK
-5/11 memory_map.test.Memory map: Screen address calculation...OK
-6/11 memory_map.test.Memory map: Screen address out of bounds...OK
-7/11 memory_map.test.Memory map: Screen row/col extraction...OK
-8/11 a_instruction.test.A-instruction: comprehensive tests...
+1/12 mod.test.machine_language module: include all machine language tests...OK
+2/12 instruction.test.multiplication program...
+=== Multiplication Program Test ===
+
+Generated binary:
+0000000000010000
+1110101010001000
+0000000000010001
+1110111111001000
+0000000000010001
+1111110000010000
+0000000000000000
+1111010011010000
+0000000000010010
+1110001100000001
+0000000000000001
+1111110000010000
+0000000000010000
+1111000010001000
+0000000000010001
+1111110111001000
+0000000000000100
+1110101010000111
+0000000000010000
+1111110000010000
+0000000000000010
+1110001100001000
+
+✓ All binary instructions match expected output!
+OK
+3/12 memory_map.test.Memory map: RAM addresses...OK
+4/12 memory_map.test.Memory map: Screen addresses...OK
+5/12 memory_map.test.Memory map: Keyboard address...OK
+6/12 memory_map.test.Memory map: Screen address calculation...OK
+7/12 memory_map.test.Memory map: Screen address out of bounds...OK
+8/12 memory_map.test.Memory map: Screen row/col extraction...OK
+9/12 a_instruction.test.A-instruction: comprehensive tests...
 === A-Instruction Comprehensive Tests ===
 
 [1/10] Input: 0 (0b0000000000000000)
@@ -27,7 +56,7 @@ Failed: 0
 ✓ All tests passed!
 
 OK
-9/11 a_instruction.test.A-instruction: assembly parsing and generation...
+10/12 a_instruction.test.A-instruction: assembly parsing and generation...
 === A-Instruction Assembly Tests ===
 
 [1/35] @0
@@ -184,7 +213,7 @@ Failed: 0
 
 ✓ All assembly tests passed!
 OK
-10/11 c_instruction.test.C-instruction: comprehensive tests...
+11/12 c_instruction.test.C-instruction: comprehensive tests...
 === C-Instruction Comprehensive Tests ===
 
 [1/47] D=M
@@ -384,7 +413,7 @@ Failed: 0
 ✓ All tests passed!
 
 OK
-11/11 c_instruction.test.C-instruction: invalid assembly rejection...
+12/12 c_instruction.test.C-instruction: invalid assembly rejection...
 === C-Instruction Invalid Assembly Tests ===
 
 [1/8] reject empty string
@@ -419,4 +448,4 @@ Failed: 0
 ✓ All invalid assembly tests passed!
 
 OK
-All 11 tests passed.
+All 12 tests passed.
