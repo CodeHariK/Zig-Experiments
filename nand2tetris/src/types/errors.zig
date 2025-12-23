@@ -37,6 +37,9 @@ pub const Error = error{
     /// Binary does not represent an A-instruction (bit 15 = 1)
     NotAInstruction,
 
+    /// Binary does not represent a C-instruction (bits 15-13 != 111)
+    NotCInstruction,
+
     /// Binary does not represent a valid instruction
     InvalidInstruction,
 
@@ -67,4 +70,3 @@ pub const Error = error{
     /// Test case failed (for test framework)
     TestFailed,
 };
-

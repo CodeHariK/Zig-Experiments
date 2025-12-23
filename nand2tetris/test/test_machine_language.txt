@@ -1,11 +1,11 @@
-1/9 mod.test.machine_language module: include all machine language tests...OK
-2/9 memory_map.test.Memory map: RAM addresses...OK
-3/9 memory_map.test.Memory map: Screen addresses...OK
-4/9 memory_map.test.Memory map: Keyboard address...OK
-5/9 memory_map.test.Memory map: Screen address calculation...OK
-6/9 memory_map.test.Memory map: Screen address out of bounds...OK
-7/9 memory_map.test.Memory map: Screen row/col extraction...OK
-8/9 a_instruction.test.A-instruction: comprehensive tests...
+1/11 mod.test.machine_language module: include all machine language tests...OK
+2/11 memory_map.test.Memory map: RAM addresses...OK
+3/11 memory_map.test.Memory map: Screen addresses...OK
+4/11 memory_map.test.Memory map: Keyboard address...OK
+5/11 memory_map.test.Memory map: Screen address calculation...OK
+6/11 memory_map.test.Memory map: Screen address out of bounds...OK
+7/11 memory_map.test.Memory map: Screen row/col extraction...OK
+8/11 a_instruction.test.A-instruction: comprehensive tests...
 === A-Instruction Comprehensive Tests ===
 
 [1/10] Input: 0 (0b0000000000000000)
@@ -27,102 +27,396 @@ Failed: 0
 ✓ All tests passed!
 
 OK
-9/9 a_instruction.test.A-instruction: assembly parsing and generation...
+9/11 a_instruction.test.A-instruction: assembly parsing and generation...
 === A-Instruction Assembly Tests ===
 
-[1/22] parse numeric @0
+[1/35] @0
   ✓ getValue() = 0
   ✓ toAssembly() = "@R0"
   ✓ Round-trip: "@0" -> "@R0"
-[2/22] parse numeric @5
+[2/35] @5
   ✓ getValue() = 5
   ✓ toAssembly() = "@R5"
   ✓ Round-trip: "@5" -> "@R5"
-[3/22] parse numeric @100
+[3/35] @100
   ✓ getValue() = 100
   ✓ toAssembly() = "@100"
   ✓ Round-trip: "@100" -> "@100"
-[4/22] parse numeric @32767
+[4/35] @32767
   ✓ getValue() = 32767
   ✓ toAssembly() = "@32767"
   ✓ Round-trip: "@32767" -> "@32767"
-[5/22] parse @R0
+[5/35] @R0
   ✓ getValue() = 0
   ✓ toAssembly() = "@R0"
   ✓ Round-trip: "@R0" -> "@R0"
-[6/22] parse @R15
+[6/35] @R15
   ✓ getValue() = 15
   ✓ toAssembly() = "@R15"
   ✓ Round-trip: "@R15" -> "@R15"
-[7/22] parse @SP
+[7/35] @SP
   ✓ getValue() = 0
   ✓ toAssembly() = "@R0"
   ✓ Round-trip: "@SP" -> "@R0"
-[8/22] parse @LCL
+[8/35] @LCL
   ✓ getValue() = 1
   ✓ toAssembly() = "@R1"
   ✓ Round-trip: "@LCL" -> "@R1"
-[9/22] parse @ARG
+[9/35] @ARG
   ✓ getValue() = 2
   ✓ toAssembly() = "@R2"
   ✓ Round-trip: "@ARG" -> "@R2"
-[10/22] parse @THIS
+[10/35] @THIS
   ✓ getValue() = 3
   ✓ toAssembly() = "@R3"
   ✓ Round-trip: "@THIS" -> "@R3"
-[11/22] parse @THAT
+[11/35] @THAT
   ✓ getValue() = 4
   ✓ toAssembly() = "@THAT"
   ✓ Round-trip: "@THAT" -> "@THAT"
-[12/22] parse @SCREEN
+[12/35] @SCREEN
   ✓ getValue() = 16384
   ✓ toAssembly() = "@SCREEN"
   ✓ Round-trip: "@SCREEN" -> "@SCREEN"
-[13/22] parse @KBD
+[13/35] @KBD
   ✓ getValue() = 24576
   ✓ toAssembly() = "@KBD"
   ✓ Round-trip: "@KBD" -> "@KBD"
-[14/22] parse @LOOP label
+[14/35] @LOOP
   Setup: Added label LOOP = 10
   ✓ getValue() = 10
   ✓ toAssembly() = "@LOOP"
   ✓ Round-trip: "@LOOP" -> "@LOOP"
-[15/22] parse @END label
+[15/35] @END
   Setup: Added label END = 50
   ✓ getValue() = 50
   ✓ toAssembly() = "@END"
   ✓ Round-trip: "@END" -> "@END"
-[16/22] parse @START label
+[16/35] @START
   Setup: Added label START = 0
   ✓ getValue() = 0
   ✓ toAssembly() = "@R0"
   ✓ Round-trip: "@START" -> "@R0"
-[17/22] parse @counter variable
+[17/35] @counter
   Setup: Added variable counter = 16
   ✓ getValue() = 16
   ✓ toAssembly() = "@counter"
   ✓ Round-trip: "@counter" -> "@counter"
-[18/22] parse @sum variable
+[18/35] @sum
   Setup: Added variable sum = 17
   ✓ getValue() = 17
   ✓ toAssembly() = "@sum"
   ✓ Round-trip: "@sum" -> "@sum"
-[19/22] parse @i variable
+[19/35] @i
   Setup: Added variable i = 18
   ✓ getValue() = 18
   ✓ toAssembly() = "@i"
   ✓ Round-trip: "@i" -> "@i"
-[20/22] reject missing @
+[20/35]   @5
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  Note: toAssembly() = "@R5" (not in expected list, but parses correctly)
+  ✓ Round-trip: "  @5" -> "@R5"
+[21/35] @5  
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  Note: toAssembly() = "@R5" (not in expected list, but parses correctly)
+  ✓ Round-trip: "@5  " -> "@R5"
+[22/35]   @5  
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  Note: toAssembly() = "@R5" (not in expected list, but parses correctly)
+  ✓ Round-trip: "  @5  " -> "@R5"
+[23/35] 	@100	
+  ✓ getValue() = 100
+  ✓ toAssembly() = "@100"
+  ✓ Round-trip: "	@100	" -> "@100"
+[24/35] @R0
+
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@R0
+" -> "@R0"
+[25/35]   @SCREEN  
+  ✓ getValue() = 16384
+  ✓ toAssembly() = "@SCREEN"
+  ✓ Round-trip: "  @SCREEN  " -> "@SCREEN"
+[26/35] @5 // comment
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  Note: toAssembly() = "@R5" (not in expected list, but parses correctly)
+  ✓ Round-trip: "@5 // comment" -> "@R5"
+[27/35] @5//comment
+  ✓ getValue() = 5
+  ✓ toAssembly() = "@R5"
+  Note: toAssembly() = "@R5" (not in expected list, but parses correctly)
+  ✓ Round-trip: "@5//comment" -> "@R5"
+[28/35]   @100  // comment with spaces
+  ✓ getValue() = 100
+  ✓ toAssembly() = "@100"
+  ✓ Round-trip: "  @100  // comment with spaces" -> "@100"
+[29/35] @R0 // register 0
+  ✓ getValue() = 0
+  ✓ toAssembly() = "@R0"
+  ✓ Round-trip: "@R0 // register 0" -> "@R0"
+[30/35] @SCREEN // screen memory
+  ✓ getValue() = 16384
+  ✓ toAssembly() = "@SCREEN"
+  ✓ Round-trip: "@SCREEN // screen memory" -> "@SCREEN"
+[31/35] @KBD // keyboard input
+  ✓ getValue() = 24576
+  ✓ toAssembly() = "@KBD"
+  ✓ Round-trip: "@KBD // keyboard input" -> "@KBD"
+[32/35] @32767 // max value
+  ✓ getValue() = 32767
+  ✓ toAssembly() = "@32767"
+  ✓ Round-trip: "@32767 // max value" -> "@32767"
+[33/35] 5
   ✓ Correctly rejected with error: error.InvalidAssembly
-[21/22] reject unknown symbol
+[34/35] @UNKNOWN
   ✓ Correctly rejected with error: error.SymbolNotFound
-[22/22] reject value too large
+[35/35] @32768
   ✓ Correctly rejected with error: error.NotAInstruction
 === Assembly Test Summary ===
-Total: 22
-Passed: 22
+Total: 35
+Passed: 35
 Failed: 0
 
 ✓ All assembly tests passed!
 OK
-All 9 tests passed.
+10/11 c_instruction.test.C-instruction: comprehensive tests...
+=== C-Instruction Comprehensive Tests ===
+
+[1/47] D=M
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[2/47] M=D
+  Comp: a=0, comp=0b001100, Dest=M, Jump=null
+  ✓ encode() = 0b1110001100001000
+  ✓ toAssembly() = "M=D"
+[3/47] A=0
+  Comp: a=0, comp=0b101010, Dest=A, Jump=null
+  ✓ encode() = 0b1110101010100000
+  ✓ toAssembly() = "A=0"
+[4/47] D=1
+  Comp: a=0, comp=0b111111, Dest=D, Jump=null
+  ✓ encode() = 0b1110111111010000
+  ✓ toAssembly() = "D=1"
+[5/47] M=-1
+  Comp: a=0, comp=0b111010, Dest=M, Jump=null
+  ✓ encode() = 0b1110111010001000
+  ✓ toAssembly() = "M=-1"
+[6/47] D;JGT
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JGT
+  ✓ encode() = 0b1110001100000001
+  ✓ toAssembly() = "D;JGT"
+[7/47] D;JEQ
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JEQ
+  ✓ encode() = 0b1110001100000010
+  ✓ toAssembly() = "D;JEQ"
+[8/47] 0;JMP
+  Comp: a=0, comp=0b101010, Dest=null, Jump=JMP
+  ✓ encode() = 0b1110101010000111
+  ✓ toAssembly() = "0;JMP"
+[9/47] D;JLE
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JLE
+  ✓ encode() = 0b1110001100000110
+  ✓ toAssembly() = "D;JLE"
+[10/47] MD=D+1;JGT
+  Comp: a=0, comp=0b011111, Dest=MD, Jump=JGT
+  ✓ encode() = 0b1110011111011001
+  ✓ toAssembly() = "MD=D+1;JGT"
+[11/47] AMD=M-1;JMP
+  Comp: a=1, comp=0b110010, Dest=AMD, Jump=JMP
+  ✓ encode() = 0b1111110010111111
+  ✓ toAssembly() = "AMD=M-1;JMP"
+[12/47] M=0
+  Comp: a=0, comp=0b101010, Dest=M, Jump=null
+  ✓ encode() = 0b1110101010001000
+  ✓ toAssembly() = "M=0"
+[13/47] D=0
+  Comp: a=0, comp=0b101010, Dest=D, Jump=null
+  ✓ encode() = 0b1110101010010000
+  ✓ toAssembly() = "D=0"
+[14/47] MD=0
+  Comp: a=0, comp=0b101010, Dest=MD, Jump=null
+  ✓ encode() = 0b1110101010011000
+  ✓ toAssembly() = "MD=0"
+[15/47] A=0
+  Comp: a=0, comp=0b101010, Dest=A, Jump=null
+  ✓ encode() = 0b1110101010100000
+  ✓ toAssembly() = "A=0"
+[16/47] AM=0
+  Comp: a=0, comp=0b101010, Dest=AM, Jump=null
+  ✓ encode() = 0b1110101010101000
+  ✓ toAssembly() = "AM=0"
+[17/47] AD=0
+  Comp: a=0, comp=0b101010, Dest=AD, Jump=null
+  ✓ encode() = 0b1110101010110000
+  ✓ toAssembly() = "AD=0"
+[18/47] AMD=0
+  Comp: a=0, comp=0b101010, Dest=AMD, Jump=null
+  ✓ encode() = 0b1110101010111000
+  ✓ toAssembly() = "AMD=0"
+[19/47] D;JGT
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JGT
+  ✓ encode() = 0b1110001100000001
+  ✓ toAssembly() = "D;JGT"
+[20/47] D;JEQ
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JEQ
+  ✓ encode() = 0b1110001100000010
+  ✓ toAssembly() = "D;JEQ"
+[21/47] D;JGE
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JGE
+  ✓ encode() = 0b1110001100000011
+  ✓ toAssembly() = "D;JGE"
+[22/47] D;JLT
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JLT
+  ✓ encode() = 0b1110001100000100
+  ✓ toAssembly() = "D;JLT"
+[23/47] D;JNE
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JNE
+  ✓ encode() = 0b1110001100000101
+  ✓ toAssembly() = "D;JNE"
+[24/47] D;JLE
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JLE
+  ✓ encode() = 0b1110001100000110
+  ✓ toAssembly() = "D;JLE"
+[25/47] D;JMP
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JMP
+  ✓ encode() = 0b1110001100000111
+  ✓ toAssembly() = "D;JMP"
+[26/47] D=A
+  Comp: a=0, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1110110000010000
+  ✓ toAssembly() = "D=A"
+[27/47] D=M
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[28/47] D=D+1
+  Comp: a=0, comp=0b011111, Dest=D, Jump=null
+  ✓ encode() = 0b1110011111010000
+  ✓ toAssembly() = "D=D+1"
+[29/47] D=D-1
+  Comp: a=0, comp=0b001110, Dest=D, Jump=null
+  ✓ encode() = 0b1110001110010000
+  ✓ toAssembly() = "D=D-1"
+[30/47] D=D+A
+  Comp: a=0, comp=0b000010, Dest=D, Jump=null
+  ✓ encode() = 0b1110000010010000
+  ✓ toAssembly() = "D=D+A"
+[31/47] D=D+M
+  Comp: a=1, comp=0b000010, Dest=D, Jump=null
+  ✓ encode() = 0b1111000010010000
+  ✓ toAssembly() = "D=D+M"
+[32/47] D=D-A
+  Comp: a=0, comp=0b010011, Dest=D, Jump=null
+  ✓ encode() = 0b1110010011010000
+  ✓ toAssembly() = "D=D-A"
+[33/47] D=D-A
+  Comp: a=0, comp=0b010011, Dest=D, Jump=null
+  ✓ encode() = 0b1110010011010000
+  ✓ toAssembly() = "D=D-A"
+[34/47] D=D&M
+  Comp: a=1, comp=0b000000, Dest=D, Jump=null
+  ✓ encode() = 0b1111000000010000
+  ✓ toAssembly() = "D=D&M"
+[35/47] D=D|A
+  Comp: a=0, comp=0b010101, Dest=D, Jump=null
+  ✓ encode() = 0b1110010101010000
+  ✓ toAssembly() = "D=D|A"
+[36/47]   D=M
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[37/47] D=M  
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[38/47]   D=M  
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[39/47] 	D=M	
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[40/47] D=M
+
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[41/47]   D;JGT  
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JGT
+  ✓ encode() = 0b1110001100000001
+  ✓ toAssembly() = "D;JGT"
+[42/47] D=M // comment
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[43/47] D=M//comment
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[44/47]   D=M  // comment with spaces
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+[45/47] D;JGT // jump if greater
+  Comp: a=0, comp=0b001100, Dest=null, Jump=JGT
+  ✓ encode() = 0b1110001100000001
+  ✓ toAssembly() = "D;JGT"
+[46/47] MD=D+1;JGT // combined instruction
+  Comp: a=0, comp=0b011111, Dest=MD, Jump=JGT
+  ✓ encode() = 0b1110011111011001
+  ✓ toAssembly() = "MD=D+1;JGT"
+[47/47] D=M // load from memory
+  Comp: a=1, comp=0b110000, Dest=D, Jump=null
+  ✓ encode() = 0b1111110000010000
+  ✓ toAssembly() = "D=M"
+
+=== Test Summary ===
+Total: 47
+Passed: 47
+Failed: 0
+✓ All tests passed!
+
+OK
+11/11 c_instruction.test.C-instruction: invalid assembly rejection...
+=== C-Instruction Invalid Assembly Tests ===
+
+[1/8] reject empty string
+  Assembly: ""
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[2/8] reject invalid computation
+  Assembly: "D=X"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[3/8] reject invalid destination
+  Assembly: "X=D"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[4/8] reject invalid jump
+  Assembly: "D;XXX"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[5/8] reject malformed dest=comp
+  Assembly: "=D"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[6/8] reject malformed comp;jump
+  Assembly: ";JMP"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[7/8] reject invalid computation in dest=comp
+  Assembly: "D=INVALID"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+[8/8] reject invalid computation in comp;jump
+  Assembly: "INVALID;JMP"
+  ✓ Correctly rejected with error: error.InvalidAssembly
+
+=== Invalid Assembly Test Summary ===
+Total: 8
+Passed: 8
+Failed: 0
+✓ All invalid assembly tests passed!
+
+OK
+All 11 tests passed.

@@ -93,6 +93,6 @@ pub const CInstruction = @import("c_instruction.zig").CInstruction;
 test "machine_language module: include all machine language tests" {
     _ = @import("memory_map.zig");
     _ = @import("a_instruction.zig");
-    // _ = @import("c_instruction.zig");
+    _ = @import("c_instruction.zig");
     // _ = @import("instruction.zig");
 }
