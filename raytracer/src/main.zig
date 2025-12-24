@@ -5,12 +5,19 @@ const ray = @import("ray.zig");
 const hittable = @import("hittable.zig");
 const camera_mod = @import("camera.zig");
 const math = @import("math.zig");
+const material_mod = @import("material.zig");
 
 const Point3 = ray.Point3;
 const HittableList = hittable.HittableList;
 const Hittable = hittable.Hittable;
 const Sphere = hittable.Sphere;
 const Camera = camera_mod.Camera;
+
+const Material = material_mod.Material;
+const Lambertian = material_mod.Lambertian;
+const Metal = material_mod.Metal;
+
+const Color = math.Vec3;
 
 pub fn main() !void {
 
@@ -31,9 +38,15 @@ pub fn main() !void {
     var world = HittableList.init(allocator);
     defer world.deinit();
 
-    // Add spheres to the world
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, 0.0, -1.0 }), 0.5) });
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, -100.5, -1.0 }), 100.0) });
+    const material_ground = Lambertian.init(Color.init(.{ 0.8, 0.8, 0.0 }));
+    const material_center = Lambertian.init(Color.init(.{ 0.1, 0.2, 0.5 }));
+    const material_left = Metal.init(Color.init(.{ 0.8, 0.8, 0.8 }), 0.3);
+    const material_right = Metal.init(Color.init(.{ 0.8, 0.6, 0.2 }), 1.0);
+
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, -100.5, -1.0 }), 100.0, material_ground) });
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, 0.0, -1.2 }), 0.5, material_center) });
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ -1.0, 0.0, -1.0 }), 0.5, material_left) });
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 1.0, 0.0, -1.0 }), 0.5, material_right) });
 
     // Create and initialize camera
     var cam = Camera.init();

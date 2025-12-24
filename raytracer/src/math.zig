@@ -12,101 +12,105 @@ pub fn Vec(comptime N: comptime_int, comptime T: type) type {
 
         const tolerance_vec: @Vector(N, T) = @splat(epsilon);
 
-        pub fn init(components: [N]T) Self {
+        pub inline fn init(components: [N]T) Self {
             return Self{ .data = components };
         }
 
-        pub fn zero() Self {
+        pub inline fn zero() Self {
             const zero_val: T = 0;
             return Self{ .data = @splat(zero_val) };
         }
 
-        pub fn one() Self {
+        pub inline fn one() Self {
             const one_val: T = 1;
             return Self{ .data = @splat(one_val) };
         }
 
-        pub fn x(self: Self) T {
+        pub inline fn x(self: Self) T {
             return self.data[0];
         }
 
-        pub fn y(self: Self) T {
+        pub inline fn y(self: Self) T {
             if (N < 2) @compileError("Vec.y() requires N >= 2");
             return self.data[1];
         }
 
-        pub fn z(self: Self) T {
+        pub inline fn z(self: Self) T {
             if (N < 3) @compileError("Vec.z() requires N >= 3");
             return self.data[2];
         }
 
-        pub fn neg(self: Self) Self {
+        pub inline fn neg(self: Self) Self {
             return Self{ .data = -self.data };
         }
 
-        pub fn add(self: Self, other: Self) Self {
+        pub inline fn add(self: Self, other: Self) Self {
             return Self{ .data = self.data + other.data };
         }
 
-        pub fn addScalar(self: Self, t: T) Self {
+        pub inline fn addScalar(self: Self, t: T) Self {
             const t_vec: @Vector(N, T) = @splat(t);
             return Self{ .data = self.data + t_vec };
         }
 
-        pub fn sub(self: Self, other: Self) Self {
+        pub inline fn sub(self: Self, other: Self) Self {
             return Self{ .data = self.data - other.data };
         }
 
-        pub fn mul(self: Self, other: Self) Self {
+        pub inline fn mul(self: Self, other: Self) Self {
             return Self{ .data = self.data * other.data };
         }
 
-        pub fn mulScalar(self: Self, t: T) Self {
+        pub inline fn mulScalar(self: Self, t: T) Self {
             const t_vec: @Vector(N, T) = @splat(t);
             return Self{ .data = self.data * t_vec };
         }
 
-        pub fn div(self: Self, other: Self) Self {
+        pub inline fn div(self: Self, other: Self) Self {
             return Self{ .data = self.data / other.data };
         }
 
-        pub fn divScalar(self: Self, t: T) Self {
+        pub inline fn divScalar(self: Self, t: T) Self {
             const t_vec: @Vector(N, T) = @splat(t);
             return Self{ .data = self.data / t_vec };
         }
 
-        pub fn addAssign(self: *Self, other: Self) void {
+        pub inline fn addAssign(self: *Self, other: Self) void {
             self.data += other.data;
         }
 
-        pub fn mulAssign(self: *Self, t: T) void {
+        pub inline fn mulAssign(self: *Self, t: T) void {
             const t_vec: @Vector(N, T) = @splat(t);
             self.data *= t_vec;
         }
 
-        pub fn divAssign(self: *Self, t: T) void {
+        pub inline fn divAssign(self: *Self, t: T) void {
             const t_vec: @Vector(N, T) = @splat(t);
             self.data /= t_vec;
         }
 
-        pub fn lengthSquared(self: Self) T {
+        pub inline fn lengthSquared(self: Self) T {
             return @reduce(.Add, self.data * self.data);
         }
 
-        pub fn length(self: Self) T {
+        pub inline fn length(self: Self) T {
             return @sqrt(self.lengthSquared());
         }
 
-        pub fn dot(self: Self, other: Self) T {
+        pub inline fn dot(self: Self, other: Self) T {
             return @reduce(.Add, self.data * other.data);
         }
 
-        pub fn unit(self: Self) Self {
+        pub inline fn unit(self: Self) Self {
             return self.divScalar(self.length());
         }
 
+        pub inline fn reflect(self: Self, normal: Self) Self {
+            return self.sub(normal.mulScalar(2.0 * self.dot(normal)));
+        }
+
         // cross product only works for 3D vectors
-        pub fn cross(self: Self, other: Self) Self {
+        pub inline fn cross(self: Self, other: Self) Self {
             if (N != 3) @compileError("cross product only works for 3D vectors");
             return Self{
                 .data = .{
@@ -117,7 +121,7 @@ pub fn Vec(comptime N: comptime_int, comptime T: type) type {
             };
         }
 
-        pub fn approxEqAbs(self: Self, other: Self) bool {
+        pub inline fn approxEqAbs(self: Self, other: Self) bool {
             const diff = self.data - other.data;
             const abs_diff = @abs(diff);
             return @reduce(.And, abs_diff < tolerance_vec);

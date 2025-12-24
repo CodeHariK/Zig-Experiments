@@ -6,6 +6,7 @@ const ray = @import("ray.zig");
 const hittable = @import("hittable.zig");
 const interval = @import("interval.zig");
 const color_mod = @import("color.zig");
+const material = @import("material.zig");
 
 const Vec3 = math.Vec3;
 const Point3 = ray.Point3;
@@ -159,9 +160,21 @@ pub const Camera = struct {
         // Check if ray hits anything in the world
         const ray_t = Interval.initWithBounds(0.001, std.math.inf(f64));
         if (world.hit(r, ray_t, &rec)) {
-            return self.scatterLambertian(&rec, world, depth);
+            // return self.scatterLambertian(&rec, world, depth);
             // return self.scatterBounceColor(&rec, world, depth);
             // return self.normalColor(&rec);
+
+            // Use material system to scatter the ray
+            if (rec.material) |mat| {
+                const scatter_result = mat.scatter(r, &rec, &Self.rand);
+                if (scatter_result.did_scatter) {
+                    // Recursively trace the scattered ray with material attenuation
+                    return self.rayColor(scatter_result.scattered, world, depth - 1)
+                        .mul(scatter_result.attenuation);
+                }
+            }
+            // If material doesn't scatter, return black (absorbed)
+            return Color.zero();
         }
 
         // Ray missed everything - it hit the sky (our light source)

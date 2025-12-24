@@ -23,6 +23,8 @@
 
 ## Sebastian Lague
 
+* https://github.com/SebLague/Digital-Logic-Sim
+
 * [Exploring How Computers Work](https://www.youtube.com/playlist?list=PLFt_AvWsXl0dPhqVsKt1Ni_46ARyiCGSq)
 
 ## Core Dumped
@@ -30,6 +32,9 @@
 * [Computer architecture from scratch](https://www.youtube.com/playlist?list=PL9vTTBa7QaQOoMfpP3ztvgyQkPWDPfJez)
 
 ## Computer Science
+
+* [MIT 6.004 Computation Structures](https://www.youtube.com/playlist?list=PLDSlqjcPpoL64CJdF0Qee5oWqGS6we_Yu)
+* [MIT 6.004 Computation Structures](https://www.youtube.com/playlist?list=PLUl4u3cNGP62WVs95MNq3dQBqY2vGOtQ2)
 
 * [CMU: Digital Design and Computer Architecture](https://www.youtube.com/playlist?list=PL5Q2soXY2Zi9Eo29LMgKVcaydS7V1zZW3)
 
@@ -81,7 +86,11 @@
 
 ## RISC-V
 
+* [RISC-V Lectures](https://www.youtube.com/playlist?list=PL3by7evD3F53Dz2RiB47Ztp9l_piGVuus)
+
 * [RV32I Base Integer Instruction Set, Version 2.1](https://docs.riscv.org/reference/isa/unpriv/rv32.html)
+
+* [rv32emu: RISC-V 32-bit Emulator](https://github.com/sysprog21/rv32emu?tab=readme-ov-file#reference)
 
 ## Hardware
 

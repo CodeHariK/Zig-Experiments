@@ -7,6 +7,7 @@ const Vec3 = math.Vec3;
 const Point3 = ray.Point3;
 const Ray = ray.Ray;
 const Interval = interval.Interval;
+const Material = @import("material.zig").Material;
 
 // Hit record stores information about a ray-object intersection
 pub const HitRecord = struct {
@@ -14,6 +15,7 @@ pub const HitRecord = struct {
     normal: Vec3,
     t: f64,
     front_face: bool,
+    material: ?Material = null, // Material of the hit object
 
     const Self = @This();
 
@@ -99,15 +101,17 @@ pub const HittableList = struct {
 pub const Sphere = struct {
     center: Point3,
     radius: f64,
+    material: Material,
 
     const Self = @This();
 
-    pub fn init(center: Point3, radius: f64) Self {
+    pub fn init(center: Point3, radius: f64, material: Material) Self {
         // Ensure radius is non-negative (equivalent to std::fmax(0, radius))
         const safe_radius = @max(0.0, radius);
         return Self{
             .center = center,
             .radius = safe_radius,
+            .material = material,
         };
     }
 
@@ -143,6 +147,8 @@ pub const Sphere = struct {
         const outward_normal = rec.p.sub(self.center).divScalar(self.radius);
         // Set face normal (determines front_face and ensures normal points against ray)
         rec.setFaceNormal(r, outward_normal);
+        // Store material
+        rec.material = self.material;
 
         return true;
     }
