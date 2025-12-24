@@ -1,10 +1,12 @@
 const std = @import("std");
 const math = @import("math.zig");
 const ray = @import("ray.zig");
+const interval = @import("interval.zig");
 
 const Vec3 = math.Vec3;
 const Point3 = ray.Point3;
 const Ray = ray.Ray;
+const Interval = interval.Interval;
 
 // Hit record stores information about a ray-object intersection
 pub const HitRecord = struct {
@@ -35,10 +37,10 @@ pub const Hittable = union(enum) {
     // triangle: Triangle,
 
     // Generic hit method that dispatches to the appropriate type
-    pub fn hit(self: *const Hittable, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: *const Hittable, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         return switch (self.*) {
-            .sphere => |*s| s.hit(r, ray_tmin, ray_tmax, rec),
-            // .plane => |*p| p.hit(r, ray_tmin, ray_tmax, rec),
+            .sphere => |*s| s.hit(r, ray_t, rec),
+            // .plane => |*p| p.hit(r, ray_t, rec),
         };
     }
 };
@@ -69,7 +71,7 @@ pub const HittableList = struct {
         try self.objects.append(self.allocator, object);
     }
 
-    pub fn hit(self: *const Self, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: *const Self, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         var temp_rec = HitRecord{
             .p = undefined,
             .normal = undefined,
@@ -77,10 +79,12 @@ pub const HittableList = struct {
             .front_face = false,
         };
         var hit_anything = false;
-        var closest_so_far = ray_tmax;
+        var closest_so_far = ray_t.max;
 
         for (self.objects.items) |object| {
-            if (object.hit(r, ray_tmin, closest_so_far, &temp_rec)) {
+            // Create a new interval from ray_t.min to closest_so_far
+            const search_interval = Interval.initWithBounds(ray_t.min, closest_so_far);
+            if (object.hit(r, search_interval, &temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec.* = temp_rec;
@@ -107,7 +111,7 @@ pub const Sphere = struct {
         };
     }
 
-    pub fn hit(self: *const Self, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: *const Self, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         // Vector from ray origin to sphere center
         const oc = self.center.sub(r.orig);
 
@@ -125,9 +129,9 @@ pub const Sphere = struct {
 
         // Find the nearest root that lies in the acceptable range
         var root = (h - sqrtd) / a;
-        if (root <= ray_tmin or root >= ray_tmax) {
+        if (!ray_t.surrounds(root)) {
             root = (h + sqrtd) / a;
-            if (root <= ray_tmin or root >= ray_tmax) {
+            if (!ray_t.surrounds(root)) {
                 return false;
             }
         }
