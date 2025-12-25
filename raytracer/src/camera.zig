@@ -22,15 +22,25 @@ pub const Camera = struct {
     aspect_ratio: f64 = 16.0 / 9.0,
     image_width: f64 = 800.0,
     image_height: f64 = undefined,
+    vfov: f64 = 90.0, // Vertical field of view in degrees
+    lookfrom: Point3 = Point3.init(.{ 0.0, 0.0, 0.0 }), // Point camera is looking from
+    lookat: Point3 = Point3.init(.{ 0.0, 0.0, -1.0 }), // Point camera is looking at
+    vup: Vec3 = Vec3.init(.{ 0.0, 1.0, 0.0 }), // Camera-relative "up" direction
+    defocus_angle: f64 = 0.0, // Variation angle of rays through each pixel
+    focus_dist: f64 = 10.0, // Distance from camera lookfrom point to plane of perfect focus
 
     // Private camera variables (computed during initialization)
     camera_center: Point3 = undefined,
 
-    focal_length: f64 = 1.0,
-    viewport_height: f64 = 2.0,
+    viewport_height: f64 = undefined,
     viewport_width: f64 = undefined,
     viewport_u: Vec3 = undefined,
     viewport_v: Vec3 = undefined,
+    u: Vec3 = undefined, // Camera frame basis vectors
+    v: Vec3 = undefined,
+    w: Vec3 = undefined,
+    defocus_disk_u: Vec3 = undefined, // Defocus disk horizontal radius
+    defocus_disk_v: Vec3 = undefined, // Defocus disk vertical radius
 
     pixel_delta_u: Vec3 = undefined,
     pixel_delta_v: Vec3 = undefined,
@@ -45,52 +55,91 @@ pub const Camera = struct {
     const Self = @This();
 
     // Initialize camera parameters
-    pub fn init() Self {
+    pub fn init(args: struct {
+        aspect_ratio: ?f64,
+        image_width: ?f64,
+        samples_per_pixel: ?u8,
+        max_depth: ?u8,
+        vfov: ?f64,
+        lookfrom: ?Point3,
+        lookat: ?Point3,
+        vup: ?Vec3,
+        defocus_angle: ?f64,
+        focus_dist: ?f64,
+    }) Self {
         var self = Self{
-            .aspect_ratio = 16.0 / 9.0,
-            .image_width = 800.0,
-            .focal_length = 1.0,
-            .viewport_height = 2.0,
+            .aspect_ratio = args.aspect_ratio orelse 16.0 / 9.0,
+            .image_width = args.image_width orelse 800.0,
+            .samples_per_pixel = args.samples_per_pixel orelse 8,
+            .max_depth = args.max_depth orelse 8,
+            .vfov = args.vfov orelse 90.0,
+            .lookfrom = args.lookfrom orelse Point3.init(.{ 0.0, 0.0, 0.0 }),
+            .lookat = args.lookat orelse Point3.init(.{ 0.0, 0.0, -1.0 }),
+            .vup = args.vup orelse Vec3.init(.{ 0.0, 1.0, 0.0 }),
+            .defocus_angle = args.defocus_angle orelse 0.0,
+            .focus_dist = args.focus_dist orelse 10.0,
         };
 
         Self.rand = math.Rand.init(@bitCast(std.time.timestamp()));
+
+        // Camera center is where we're looking from
+        self.camera_center = self.lookfrom;
+
+        // Compute viewport height from vertical field of view
+        const theta = std.math.degreesToRadians(self.vfov);
+        const h = @tan(theta / 2.0);
+        self.viewport_height = 2.0 * h * self.focus_dist;
 
         // Compute derived values
         self.image_height = self.image_width / self.aspect_ratio;
         self.viewport_width = self.viewport_height * self.aspect_ratio;
 
-        // Camera center (origin)
-        self.camera_center = Point3.init(.{ 0.0, 0.0, 0.0 });
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame
+        // w is the direction the camera is looking (from lookat to lookfrom, normalized)
+        self.w = self.lookfrom.sub(self.lookat).unit();
+        // u is perpendicular to both vup and w (right vector)
+        self.u = self.vup.cross(self.w).unit();
+        // v is perpendicular to both w and u (up vector)
+        self.v = self.w.cross(self.u);
 
-        // Viewport vectors: U goes right, V goes down (negative Y)
-        self.viewport_u = Vec3.init(.{ self.viewport_width, 0.0, 0.0 });
-        self.viewport_v = Vec3.init(.{ 0.0, -self.viewport_height, 0.0 });
+        // Viewport vectors: U goes right, V goes down (negative v)
+        self.viewport_u = self.u.mulScalar(self.viewport_width);
+        self.viewport_v = self.v.neg().mulScalar(self.viewport_height);
 
         // Pixel spacing: how much to move for each pixel
         self.pixel_delta_u = self.viewport_u.divScalar(self.image_width);
         self.pixel_delta_v = self.viewport_v.divScalar(self.image_height);
 
-        // Calculate the location of the upper left pixel.
-        //
-        // Explanation:
-        // 1. Start at camera center
-        // 2. Move back by focal_length along -Z axis (camera looks down -Z)
-        // 3. Move left by half the viewport width (viewport_u/2)
-        // 4. Move up by half the viewport height (viewport_v/2, but V is negative so this moves up)
-        // This gives us the upper-left corner of the viewport
+        // Calculate the location of the upper left pixel
+        // Start at camera center, move back by focus_dist along w, then offset by half viewport
         const viewport_upper_left = self.camera_center
-            .sub(Vec3.init(.{ 0.0, 0.0, self.focal_length }))
-            .sub(self.viewport_u.add(self.viewport_v).divScalar(2.0));
+            .sub(self.w.mulScalar(self.focus_dist))
+            .sub(self.viewport_u.divScalar(2.0))
+            .sub(self.viewport_v.divScalar(2.0));
 
         // Pixel00 is the center of the first pixel (upper-left pixel)
         // We offset by half a pixel in both U and V directions to get the pixel center
         self.pixel00_loc = viewport_upper_left
             .add(self.pixel_delta_u.add(self.pixel_delta_v).mulScalar(0.5));
 
+        // Calculate defocus disk radius from defocus angle
+        // The disk radius is: focus_dist * tan(defocus_angle / 2)
+        const defocus_radius = self.focus_dist * @tan(std.math.degreesToRadians(self.defocus_angle / 2.0));
+        self.defocus_disk_u = self.u.mulScalar(defocus_radius);
+        self.defocus_disk_v = self.v.mulScalar(defocus_radius);
+
         // Compute pixel samples scale
         self.pixel_samples_scale = 1.0 / @as(f64, @floatFromInt(self.samples_per_pixel));
 
         return self;
+    }
+
+    // Returns a random point in the camera defocus disk
+    fn defocusDiskSample(self: *Self) Point3 {
+        const p = Self.rand.vec3RandomInUnitDisk();
+        return self.camera_center
+            .add(self.defocus_disk_u.mulScalar(p.x()))
+            .add(self.defocus_disk_v.mulScalar(p.y()));
     }
 
     // Construct a camera ray originating from the origin and directed at randomly sampled
@@ -103,7 +152,14 @@ pub const Camera = struct {
             .add(self.pixel_delta_u.mulScalar(i_f64 + offset.x()))
             .add(self.pixel_delta_v.mulScalar(j_f64 + offset.y()));
 
-        const ray_origin = self.camera_center;
+        // Get a random point in the defocus disk for depth of field
+        const ray_origin = if (self.defocus_angle <= 0.0)
+            self.camera_center
+        else
+            self.defocusDiskSample();
+
+        // Calculate the point on the focus plane that the ray should pass through
+        // Since the viewport is at focus_dist, pixel_sample is already on the focus plane
         const ray_direction = pixel_sample.sub(ray_origin);
 
         return Ray.init(ray_origin, ray_direction);
@@ -193,61 +249,17 @@ pub const Camera = struct {
         return color;
     }
 
-    // Hemisphere-based scattering: uniform distribution on hemisphere
-    // All directions above surface have equal probability
-    // This function recursively traces rays through the scene:
-    // - If ray hits a surface: bounce in random direction (diffuse material), attenuate by 0.5
-    // - If ray misses everything: return sky gradient color
-    // - If max_depth reached: return black (no light contribution from this path)
-    // The color accumulates as we unwind the recursion: each bounce multiplies by 0.5
     inline fn scatterBounceColor(self: *const Self, rec: *const HitRecord, world: *const HittableList, depth: u32) Color {
-        // Diffuse material: scatter ray in random direction on hemisphere above surface
-        // vec3RandomOnHemisphere ensures the scattered ray is above the surface (not going into it)
-        // This creates a uniform distribution on the hemisphere
         const direction = Self.rand.vec3RandomOnHemisphere(rec.normal);
-
-        // ATTENUATION: When light bounces off a surface, not all light is reflected.
-        // Some light is absorbed by the material. The 0.5 factor represents the material's
-        // "albedo" (reflectivity) - in this case, 50% of light is reflected, 50% is absorbed.
-        //
-        // Example: If a ray with intensity 1.0 hits a surface:
-        //   - After 1 bounce: 1.0 * 0.5 = 0.5 (50% reflected)
-        //   - After 2 bounces: 0.5 * 0.5 = 0.25 (25% of original)
-        //   - After 3 bounces: 0.25 * 0.5 = 0.125 (12.5% of original)
-        // This creates realistic light falloff - objects get darker the more bounces away from light.
-        //
-        // In a real raytracer, different materials would have different albedos:
-        //   - White paint: ~0.9 (reflects 90%)
-        //   - Gray concrete: ~0.5 (reflects 50%)
-        //   - Dark wood: ~0.2 (reflects 20%)
         return self.rayColor(Ray.init(rec.p, direction), world, depth - 1).mulScalar(REFLECTANCE);
     }
-
-    // Lambertian scattering model: direction = normal + random_unit_vector()
-    // This creates a cosine-weighted distribution that is physically accurate for matte surfaces.
-    //
-    // HOW IT WORKS:
-    // 1. Generate a random unit vector (point on unit sphere)
-    // 2. Add it to the surface normal
-    // 3. This creates a new direction vector
-    //
-    // PHYSICAL ACCURACY:
-    // - The distribution favors directions closer to the normal (cosine-weighted)
-    // - This matches how real matte surfaces scatter light (Lambert's cosine law)
-    // - More physically accurate than uniform hemisphere sampling
-    //
-    // NOTE: The direction vector is not normalized, but that's correct for this model.
-    // The non-normalized length creates the proper probability distribution.
     inline fn scatterLambertian(self: *const Self, rec: *const HitRecord, world: *const HittableList, depth: u32) Color {
         const random_unit = Self.rand.vec3RandomUnitVector();
         const direction = rec.normal.add(random_unit);
         return self.rayColor(Ray.init(rec.p, direction), world, depth - 1).mulScalar(REFLECTANCE);
     }
-
     inline fn normalColor(self: *const Self, rec: *const HitRecord) Color {
         _ = self;
-        // This adds white (1,1,1) to normal (components in [-1,1]), giving [0,2]
-        // Then scales by 0.5 to get [0,1] range
         return rec.normal.add(WHITE).mulScalar(REFLECTANCE);
     }
 };

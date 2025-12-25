@@ -18,9 +18,7 @@ pub const ScatterResult = struct {
 pub const Material = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
-    // Future materials can be added here:
-    // metal: Metal,
-    // dielectric: Dielectric,
+    dielectric: Dielectric,
 
     const Self = @This();
 
@@ -30,7 +28,7 @@ pub const Material = union(enum) {
         return switch (self) {
             .lambertian => |mat| mat.scatter(r_in, rec, rand),
             .metal => |mat| mat.scatter(r_in, rec, rand),
-            // .dielectric => |mat| mat.scatter(r_in, rec, rand),
+            .dielectric => |mat| mat.scatter(r_in, rec, rand),
         };
     }
 };
@@ -102,5 +100,64 @@ pub const Metal = struct {
             .scattered = scattered,
             .did_scatter = did_scatter,
         };
+    }
+};
+
+// Dielectric (glass/transparent) material
+// Refracts light based on Snell's law
+pub const Dielectric = struct {
+    // Refractive index in vacuum or air, or the ratio of the material's refractive index
+    // over the refractive index of the enclosing media
+    refraction_index: f64,
+
+    const Self = @This();
+
+    pub fn init(refraction_index: f64) Material {
+        return Material{ .dielectric = Self{ .refraction_index = refraction_index } };
+    }
+
+    pub fn scatter(self: Self, r_in: Ray, rec: *const HitRecord, rand: *math.Rand) ScatterResult {
+        // Glass doesn't absorb color - attenuation is always white
+        const attenuation = Color.init(.{ 1.0, 1.0, 1.0 });
+
+        // Determine the ratio of refraction indices
+        // When entering material (front_face = true): use 1.0 / refraction_index
+        // When exiting material (front_face = false): use refraction_index / 1.0
+        const ri = if (rec.front_face) (1.0 / self.refraction_index) else self.refraction_index;
+
+        // Normalize the incoming ray direction
+        const unit_direction = r_in.dir.unit();
+
+        // Calculate cos(theta) where theta is the angle between -unit_direction and normal
+        const cos_theta = @min(unit_direction.neg().dot(rec.normal), 1.0);
+        const sin_theta = std.math.sqrt(1.0 - cos_theta * cos_theta);
+
+        // Check for total internal reflection
+        // If ri * sin_theta > 1.0, refraction is impossible (Snell's law violation)
+        const cannot_refract = ri * sin_theta > 1.0;
+
+        const direction = if (cannot_refract or Self.reflectance(cos_theta, ri) > rand.randomDouble())
+            unit_direction.reflect(rec.normal)
+        else
+            unit_direction.refract(rec.normal, ri);
+
+        const scattered = Ray.init(rec.p, direction);
+
+        // Dielectric always scatters (either refracts or reflects)
+        return ScatterResult{
+            .attenuation = attenuation,
+            .scattered = scattered,
+            .did_scatter = true,
+        };
+    }
+
+    // Use Schlick's approximation for reflectance (Fresnel reflection)
+    // This gives the probability of reflection based on the angle of incidence
+    pub fn reflectance(cosine: f64, refraction_index: f64) f64 {
+        // r0 is the reflectance at normal incidence (0 degrees)
+        var r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+        r0 = r0 * r0;
+        // Schlick's approximation: R(θ) = r0 + (1 - r0) * (1 - cos(θ))^5
+        return r0 + (1.0 - r0) * std.math.pow(f64, 1.0 - cosine, 5);
     }
 };

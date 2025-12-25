@@ -1,6 +1,5 @@
 const std = @import("std");
 const rl = @import("raylib");
-const rui = @import("raygui");
 const ray = @import("ray.zig");
 const hittable = @import("hittable.zig");
 const camera_mod = @import("camera.zig");
@@ -16,14 +15,35 @@ const Camera = camera_mod.Camera;
 const Material = material_mod.Material;
 const Lambertian = material_mod.Lambertian;
 const Metal = material_mod.Metal;
+const Dielectric = material_mod.Dielectric;
 
 const Color = math.Vec3;
+const Vec3 = math.Vec3;
+
+// Helper function to generate a random color in [0, 1)
+fn randomColor(rand: *math.Rand) Color {
+    return Color.init(.{
+        rand.randomDouble(),
+        rand.randomDouble(),
+        rand.randomDouble(),
+    });
+}
+
+// Helper function to generate a random color in [min, max)
+fn randomColorMinMax(rand: *math.Rand, min: f64, max: f64) Color {
+    return Color.init(.{
+        rand.randomDoubleMinMax(min, max),
+        rand.randomDoubleMinMax(min, max),
+        rand.randomDoubleMinMax(min, max),
+    });
+}
 
 pub fn main() !void {
 
     // Initialize raylib window
+    const aspect_ratio: f64 = 16.0 / 9.0;
     const image_width: f64 = 800.0;
-    const image_height: f64 = image_width / (16.0 / 9.0);
+    const image_height: f64 = image_width / aspect_ratio;
     const image_width_int = @as(i32, @intFromFloat(image_width));
     const image_height_int = @as(i32, @intFromFloat(image_height));
 
@@ -38,18 +58,72 @@ pub fn main() !void {
     var world = HittableList.init(allocator);
     defer world.deinit();
 
-    const material_ground = Lambertian.init(Color.init(.{ 0.8, 0.8, 0.0 }));
-    const material_center = Lambertian.init(Color.init(.{ 0.1, 0.2, 0.5 }));
-    const material_left = Metal.init(Color.init(.{ 0.8, 0.8, 0.8 }), 0.3);
-    const material_right = Metal.init(Color.init(.{ 0.8, 0.6, 0.2 }), 1.0);
+    // Initialize random number generator
+    var rand = math.Rand.init(@bitCast(std.time.timestamp()));
 
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, -100.5, -1.0 }), 100.0, material_ground) });
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, 0.0, -1.2 }), 0.5, material_center) });
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ -1.0, 0.0, -1.0 }), 0.5, material_left) });
-    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 1.0, 0.0, -1.0 }), 0.5, material_right) });
+    // Ground sphere
+    const ground_material = Lambertian.init(Color.init(.{ 0.5, 0.5, 0.5 }));
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, -1000.0, 0.0 }), 1000.0, ground_material) });
+
+    // Create a grid of random spheres
+    const sphere_count = 4;
+    var a: i32 = -sphere_count;
+    while (a < sphere_count) : (a += 1) {
+        var b: i32 = -sphere_count;
+        while (b < sphere_count) : (b += 1) {
+            const choose_mat = rand.randomDouble();
+            const center = Point3.init(.{
+                @as(f64, @floatFromInt(a)) + 0.9 * rand.randomDouble(),
+                0.2,
+                @as(f64, @floatFromInt(b)) + 0.9 * rand.randomDouble(),
+            });
+
+            // Skip spheres too close to the large sphere at (4, 0.2, 0)
+            const to_large_sphere = center.sub(Point3.init(.{ 4.0, 0.2, 0.0 }));
+            if (to_large_sphere.length() > 0.9) {
+                if (choose_mat < 0.8) {
+                    // Diffuse material
+                    const albedo = randomColor(&rand).mul(randomColor(&rand));
+                    const sphere_material = Lambertian.init(albedo);
+                    try world.add(Hittable{ .sphere = Sphere.init(center, 0.2, sphere_material) });
+                } else if (choose_mat < 0.95) {
+                    // Metal material
+                    const albedo = randomColorMinMax(&rand, 0.5, 1.0);
+                    const fuzz = rand.randomDoubleMinMax(0.0, 0.5);
+                    const sphere_material = Metal.init(albedo, fuzz);
+                    try world.add(Hittable{ .sphere = Sphere.init(center, 0.2, sphere_material) });
+                } else {
+                    // Glass material
+                    const sphere_material = Dielectric.init(1.5);
+                    try world.add(Hittable{ .sphere = Sphere.init(center, 0.2, sphere_material) });
+                }
+            }
+        }
+    }
+
+    // Three large spheres
+    const material1 = Dielectric.init(1.5);
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 0.0, 1.0, 0.0 }), 1.0, material1) });
+
+    const material2 = Lambertian.init(Color.init(.{ 0.4, 0.2, 0.1 }));
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ -4.0, 1.0, 0.0 }), 1.0, material2) });
+
+    const material3 = Metal.init(Color.init(.{ 0.7, 0.6, 0.5 }), 0.0);
+    try world.add(Hittable{ .sphere = Sphere.init(Point3.init(.{ 4.0, 1.0, 0.0 }), 1.0, material3) });
 
     // Create and initialize camera
-    var cam = Camera.init();
+    var cam = Camera.init(.{
+        .aspect_ratio = aspect_ratio,
+        .image_width = image_width,
+        .samples_per_pixel = 8,
+        .max_depth = 8,
+        .vfov = 20.0,
+        .lookfrom = Point3.init(.{ 13.0, 2.0, 3.0 }),
+        .lookat = Point3.init(.{ 0.0, 0.0, 0.0 }),
+        .vup = Vec3.init(.{ 0.0, 1.0, 0.0 }),
+        .defocus_angle = 0.6,
+        .focus_dist = 10.0,
+    });
 
     // Render the world and measure time
     var timer = try std.time.Timer.start();

@@ -109,6 +109,13 @@ pub fn Vec(comptime N: comptime_int, comptime T: type) type {
             return self.sub(normal.mulScalar(2.0 * self.dot(normal)));
         }
 
+        pub inline fn refract(self: Self, normal: Self, etai_over_etat: T) Self {
+            const cos_theta = @min(self.dot(normal.neg()), 1.0);
+            const r_out_perp = self.add(normal.mulScalar(cos_theta)).mulScalar(etai_over_etat);
+            const r_out_parallel = normal.mulScalar(-std.math.sqrt(@abs(1.0 - r_out_perp.lengthSquared())));
+            return r_out_perp.add(r_out_parallel);
+        }
+
         // cross product only works for 3D vectors
         pub inline fn cross(self: Self, other: Self) Self {
             if (N != 3) @compileError("cross product only works for 3D vectors");
@@ -175,6 +182,23 @@ pub const Rand = struct {
             self.randomDouble() - 0.5,
             0.0,
         });
+    }
+
+    // Generates a random point inside a unit disk (circle with radius 1) in the x-y plane.
+    // Uses rejection sampling: generates random points in [-1,1]² and accepts those
+    // inside the unit circle (length_squared < 1).
+    // This is typically used for depth of field effects in ray tracing.
+    pub inline fn vec3RandomInUnitDisk(self: *Self) Vec3 {
+        while (true) {
+            const p = Vec3.init(.{
+                self.randomDoubleMinMax(-1.0, 1.0),
+                self.randomDoubleMinMax(-1.0, 1.0),
+                0.0,
+            });
+            if (p.lengthSquared() < 1.0) {
+                return p;
+            }
+        }
     }
 
     // Generates a random unit vector (vector with length 1) using rejection sampling.
