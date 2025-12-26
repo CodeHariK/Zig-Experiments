@@ -160,7 +160,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const logic = @import("gates").Logic;
+const logic = @import("logic").Logic;
 
 const register = @import("register.zig");
 const types = @import("types");

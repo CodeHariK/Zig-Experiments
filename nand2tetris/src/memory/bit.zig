@@ -94,7 +94,7 @@ const testing = std.testing;
 
 const dff = @import("dff.zig");
 
-const logic = @import("gates").Logic;
+const logic = @import("logic").Logic;
 
 /// Bit - a 1-bit register with load control.
 ///

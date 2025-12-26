@@ -10,7 +10,8 @@
 		"format": "biome format --write"
 	},
 	"dependencies": {
-		"solid-js": "^1.9.10"
+		"solid-js": "^1.9.10",
+		"wgpu-matrix": "^3.4.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.10.1",

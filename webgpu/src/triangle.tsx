@@ -23,7 +23,7 @@ fn main(
 }
 `;
 
-function App() {
+function Triangle() {
 	const [canvas, setCanvas] = createSignal<HTMLCanvasElement | null>(null);
 
 	createEffect(() => {
@@ -104,11 +104,7 @@ function App() {
 		requestAnimationFrame(() => frame(device, context, pipeline));
 	}
 
-	return (
-		<>
-			<canvas width={300} height={300} ref={setCanvas} />
-		</>
-	);
+	return <canvas width={300} height={300} ref={setCanvas} />;
 }
 
-export default App;
+export default Triangle;

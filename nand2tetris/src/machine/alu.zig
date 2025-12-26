@@ -54,8 +54,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const logic = @import("logic.zig").Logic;
-const adder = @import("adder.zig");
+const logic = @import("logic").Logic;
 
 const types = @import("types");
 const b16 = types.b16;
@@ -176,7 +175,7 @@ pub inline fn ALU(x: [16]u1, y: [16]u1, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, n
     // Add16(a=nxout,b=nyout,out=addout);
     // And16(a=nxout,b=nyout,out=andout);
     // Mux16(a=andout,b=addout,sel=f,out=fout);
-    const addout = adder.RIPPLE_ADDER_16(nxout, nyout).sum;
+    const addout = logic.RIPPLE_ADDER_16(nxout, nyout).sum;
     const andout = logic.AND16(nxout, nyout);
     const fout = logic.MUX16(addout, andout, f);
 
@@ -232,7 +231,7 @@ pub inline fn ALU_I(x: u16, y: u16, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, no: u
     // Add16(a=nxout,b=nyout,out=addout);
     // And16(a=nxout,b=nyout,out=andout);
     // Mux16(a=andout,b=addout,sel=f,out=fout);
-    const addout = adder.RIPPLE_ADDER_16_I(nxout, nyout).sum;
+    const addout = logic.RIPPLE_ADDER_16_I(nxout, nyout).sum;
     const andout = logic.AND16_I(nxout, nyout);
     const fout = logic.MUX16_I(addout, andout, f);
 

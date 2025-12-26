@@ -63,6 +63,11 @@
 //   └──┬────┘       12-bit address
 //       │
 //       ▼
+//   ┌───────┐
+//   │ RAM8K │  ◄── 2 RAM4Ks = 8192 Registers
+//   └──┬────┘       13-bit address
+//       │
+//       ▼
 //  ┌────────┐
 //  │ RAM16K │  ◄── 4 RAM4Ks = 16384 Registers
 //  └────────┘       14-bit address
@@ -147,8 +152,9 @@
 // 5. RAM64    - uses 8 RAM8s + DMux8Way + Mux8Way16
 // 6. RAM512   - uses 8 RAM64s + DMux8Way + Mux8Way16
 // 7. RAM4K    - uses 8 RAM512s + DMux8Way + Mux8Way16
-// 8. RAM16K   - uses 4 RAM4Ks + DMux4Way + Mux4Way16
-// 9. PC       - uses Register + Inc16 + Muxes
+// 8. RAM8K    - uses 2 RAM4Ks + DMux + Mux16
+// 9. RAM16K   - uses 4 RAM4Ks + DMux4Way + Mux4Way16
+// 10. PC      - uses Register + Inc16 + Muxes
 //
 
 const dff_mod = @import("dff.zig");
@@ -159,28 +165,37 @@ const pc_mod = @import("pc.zig");
 
 /// Memory - a collection of memory elements.
 pub const Memory = struct {
-    dff: dff_mod.DFF,
-    bit: bit_mod.Bit,
-    register: register_mod.Register,
-    register16: register_mod.Register16,
-    ram8: ram_mod.RAM8,
-    ram64: ram_mod.RAM64,
-    ram512: ram_mod.RAM512,
-    ram4k: ram_mod.RAM4K,
-    ram16k: ram_mod.RAM16K,
-    pc: pc_mod.PC,
+    pub const DFF = dff_mod.DFF;
+    pub const Bit = bit_mod.Bit;
+    pub const Register = register_mod.Register;
+    pub const Register16 = register_mod.Register16;
+    pub const Ram8 = ram_mod.RAM8;
+    pub const Ram64 = ram_mod.RAM64;
+    pub const Ram512 = ram_mod.RAM512;
+    pub const Ram4K = ram_mod.RAM4K;
+    pub const Ram8K = ram_mod.RAM8K;
+    pub const Ram16K = ram_mod.RAM16K;
+    pub const Ram32K = ram_mod.RAM32K;
+    pub const PC = pc_mod.PC;
 };
 
 /// Memory_I - a collection of memory elements (integer version).
 pub const Memory_I = struct {
-    register: register_mod.Register_I,
-    register16: register_mod.Register16_I,
-    ram8: ram_mod.RAM8_I,
-    ram64: ram_mod.RAM64_I,
-    ram512: ram_mod.RAM512_I,
-    ram4k: ram_mod.RAM4K_I,
-    ram16k: ram_mod.RAM16K_I,
-    pc: pc_mod.PC_I,
+    pub const Register = register_mod.Register_I;
+    pub const Register16 = register_mod.Register16_I;
+
+    /// RAM_R_T - Generic RAM function for creating RAM types with custom register size and count.
+    /// Export the function directly from the memory module.
+    pub const RAM_R_T = ram_mod.RAM_R_T;
+
+    pub const Ram8 = ram_mod.RAM8_I;
+    pub const Ram64 = ram_mod.RAM64_I;
+    pub const Ram512 = ram_mod.RAM512_I;
+    pub const Ram4K = ram_mod.RAM4K_I;
+    pub const Ram8K = ram_mod.RAM8K_I;
+    pub const Ram16K = ram_mod.RAM16K_I;
+    pub const Ram32K = ram_mod.RAM32K_I;
+    pub const PC = pc_mod.PC_I;
 };
 
 // ============================================================================

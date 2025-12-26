@@ -12,7 +12,6 @@ const testing = std.testing;
 
 const mux = @import("mux.zig");
 const adder = @import("adder.zig");
-const alu = @import("alu.zig");
 const two_complement = @import("two_complement.zig");
 
 const types = @import("types");
@@ -189,7 +188,6 @@ test "run all gate tests" {
     _ = @import("mux.zig");
     _ = @import("adder.zig");
     _ = @import("two_complement.zig");
-    _ = @import("alu.zig");
 }
 
 test "single-bit gates follow truth tables" {

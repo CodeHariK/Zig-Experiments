@@ -149,7 +149,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const register = @import("register.zig");
-const logic = @import("gates").Logic;
+const logic = @import("logic").Logic;
 
 const types = @import("types");
 const b16 = types.b16;
@@ -157,9 +157,12 @@ const b3 = types.b3;
 const b6 = types.b6;
 const b9 = types.b9;
 const b12 = types.b12;
+const b13 = types.b13;
 const b14 = types.b14;
+const b15 = types.b15;
 const fb3 = types.fb3;
 const fb8 = types.fb8;
+const fb13 = types.fb13;
 const fb16 = types.fb16;
 const toBits = types.toBits;
 
@@ -210,14 +213,6 @@ pub const RAM8 = struct {
             address,
         );
 
-        // std.debug.print("{s}: {any}, input: {any}, output: {any}, load_signals: {any}\n", .{
-        //     if (load == 1) "Load" else "Read",
-        //     fb3(address),
-        //     fb16(input),
-        //     fb16(output),
-        //     load_signals,
-        // });
-
         return output;
     }
 
@@ -264,100 +259,6 @@ pub const RAM8 = struct {
         std.debug.print("└─────────┴─────────┘\n", .{});
     }
 };
-
-// =============================================================================
-// RAM8_I - 8 Registers (Integer Version)
-// =============================================================================
-
-/// RAM8_I - 8 16-bit registers addressable by 3-bit address (integer version).
-///
-/// Integer version using u16 for values and u3 for addresses.
-/// More efficient than bit-array version for performance-critical code.
-pub const RAM8_I = struct {
-    registers: [8]register.Register16_I = [_]register.Register16_I{.{}} ** 8,
-
-    const Self = @This();
-
-    /// Update RAM8_I with new input, address, and load signal.
-    /// Returns the current output from the addressed register.
-    ///
-    /// This function represents one clock cycle:
-    /// - Always reads from Register[address]
-    /// - If load=1: writes input to Register[address]
-    pub fn tick(self: *Self, input: u16, address: u3, load: u1) u16 {
-        // Step 1: DMUX8WAY_I routes load signal to the correct register
-        // Returns u8 with bit set at position 'address'
-        const load_signals = logic.DMUX8WAY_I(load, address);
-
-        // Step 2: All registers receive the same input, but only one gets load=1
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            const j = 7 - i;
-            // Check if the load signal bit is set for this register
-            const load_signal: u1 = @truncate((load_signals >> j) & 1);
-            // Always tick the register to get its output (it will only load if load_signal == 1)
-            outputs[i] = self.registers[i].tick(input, load_signal);
-        }
-
-        // Step 3: MUX8WAY16_I selects output from the addressed register
-        // MUX8WAY16_I expects in7, in6, ..., in0 where in0 is for address 0
-        // So outputs[0] (address 0) maps to in0 (last param), outputs[7] (address 7) maps to in7 (first param)
-        const output = logic.MUX8WAY16_I(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            address,
-        );
-
-        return output;
-    }
-
-    /// Get the current output from the addressed register without advancing time.
-    pub fn peek(self: *const Self, address: u3) u16 {
-        return logic.MUX8WAY16_I(
-            self.registers[0].peek(),
-            self.registers[1].peek(),
-            self.registers[2].peek(),
-            self.registers[3].peek(),
-            self.registers[4].peek(),
-            self.registers[5].peek(),
-            self.registers[6].peek(),
-            self.registers[7].peek(),
-            address,
-        );
-    }
-
-    /// Reset all registers to initial state (all values set to 0).
-    pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.registers[i].reset();
-        }
-    }
-
-    pub fn print(self: *const Self) void {
-        std.debug.print("RAM8_I State:\n", .{});
-        std.debug.print("┌─────────┬─────────┐\n", .{});
-        std.debug.print("│ Address │  Value  │\n", .{});
-        std.debug.print("├─────────┼─────────┤\n", .{});
-
-        inline for (0..8) |i| {
-            const j = 7 - i;
-            const value = self.registers[j].peek();
-            std.debug.print("│  {d:3}    │  {d:5}  │\n", .{ i, value });
-        }
-
-        std.debug.print("└─────────┴─────────┘\n", .{});
-    }
-};
-
-// =============================================================================
-// RAM64 - 64 Registers (6-bit address)
-// =============================================================================
 
 /// RAM64 - 64 16-bit registers addressable by 6-bit address.
 ///
@@ -437,91 +338,6 @@ pub const RAM64 = struct {
     }
 };
 
-// =============================================================================
-// RAM64_I - 64 Registers (Integer Version)
-// =============================================================================
-
-/// RAM64_I - 64 16-bit registers addressable by 6-bit address (integer version).
-///
-/// Integer version using u16 for values and u6 for addresses.
-/// Built from 8 RAM8_I chips:
-/// - High 3 bits select which RAM8_I unit
-/// - Low 3 bits address within that RAM8_I
-pub const RAM64_I = struct {
-    ram8s: [8]RAM8_I = [_]RAM8_I{.{}} ** 8,
-
-    const Self = @This();
-
-    /// Update RAM64_I with new input, address, and load signal.
-    /// Returns the current output from the addressed register.
-    pub fn tick(self: *Self, input: u16, address: u6, load: u1) u16 {
-        // Split address: high 3 bits select RAM8_I, low 3 bits address within RAM8_I
-        const high_bits: u3 = @truncate(address >> 3);
-        const low_bits: u3 = @truncate(address);
-
-        // Step 1: DMUX8WAY_I routes load signal to the correct RAM8_I
-        const load_signals = logic.DMUX8WAY_I(load, high_bits);
-
-        // Step 2: All RAM8_Is receive the same input and low address, but only one gets load=1
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            const j = 7 - i;
-            // Check if the load signal bit is set for this RAM8_I
-            const load_signal: u1 = @truncate((load_signals >> j) & 1);
-            // Always tick the RAM8_I to get its output (it will only load if load_signal == 1)
-            outputs[i] = self.ram8s[i].tick(input, low_bits, load_signal);
-        }
-
-        // Step 3: MUX8WAY16_I selects output from the addressed RAM8_I
-        const output = logic.MUX8WAY16_I(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
-
-        return output;
-    }
-
-    /// Get the current output from the addressed register without advancing time.
-    pub fn peek(self: *const Self, address: u6) u16 {
-        const high_bits: u3 = @truncate(address >> 3);
-        const low_bits: u3 = @truncate(address);
-
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram8s[i].peek(low_bits);
-        }
-        return logic.MUX8WAY16_I(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
-    }
-
-    /// Reset all RAM8_Is to initial state.
-    pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram8s[i].reset();
-        }
-    }
-};
-
-// =============================================================================
-// RAM512 - 512 Registers (9-bit address)
-// =============================================================================
-
 /// RAM512 - 512 16-bit registers addressable by 9-bit address.
 ///
 /// Built from 8 RAM64 chips:
@@ -590,91 +406,6 @@ pub const RAM512 = struct {
         }
     }
 };
-
-// =============================================================================
-// RAM512_I - 512 Registers (Integer Version)
-// =============================================================================
-
-/// RAM512_I - 512 16-bit registers addressable by 9-bit address (integer version).
-///
-/// Integer version using u16 for values and u9 for addresses.
-/// Built from 8 RAM64_I chips:
-/// - High 3 bits select which RAM64_I unit
-/// - Low 6 bits address within that RAM64_I
-pub const RAM512_I = struct {
-    ram64s: [8]RAM64_I = [_]RAM64_I{.{}} ** 8,
-
-    const Self = @This();
-
-    /// Update RAM512_I with new input, address, and load signal.
-    /// Returns the current output from the addressed register.
-    pub fn tick(self: *Self, input: u16, address: u9, load: u1) u16 {
-        // Split address: high 3 bits select RAM64_I, low 6 bits address within that RAM64_I
-        const high_bits: u3 = @truncate(address >> 6);
-        const low_bits: u6 = @truncate(address);
-
-        // Step 1: DMUX8WAY_I routes load signal to the correct RAM64_I
-        const load_signals = logic.DMUX8WAY_I(load, high_bits);
-
-        // Step 2: All RAM64_Is receive the same input and low address, but only one gets load=1
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            const j = 7 - i;
-            // Check if the load signal bit is set for this RAM64_I
-            const load_signal: u1 = @truncate((load_signals >> j) & 1);
-            // Always tick the RAM64_I to get its output (it will only load if load_signal == 1)
-            outputs[i] = self.ram64s[i].tick(input, low_bits, load_signal);
-        }
-
-        // Step 3: MUX8WAY16_I selects output from the addressed RAM64_I
-        const output = logic.MUX8WAY16_I(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
-
-        return output;
-    }
-
-    /// Get the current output from the addressed register without advancing time.
-    pub fn peek(self: *const Self, address: u9) u16 {
-        const high_bits: u3 = @truncate(address >> 6);
-        const low_bits: u6 = @truncate(address);
-
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram64s[i].peek(low_bits);
-        }
-        return logic.MUX8WAY16_I(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
-    }
-
-    /// Reset all RAM64_Is to initial state.
-    pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram64s[i].reset();
-        }
-    }
-};
-
-// =============================================================================
-// RAM4K - 4096 Registers (12-bit address)
-// =============================================================================
 
 /// RAM4K - 4096 16-bit registers addressable by 12-bit address.
 ///
@@ -745,90 +476,69 @@ pub const RAM4K = struct {
     }
 };
 
-// =============================================================================
-// RAM4K_I - 4096 Registers (Integer Version)
-// =============================================================================
-
-/// RAM4K_I - 4096 16-bit registers addressable by 12-bit address (integer version).
+/// RAM8K - 8192 16-bit registers addressable by 13-bit address.
 ///
-/// Integer version using u16 for values and u12 for addresses.
-/// Built from 8 RAM512_I chips:
-/// - High 3 bits select which RAM512_I unit
-/// - Low 9 bits address within that RAM512_I
-pub const RAM4K_I = struct {
-    ram512s: [8]RAM512_I = [_]RAM512_I{.{}} ** 8,
+/// Built from 2 RAM4K chips (2 × 4096 = 8192):
+/// - High bit (bit 12) selects which RAM4K unit
+/// - Low 12 bits address within that RAM4K
+pub const RAM8K = struct {
+    ram4ks: [2]RAM4K = [_]RAM4K{.{}} ** 2,
 
     const Self = @This();
 
-    /// Update RAM4K_I with new input, address, and load signal.
-    /// Returns the current output from the addressed register.
-    pub fn tick(self: *Self, input: u16, address: u12, load: u1) u16 {
-        // Split address: high 3 bits select RAM512_I, low 9 bits address within that RAM512_I
-        const high_bits: u3 = @truncate(address >> 9);
-        const low_bits: u9 = @truncate(address);
+    /// Update RAM8K with new input, address, and load signal.
+    pub fn tick(self: *Self, input: [16]u1, address: [13]u1, load: u1) [16]u1 {
+        // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
+        // Address is MSB-first: address[0] is MSB (bit 12)
+        const high_bit: u1 = address[0]; // MSB (bit 12)
+        const low_bits: [12]u1 = address[1..13].*;
 
-        // Step 1: DMUX8WAY_I routes load signal to the correct RAM512_I
-        const load_signals = logic.DMUX8WAY_I(load, high_bits);
+        // Route load signal to the correct RAM4K
+        // DMux(in, sel) returns [out_sel1, out_sel0]
+        // When sel=0: out[0]=0, out[1]=in (first RAM4K)
+        // When sel=1: out[0]=in, out[1]=0 (second RAM4K)
+        const load_signals = logic.DMUX(load, high_bit);
 
-        // Step 2: All RAM512_Is receive the same input and low address, but only one gets load=1
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            const j = 7 - i;
-            // Check if the load signal bit is set for this RAM512_I
-            const load_signal: u1 = @truncate((load_signals >> j) & 1);
-            // Always tick the RAM512_I to get its output (it will only load if load_signal == 1)
-            outputs[i] = self.ram512s[i].tick(input, low_bits, load_signal);
+        var outputs: [2][16]u1 = undefined;
+        inline for (0..2) |i| {
+            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
         }
 
-        // Step 3: MUX8WAY16_I selects output from the addressed RAM512_I
-        const output = logic.MUX8WAY16_I(
+        // MUX16 selects output from the addressed RAM4K
+        // MUX16(in1, in0, sel): sel=0 → in0, sel=1 → in1
+        return logic.MUX16(
             outputs[0],
             outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
+            high_bit,
         );
-
-        return output;
     }
 
     /// Get the current output from the addressed register without advancing time.
-    pub fn peek(self: *const Self, address: u12) u16 {
-        const high_bits: u3 = @truncate(address >> 9);
-        const low_bits: u9 = @truncate(address);
+    pub fn peek(self: *const Self, address: [13]u1) [16]u1 {
+        // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
+        const high_bit: u1 = address[0]; // MSB (bit 12)
+        const low_bits: [12]u1 = address[1..13].*;
 
-        var outputs: [8]u16 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram512s[i].peek(low_bits);
+        var outputs: [2][16]u1 = undefined;
+        inline for (0..2) |i| {
+            outputs[i] = self.ram4ks[i].peek(low_bits);
         }
-        return logic.MUX8WAY16_I(
+
+        // MUX16 selects output from the addressed RAM4K
+        return logic.MUX16(
             outputs[0],
             outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
+            high_bit,
         );
     }
 
-    /// Reset all RAM512_Is to initial state.
+    /// Reset all RAM4Ks to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram512s[i].reset();
+        inline for (0..2) |i| {
+            self.ram4ks[i].reset();
         }
     }
 };
-
-// =============================================================================
-// RAM16K - 16384 Registers (14-bit address)
-// =============================================================================
 
 /// RAM16K - 16384 16-bit registers addressable by 14-bit address.
 ///
@@ -893,79 +603,171 @@ pub const RAM16K = struct {
     }
 };
 
-// =============================================================================
-// RAM16K_I - 16384 Registers (Integer Version)
-// =============================================================================
-
-/// RAM16K_I - 16384 16-bit registers addressable by 14-bit address (integer version).
+/// RAM32K - 32768 16-bit registers addressable by 15-bit address.
 ///
-/// Integer version using u16 for values and u16 for addresses (14 bits used).
-/// Built from 4 RAM4K_I chips (not 8, because 14 bits = 2^14 = 16384):
-/// - High 2 bits select which RAM4K_I unit
-/// - Low 12 bits address within that RAM4K_I
-pub const RAM16K_I = struct {
-    ram4ks: [4]RAM4K_I = [_]RAM4K_I{.{}} ** 4,
+/// Built from 8 RAM4K chips (8 × 4096 = 32768):
+/// - High 3 bits (bits 12-14) select which RAM4K unit
+/// - Low 12 bits (bits 0-11) address within that RAM4K
+pub const RAM32K = struct {
+    ram4ks: [8]RAM4K = [_]RAM4K{.{}} ** 8,
 
     const Self = @This();
 
-    /// Update RAM16K_I with new input, address, and load signal.
-    /// Returns the current output from the addressed register.
-    pub fn tick(self: *Self, input: u16, address: u16, load: u1) u16 {
-        // Split address: high 2 bits select RAM4K_I, low 12 bits address within that RAM4K_I
-        // Address is 14 bits, stored in u16: bits 12-13 are high, bits 0-11 are low
-        const high_bits: u2 = @truncate(address >> 12);
-        const low_bits: u12 = @truncate(address);
+    /// Update RAM32K with new input, address, and load signal.
+    pub fn tick(self: *Self, input: [16]u1, address: [15]u1, load: u1) [16]u1 {
+        // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
+        // Address is MSB-first: address[0] is MSB (bit 14)
+        // 15 bits total: 3 bits for selection (8 RAM4Ks) + 12 bits for address = 15 bits
+        const high_bits_raw: [3]u1 = address[0..3].*;
+        // Reverse high bits because MUX/DMUX expect LSB-first selector
+        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        const low_bits: [12]u1 = address[3..15].*;
 
-        // Step 1: DMUX4WAY_I routes load signal to the correct RAM4K_I
-        const load_signals = logic.DMUX4WAY_I(load, high_bits);
+        // Use DMUX8WAY for 8-way selection
+        const load_signals = logic.DMUX8WAY(load, high_bits);
 
-        // Step 2: All RAM4K_Is receive the same input and low address, but only one gets load=1
-        var outputs: [4]u16 = undefined;
-        inline for (0..4) |i| {
-            const j = 3 - i;
-            // Check if the load signal bit is set for this RAM4K_I
-            const load_signal: u1 = @truncate((load_signals >> j) & 1);
-            // Always tick the RAM4K_I to get its output (it will only load if load_signal == 1)
-            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signal);
+        var outputs: [8][16]u1 = undefined;
+        inline for (0..8) |i| {
+            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
         }
 
-        // Step 3: MUX4WAY16_I selects output from the addressed RAM4K_I
-        const output = logic.MUX4WAY16_I(
+        // Use MUX8WAY16 for 8-way output selection
+        return logic.MUX8WAY16(
             outputs[0],
             outputs[1],
             outputs[2],
             outputs[3],
+            outputs[4],
+            outputs[5],
+            outputs[6],
+            outputs[7],
             high_bits,
         );
-
-        return output;
     }
 
     /// Get the current output from the addressed register without advancing time.
-    pub fn peek(self: *const Self, address: u16) u16 {
-        const high_bits: u2 = @truncate(address >> 12);
-        const low_bits: u12 = @truncate(address);
+    pub fn peek(self: *const Self, address: [15]u1) [16]u1 {
+        // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
+        const high_bits_raw: [3]u1 = address[0..3].*;
+        // Reverse high bits because MUX expects LSB-first selector
+        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        const low_bits: [12]u1 = address[3..15].*;
 
-        var outputs: [4]u16 = undefined;
-        inline for (0..4) |i| {
+        var outputs: [8][16]u1 = undefined;
+        inline for (0..8) |i| {
             outputs[i] = self.ram4ks[i].peek(low_bits);
         }
-        return logic.MUX4WAY16_I(
+
+        // Use MUX8WAY16 for 8-way output selection
+        return logic.MUX8WAY16(
             outputs[0],
             outputs[1],
             outputs[2],
             outputs[3],
+            outputs[4],
+            outputs[5],
+            outputs[6],
+            outputs[7],
             high_bits,
         );
     }
 
-    /// Reset all RAM4K_Is to initial state.
+    /// Reset all RAM4Ks to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..4) |i| {
+        inline for (0..8) |i| {
             self.ram4ks[i].reset();
         }
     }
 };
+
+// =============================================================================
+// RAM_R_T - Generic RAM with Direct Array Storage
+// =============================================================================
+
+///
+/// Integer version using direct array access for performance-critical code.
+///
+/// Parameters:
+///   - R: Register size in bits (e.g., 16 for 16-bit words)
+///   - T: Number of registers (e.g., 8192 for RAM8K)
+///
+/// Example usage:
+/// ```zig
+/// const RAM8 = RAM_R_T(16, 8);      // 8 registers of 16 bits each
+/// const RAM64 = RAM_R_T(16, 64);    // 64 registers of 16 bits each
+/// const RAM8K = RAM_R_T(16, 8192);  // 8192 registers of 16 bits each
+/// ```
+pub fn RAM_R_T(comptime R: comptime_int, comptime T: comptime_int) type {
+    // Calculate the integer type for register values
+    const RegisterType = std.meta.Int(.unsigned, R);
+
+    // Calculate address width from T (number of registers)
+    // Find the smallest integer type that can hold addresses 0..T-1
+    comptime var address_bits: comptime_int = 0;
+    comptime var temp: comptime_int = T;
+    while (temp > 1) {
+        address_bits += 1;
+        temp >>= 1;
+    }
+    // If T is not a power of 2, we need one more bit
+    if ((@as(comptime_int, 1) << address_bits) < T) {
+        address_bits += 1;
+    }
+
+    // Use u16 as the address type (can handle up to 65535 addresses)
+    // For sizes > 65535, we'd need u32, but Nand2Tetris max is 16384
+    const AddressType = if (address_bits <= 16) u16 else u32;
+
+    return struct {
+        /// Direct array storage: T registers of R bits each
+        memory: [T]RegisterType = [_]RegisterType{0} ** T,
+
+        const Self = @This();
+        const AddrType = AddressType;
+        const RegType = RegisterType;
+
+        /// Update RAM_R_T with new input, address, and load signal.
+        /// Returns the current value at the specified address.
+        ///
+        /// If load=1, writes input to the addressed register.
+        /// Address is truncated to fit within the memory size (wraps around like hardware).
+        pub fn tick(self: *Self, input: RegisterType, address: AddressType, load: u1) RegisterType {
+            // Truncate address to fit within T (like hardware does with address bits)
+            const addr = @as(usize, @intCast(address)) % T;
+            const current = self.memory[addr];
+            if (load == 1) {
+                self.memory[addr] = input;
+            }
+            return current;
+        }
+
+        /// Get the current value at the specified address without advancing time.
+        /// Address is truncated to fit within the memory size (wraps around like hardware).
+        pub fn peek(self: *const Self, address: AddressType) RegisterType {
+            // Truncate address to fit within T (like hardware does with address bits)
+            const addr = @as(usize, @intCast(address)) % T;
+            return self.memory[addr];
+        }
+
+        /// Reset all memory to initial state (all values set to 0).
+        pub fn reset(self: *Self) void {
+            @memset(&self.memory, 0);
+        }
+
+        /// Get a reference to the internal memory array.
+        pub fn getMemory(self: *Self) *[T]RegisterType {
+            return &self.memory;
+        }
+    };
+}
+
+pub const RAM8_I = RAM_R_T(16, 8);
+pub const RAM64_I = RAM_R_T(16, 64);
+pub const RAM512_I = RAM_R_T(16, 512);
+pub const RAM4K_I = RAM_R_T(16, 4096);
+pub const RAM8K_I = RAM_R_T(16, 8192);
+pub const RAM16K_I = RAM_R_T(16, 16384);
+pub const RAM32K_I = RAM_R_T(16, 32768);
 
 // =============================================================================
 // Tests
@@ -2232,6 +2034,35 @@ test "RAM4K: comprehensive test" {
     }
 }
 
+test "RAM8K: comprehensive test" {
+    const RAM_SIZE = 8192;
+    const NUM_TEST_CASES = 50;
+    const FUZZ_SEED: u64 = 0x123456789ABCDEF0;
+    const edge_addresses = [_]u16{ 0, 4095, 4096, 8191 };
+
+    var test_cases_buffer: [NUM_TEST_CASES]FuzzTestCase = undefined;
+    const testCases = generateFuzzTestCases(RAM_SIZE, NUM_TEST_CASES, FUZZ_SEED, &edge_addresses, &test_cases_buffer);
+
+    var ram = RAM8K{};
+    var ram_i = RAM8K_I{};
+    var time: u32 = 0;
+
+    std.debug.print("\n| time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |\n", .{});
+
+    for (testCases) |tc| {
+        // Convert i32 to u16 (treating as 16-bit signed/unsigned)
+        const input_u16: u16 = @bitCast(@as(i16, @intCast(tc.input)));
+
+        const output = @as(i16, @bitCast(fb16(ram.tick(b16(input_u16), b13(tc.address), tc.load))));
+        const output_i = @as(i16, @bitCast(ram_i.tick(input_u16, tc.address, tc.load)));
+        const peek = @as(i16, @bitCast(fb16(ram.peek(b13(tc.address)))));
+
+        try verifyAndPrint(time, tc.input, tc.load, tc.address, tc.expected, output, output_i, peek);
+
+        time += 1;
+    }
+}
+
 test "RAM16K: comprehensive test" {
     const testCases = [_]struct { input: i32, load: u1, address: u16, expected: i16, print_ram: bool = false }{
         .{ .input = 0, .load = 0, .address = 0, .expected = 0 },
@@ -2578,4 +2409,132 @@ test "RAM16K: comprehensive test" {
         }
         time += 1;
     }
+}
+
+test "RAM32K: comprehensive test" {
+    const RAM_SIZE = 32768;
+    const NUM_TEST_CASES = 50;
+    const FUZZ_SEED: u64 = 0x123456789ABCDEF0;
+    const edge_addresses = [_]u16{ 0, 4095, 4096, 8191 };
+
+    var test_cases_buffer: [NUM_TEST_CASES]FuzzTestCase = undefined;
+    const testCases = generateFuzzTestCases(RAM_SIZE, NUM_TEST_CASES, FUZZ_SEED, &edge_addresses, &test_cases_buffer);
+
+    var ram = RAM32K{};
+    var ram_i = RAM32K_I{};
+    var time: u32 = 0;
+
+    std.debug.print("\n| time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |\n", .{});
+
+    for (testCases) |tc| {
+        // Convert i32 to u16 (treating as 16-bit signed/unsigned)
+        const input_u16: u16 = @bitCast(@as(i16, @intCast(tc.input)));
+
+        const output = @as(i16, @bitCast(fb16(ram.tick(b16(input_u16), b15(tc.address), tc.load))));
+        const output_i = @as(i16, @bitCast(ram_i.tick(input_u16, tc.address, tc.load)));
+        const peek = @as(i16, @bitCast(fb16(ram.peek(b15(tc.address)))));
+
+        try verifyAndPrint(time, tc.input, tc.load, tc.address, tc.expected, output, output_i, peek);
+
+        time += 1;
+    }
+}
+
+// =============================================================================
+// Fuzz Test Generator
+// =============================================================================
+
+/// Test case generated by the fuzz generator
+const FuzzTestCase = struct {
+    input: i32,
+    load: u1,
+    address: u16,
+    expected: i16,
+};
+
+/// Deterministic fuzz generator for RAM tests.
+/// Generates predictable test cases using a fixed seed PRNG.
+fn generateFuzzTestCases(
+    comptime ram_size: comptime_int,
+    num_cases: usize,
+    seed: u64,
+    edge_addresses: ?[]const u16,
+    test_cases: []FuzzTestCase,
+) []FuzzTestCase {
+    // Simple LCG PRNG for deterministic generation
+    var rng_state: u64 = seed;
+    const nextRand = struct {
+        fn call(state: *u64) u64 {
+            state.* = state.* *% 1103515245 +% 12345; // LCG parameters
+            return state.*;
+        }
+    }.call;
+
+    // Track RAM state to compute expected outputs
+    var ram_state: [ram_size]u16 = [_]u16{0} ** ram_size;
+
+    // Track current address to reuse it for multiple cycles
+    var current_address: ?u16 = null;
+    var address_reuse_count: u32 = 0;
+    const max_reuse = 5; // Reuse same address for up to 3 cycles
+
+    for (0..num_cases) |i| {
+        // Generate input value (signed 16-bit range)
+        const input_i32: i32 = @as(i32, @intCast(nextRand(&rng_state) % 0x10000)) - 0x8000;
+        const input_u16: u16 = @bitCast(@as(i16, @intCast(input_i32)));
+
+        // Generate address (reuse same address for a few cycles, then pick new one)
+        var address: u16 = undefined;
+        if (current_address) |addr| {
+            // Continue using current address if we haven't reached max reuse
+            if (address_reuse_count < max_reuse) {
+                address_reuse_count += 1;
+                address = addr;
+            } else {
+                // Reset and pick new address
+                current_address = null;
+                address_reuse_count = 0;
+                // Fall through to pick new address
+            }
+        }
+
+        // Pick new address if we don't have one
+        if (current_address == null) {
+            const rand_val = nextRand(&rng_state);
+            address = if (edge_addresses) |edges| blk: {
+                // 10% chance of selecting an edge case
+                if (rand_val % 10 == 0) {
+                    const edge_idx = (rand_val / 10) % edges.len;
+                    break :blk edges[edge_idx] % ram_size;
+                } else {
+                    break :blk @truncate(rand_val % ram_size);
+                }
+            } else @truncate(rand_val % ram_size);
+            current_address = address;
+            address_reuse_count = 1;
+        }
+
+        // Generate load signal (totally random: XOR multiple bits to break up patterns)
+        const rand_val = nextRand(&rng_state);
+        // XOR bits from different positions to get better randomness
+        const load: u1 = @truncate(((rand_val >> 0) ^ (rand_val >> 7) ^ (rand_val >> 15) ^ (rand_val >> 23)) & 1);
+
+        // Compute expected output (current value at address before write)
+        const addr_truncated = address % ram_size;
+        const expected_i16: i16 = @bitCast(ram_state[addr_truncated]);
+
+        // Update RAM state if load=1
+        if (load == 1) {
+            ram_state[addr_truncated] = input_u16;
+        }
+
+        test_cases[i] = .{
+            .input = input_i32,
+            .load = load,
+            .address = address,
+            .expected = expected_i16,
+        };
+    }
+
+    return test_cases[0..num_cases];
 }

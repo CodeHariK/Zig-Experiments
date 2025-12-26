@@ -6,7 +6,6 @@
 const logic_mod = @import("logic.zig");
 const mux = @import("mux.zig");
 const adder = @import("adder.zig");
-const alu = @import("alu.zig");
 const two_complement = @import("two_complement.zig");
 
 // Re-export main namespaces
@@ -24,6 +23,5 @@ test "gates module: include all gate tests" {
     _ = @import("logic.zig");
     _ = @import("mux.zig");
     _ = @import("adder.zig");
-    _ = @import("alu.zig");
     _ = @import("two_complement.zig");
 }
