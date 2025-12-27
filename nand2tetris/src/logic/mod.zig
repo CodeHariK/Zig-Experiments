@@ -10,6 +10,7 @@ const two_complement = @import("two_complement.zig");
 
 // Re-export main namespaces
 pub const Logic = logic_mod.Logic;
+pub const Logic_I = logic_mod.Logic_I;
 
 // ============================================================================
 // Tests

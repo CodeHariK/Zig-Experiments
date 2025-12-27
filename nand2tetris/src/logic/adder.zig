@@ -75,17 +75,16 @@ pub fn RippleAdderResult(comptime N: u8) type {
 }
 
 /// N-bit ripple carry adder.
-/// Adds two N-bit numbers represented as bit arrays (MSB first).
-/// Chains N full adders, propagating carry from LSB to MSB.
+/// Adds two N-bit numbers represented as bit arrays (LSB first).
+/// Chains N full adders, propagating carry from LSB (index 0) to MSB (index N-1).
 pub inline fn RIPPLE_ADDER(comptime N: u8, a: [N]u1, b: [N]u1) RippleAdderResult(N) {
     var carry: u1 = 0;
     var sum: [N]u1 = undefined;
 
-    // Process from LSB (index N-1) to MSB (index 0)
+    // Process from LSB (index 0) to MSB (index N-1)
     inline for (0..N) |i| {
-        const bit_idx = N - 1 - i;
-        const result = FULL_ADDER(a[bit_idx], b[bit_idx], carry);
-        sum[bit_idx] = result.sum;
+        const result = FULL_ADDER(a[i], b[i], carry);
+        sum[i] = result.sum;
         carry = result.carry;
     }
 
@@ -145,7 +144,7 @@ pub inline fn INC16_I(in: u16) RippleAdderResult_I(16) {
 // Tests
 // ============================================================================
 
-test "HALF_ADDER" {
+test "ADDER" {
     std.debug.print("\nHALF_ADDER------------------\n", .{});
     std.debug.print("a b -> carry sum\n", .{});
     for (0..2) |i| {
@@ -158,9 +157,7 @@ test "HALF_ADDER" {
             std.debug.print("{b} {b} ->   {b}    {b}\n", .{ a, b, result.carry, result.sum });
         }
     }
-}
 
-test "FULL_ADDER" {
     std.debug.print("\nFULL_ADDER------------------\n", .{});
     std.debug.print("a b cin -> cout sum\n", .{});
     for (0..2) |i| {
@@ -176,9 +173,7 @@ test "FULL_ADDER" {
             }
         }
     }
-}
 
-test "RIPPLE_ADDER 4-bit" {
     std.debug.print("\nRIPPLE_ADDER u4------------------\n", .{});
     const TestCase = struct { a: u4, b: u4, sum: u4, carry: u1 };
     const cases = [_]TestCase{
@@ -199,12 +194,10 @@ test "RIPPLE_ADDER 4-bit" {
 
         std.debug.print("{} + {} = {} (carry={})\n", .{ tc.a, tc.b, r_i.sum, r_i.carry });
     }
-}
 
-test "RIPPLE_ADDER 16-bit" {
     std.debug.print("\nRIPPLE_ADDER u16------------------\n", .{});
-    const TestCase = struct { a: u16, b: u16, sum: u16, carry: u1 };
-    const cases = [_]TestCase{
+    const TestCase16 = struct { a: u16, b: u16, sum: u16, carry: u1 };
+    const casesTestCase16 = [_]TestCase16{
         .{ .a = 1000, .b = 2000, .sum = 3000, .carry = 0 },
         .{ .a = 0xFFFF, .b = 1, .sum = 0, .carry = 1 },
         .{ .a = 0x8000, .b = 0x8000, .sum = 0, .carry = 1 },
@@ -212,7 +205,7 @@ test "RIPPLE_ADDER 16-bit" {
         .{ .a = 0b0001001000110100, .b = 0b1001100001110110, .sum = 0b1010101010101010, .carry = 0 },
     };
 
-    for (cases) |tc| {
+    for (casesTestCase16) |tc| {
         const r = RIPPLE_ADDER_16(b16(tc.a), b16(tc.b));
         try testing.expectEqual(b16(tc.sum), r.sum);
         try testing.expectEqual(tc.carry, r.carry);
@@ -223,19 +216,17 @@ test "RIPPLE_ADDER 16-bit" {
 
         std.debug.print("{} + {} = {} (carry={})\n", .{ tc.a, tc.b, r_i.sum, r_i.carry });
     }
-}
 
-test "INC16" {
     std.debug.print("\nINC16------------------\n", .{});
-    const TestCase = struct { in: u16, out: u16, carry: u1 };
-    const cases = [_]TestCase{
+    const TestCaseInc16 = struct { in: u16, out: u16, carry: u1 };
+    const casesTestCaseInc16 = [_]TestCaseInc16{
         .{ .in = 0, .out = 1, .carry = 0 },
         .{ .in = 1, .out = 2, .carry = 0 },
         .{ .in = 0b1111111111111011, .out = 0b1111111111111100, .carry = 0 },
         .{ .in = 65535, .out = 0, .carry = 1 },
     };
 
-    for (cases) |tc| {
+    for (casesTestCaseInc16) |tc| {
         const r = INC16(b16(tc.in));
         try testing.expectEqual(b16(tc.out), r.sum);
         try testing.expectEqual(tc.carry, r.carry);

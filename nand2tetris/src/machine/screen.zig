@@ -392,7 +392,7 @@ pub const Screen = struct {
     }
 
     /// Clear entire screen (set all pixels to black).
-    pub fn clear(self: *Self) void {
+    pub fn reset(self: *Self) void {
         self.ram8k.reset();
     }
 
@@ -578,7 +578,7 @@ test "Screen: Screen and Screen_I produce identical results" {
 
     for (test_pixels) |tp| {
         // Clear both
-        screen.clear();
+        screen.reset();
         screen_i.clear();
 
         // Set pixel
@@ -590,39 +590,31 @@ test "Screen: Screen and Screen_I produce identical results" {
         try testing.expectEqual(screen.getPixel(tp.row, tp.col), screen_i.getPixel(tp.row, tp.col));
     }
 
-    const test_both = false;
-
     // Test fill - verify all words are 0xFFFF
-    if (test_both) {
-        screen.fill();
-    }
+    screen.fill();
     screen_i.fill();
 
     for (0..8192) |i| {
         const screen_i_word = screen_i.peek(@intCast(i));
         try testing.expectEqual(@as(u16, 0xFFFF), screen_i_word);
 
-        if (test_both) {
-            const addr_bits = b13(@intCast(i));
-            const screen_word = fb16(screen.peek(addr_bits));
-            try testing.expectEqual(@as(u16, 0xFFFF), screen_word);
-            try testing.expectEqual(screen_word, screen_i_word);
-        }
+        const addr_bits = b13(@intCast(i));
+        const screen_word = fb16(screen.peek(addr_bits));
+        try testing.expectEqual(@as(u16, 0xFFFF), screen_word);
+        try testing.expectEqual(screen_word, screen_i_word);
     }
 
     // Test clear - verify all words are 0
-    screen.clear();
+    screen.reset();
     screen_i.clear();
 
     for (0..8192) |i| {
         const screen_i_word = screen_i.peek(@intCast(i));
         try testing.expectEqual(@as(u16, 0), screen_i_word);
 
-        if (test_both) {
-            const addr_bits = b13(@intCast(i));
-            const screen_word = fb16(screen.peek(addr_bits));
-            try testing.expectEqual(@as(u16, 0), screen_word);
-            try testing.expectEqual(screen_word, screen_i_word);
-        }
+        const addr_bits = b13(@intCast(i));
+        const screen_word = fb16(screen.peek(addr_bits));
+        try testing.expectEqual(@as(u16, 0), screen_word);
+        try testing.expectEqual(screen_word, screen_i_word);
     }
 }

@@ -207,151 +207,66 @@ pub const Register16_I = Register_I(16);
 // Tests
 // =============================================================================
 
-test "Register16: basic behavior - stores and holds values" {
+test "Register16: comprehensive behavior test" {
+    const TestCase = struct {
+        input: u16,
+        load: u1,
+        expected_output: u16,
+        expected_peek: u16,
+    };
+
     var reg = Register16{};
     var reg_i = Register16_I{};
 
-    // First tick: load=1, in=0x1234 → stores 0x1234
-    const input1 = b16(0x1234);
-    const output1 = reg.tick(input1, 1);
-    const output1_i = reg_i.tick(0x1234, 1);
-    try testing.expectEqual(@as(u16, 0), fb16(output1)); // Initially 0
-    try testing.expectEqual(fb16(output1), output1_i);
+    // Test cases covering all behaviors
+    const test_cases = [_]TestCase{
+        // Basic behavior: load=1 stores new value
+        .{ .input = 0x1234, .load = 1, .expected_output = 0, .expected_peek = 0x1234 }, // First tick: initially 0
+        .{ .input = 0x5678, .load = 1, .expected_output = 0x1234, .expected_peek = 0x5678 }, // Outputs previous, stores new
+        .{ .input = 0x9ABC, .load = 0, .expected_output = 0x5678, .expected_peek = 0x5678 }, // load=0 maintains value
+        .{ .input = 0xDEF0, .load = 0, .expected_output = 0x5678, .expected_peek = 0x5678 }, // Still maintains
+        .{ .input = 0xABCD, .load = 1, .expected_output = 0x5678, .expected_peek = 0xABCD }, // Store new value
+        .{ .input = 0x0000, .load = 0, .expected_output = 0xABCD, .expected_peek = 0xABCD }, // Maintains
+        .{ .input = 0xFFFF, .load = 0, .expected_output = 0xABCD, .expected_peek = 0xABCD }, // Still maintains
+        // Bit pattern tests: all bits operate independently
+        .{ .input = 0xAAAA, .load = 1, .expected_output = 0xABCD, .expected_peek = 0xAAAA }, // Alternating pattern
+        .{ .input = 0x5555, .load = 1, .expected_output = 0xAAAA, .expected_peek = 0x5555 }, // Opposite pattern
+    };
 
-    // Second tick: load=1, in=0x5678 → stores 0x5678, outputs previous (0x1234)
-    const input2 = b16(0x5678);
-    const output2 = reg.tick(input2, 1);
-    const output2_i = reg_i.tick(0x5678, 1);
-    try testing.expectEqual(@as(u16, 0x1234), fb16(output2));
-    try testing.expectEqual(fb16(output2), output2_i);
+    std.debug.print("\n=== Register16: load=1 stores, load=0 maintains ===\n", .{});
+    std.debug.print("Time | Load | Input    | Output (previous input) | Stored\n", .{});
+    std.debug.print("-----|------|----------|------------------------|--------\n", .{});
 
-    // Third tick: load=0, in=0x9ABC → maintains 0x5678, outputs previous (0x5678)
-    const input3 = b16(0x9ABC);
-    const output3 = reg.tick(input3, 0);
-    const output3_i = reg_i.tick(0x9ABC, 0);
-    try testing.expectEqual(@as(u16, 0x5678), fb16(output3));
-    try testing.expectEqual(fb16(output3), output3_i);
+    var time: u32 = 0;
+    for (test_cases) |tc| {
+        const input_bits = b16(tc.input);
+        const output_bits = reg.tick(input_bits, tc.load);
+        const output_i = reg_i.tick(tc.input, tc.load);
 
-    // Fourth tick: load=0, in=0xDEF0 → still maintains 0x5678
-    const input4 = b16(0xDEF0);
-    const output4 = reg.tick(input4, 0);
-    const output4_i = reg_i.tick(0xDEF0, 0);
-    try testing.expectEqual(@as(u16, 0x5678), fb16(output4));
-    try testing.expectEqual(fb16(output4), output4_i);
+        try testing.expectEqual(tc.expected_output, fb16(output_bits));
+        try testing.expectEqual(fb16(output_bits), output_i);
+        try testing.expectEqual(tc.expected_peek, fb16(reg.peek()));
+        try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
 
-    // Verify current state
-    try testing.expectEqual(@as(u16, 0x5678), fb16(reg.peek()));
+        std.debug.print("  t{d} |  {d}   | 0x{X:04}  |        0x{X:04}          | 0x{X:04}\n", .{ time, tc.load, tc.input, fb16(output_bits), fb16(reg.peek()) });
+        time += 1;
+    }
+    std.debug.print("\nKey insight: Output at time t equals input at time t-1 (when load=1)\n", .{});
+    std.debug.print("When load=0, the register maintains its current value\n\n", .{});
+
+    // Test peek does not advance state
+    try testing.expectEqual(@as(u16, 0x5555), fb16(reg.peek()));
     try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-}
-
-test "Register16: load=0 maintains current value" {
-    var reg = Register16{};
-    var reg_i = Register16_I{};
-
-    // Set initial value
-    _ = reg.tick(b16(0xABCD), 1);
-    _ = reg_i.tick(0xABCD, 1);
-    try testing.expectEqual(@as(u16, 0xABCD), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-
-    // load=0, input changes but value is maintained
-    _ = reg.tick(b16(0x0000), 0);
-    _ = reg_i.tick(0x0000, 0);
-    try testing.expectEqual(@as(u16, 0xABCD), fb16(reg.peek()));
+    try testing.expectEqual(@as(u16, 0x5555), fb16(reg.peek())); // Still same value
     try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
 
-    _ = reg.tick(b16(0xFFFF), 0);
-    _ = reg_i.tick(0xFFFF, 0);
-    try testing.expectEqual(@as(u16, 0xABCD), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-}
-
-test "Register16: reset clears all bits" {
-    var reg = Register16{};
-    var reg_i = Register16_I{};
-
-    _ = reg.tick(b16(0xFFFF), 1);
-    _ = reg_i.tick(0xFFFF, 1);
-    _ = reg.tick(b16(0xFFFF), 1);
-    _ = reg_i.tick(0xFFFF, 1);
-    try testing.expectEqual(@as(u16, 0xFFFF), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-
+    // Test reset clears all bits
     reg.reset();
     reg_i.reset();
     try testing.expectEqual(@as(u16, 0), fb16(reg.peek()));
     try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
     try testing.expectEqual(@as(u16, 0), fb16(reg.tick(b16(0), 0)));
     try testing.expectEqual(fb16(reg.tick(b16(0), 0)), reg_i.tick(0, 0));
-}
-
-test "Register16: peek does not advance state" {
-    var reg = Register16{};
-    var reg_i = Register16_I{};
-
-    _ = reg.tick(b16(0x1234), 1);
-    _ = reg_i.tick(0x1234, 1);
-    try testing.expectEqual(@as(u16, 0x1234), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-    try testing.expectEqual(@as(u16, 0x1234), fb16(reg.peek())); // Still same value
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-
-    _ = reg.tick(b16(0x5678), 1);
-    _ = reg_i.tick(0x5678, 1);
-    try testing.expectEqual(@as(u16, 0x5678), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-}
-
-test "Register16: all bits operate independently" {
-    var reg = Register16{};
-    var reg_i = Register16_I{};
-
-    // Set alternating pattern: 0xAAAA = 1010101010101010
-    const input1 = b16(0xAAAA);
-    _ = reg.tick(input1, 1);
-    _ = reg_i.tick(0xAAAA, 1);
-    try testing.expectEqual(@as(u16, 0xAAAA), fb16(reg.peek()));
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-
-    // Set opposite pattern: 0x5555 = 0101010101010101
-    const input2 = b16(0x5555);
-    const output2 = reg.tick(input2, 1);
-    const output2_i = reg_i.tick(0x5555, 1);
-    try testing.expectEqual(@as(u16, 0xAAAA), fb16(output2)); // Previous value
-    try testing.expectEqual(fb16(output2), output2_i);
-    try testing.expectEqual(@as(u16, 0x5555), fb16(reg.peek())); // New value stored
-    try testing.expectEqual(fb16(reg.peek()), reg_i.peek());
-}
-
-test "Register16: debug print - demonstrates register behavior" {
-    var reg = Register16{};
-
-    // Note: To see these print statements, run the test executable directly:
-    //   zig build install && ./zig-out/bin/test-memory
-    // NOT: zig build test (which suppresses all output)
-
-    std.debug.print("\n=== Register16 Debug Test ===\n", .{});
-    std.debug.print("Time | Load | Input    | Output (previous input)\n", .{});
-    std.debug.print("-----|------|----------|------------------------\n", .{});
-
-    const test_cases = [_]struct { load: u1, input: u16 }{
-        .{ .load = 1, .input = 0x1234 },
-        .{ .load = 1, .input = 0x5678 },
-        .{ .load = 0, .input = 0x9ABC },
-        .{ .load = 1, .input = 0xDEF0 },
-        .{ .load = 0, .input = 0x0000 },
-    };
-
-    var time: u32 = 0;
-    for (test_cases) |tc| {
-        const input = b16(tc.input);
-        const output = reg.tick(input, tc.load);
-        std.debug.print("  t{d} |  {d}   | 0x{X:04}  | 0x{X:04}\n", .{ time, tc.load, tc.input, fb16(output) });
-        time += 1;
-    }
-
-    std.debug.print("\nKey insight: Output at time t equals input at time t-1 (when load=1)\n", .{});
-    std.debug.print("When load=0, the register maintains its current value\n\n", .{});
 }
 
 test "Register: generic N-bit register works for different sizes" {

@@ -127,57 +127,45 @@ pub const DFF = struct {
 // Tests
 // =============================================================================
 
-test "DFF: basic behavior - out(t) = in(t-1)" {
+test "DFF: comprehensive behavior test" {
+    const TestCase = struct {
+        input: u1,
+        expected_output: u1,
+    };
+
+    // Test cases: demonstrates out(t) = in(t-1)
+    // Time:    t0   t1   t2   t3   t4   t5
+    // in:       1    0    1    1    0    1
+    // out:      0    1    0    1    1    0
+    const tick_cases = [_]TestCase{
+        .{ .input = 1, .expected_output = 0 }, // First tick: output is 0 initially
+        .{ .input = 0, .expected_output = 1 }, // Outputs previous input (1)
+        .{ .input = 1, .expected_output = 0 }, // Outputs previous input (0)
+        .{ .input = 1, .expected_output = 1 }, // Outputs previous input (1)
+        .{ .input = 0, .expected_output = 1 }, // Outputs previous input (1)
+        .{ .input = 1, .expected_output = 0 }, // Outputs previous input (0)
+    };
+
     var dff = DFF{};
 
-    // First tick: output is undefined/0 initially, stores input=1
-    try testing.expectEqual(0, dff.tick(1));
+    std.debug.print("\n=== DFF: out(t) = in(t-1) ===\n", .{});
+    std.debug.print("Time | Input | Output | State\n", .{});
+    std.debug.print("-----|-------|--------|-------\n", .{});
 
-    // Second tick: outputs previous input (1), stores new input (0)
-    try testing.expectEqual(1, dff.tick(0));
-
-    // Third tick: outputs previous input (0), stores new input (1)
-    try testing.expectEqual(0, dff.tick(1));
-
-    // Fourth tick: outputs previous input (1), stores new input (1)
-    try testing.expectEqual(1, dff.tick(1));
-
-    // Fifth tick: outputs previous input (1), stores new input (0)
-    try testing.expectEqual(1, dff.tick(0));
-}
-
-test "DFF: reset clears state" {
-    var dff = DFF{};
-
-    _ = dff.tick(1);
-    _ = dff.tick(1);
-    try testing.expectEqual(1, dff.peek());
-
-    dff.reset();
-    try testing.expectEqual(0, dff.peek());
-    try testing.expectEqual(0, dff.tick(0));
-}
-
-test "DFF: debug print - demonstrates out(t) = in(t-1)" {
-    var dff = DFF{};
-
-    // Note: To see these print statements, run the test executable directly:
-    //   zig build install && ./zig-out/bin/test
-    // NOT: zig build test (which suppresses all output)
-
-    std.debug.print("\n=== DFF Debug Test: out(t) = in(t-1) ===\n", .{});
-    std.debug.print("Time | Input | Output (previous input) | State\n", .{});
-    std.debug.print("-----|-------|------------------------|-------\n", .{});
-
-    const inputs = [_]u1{ 1, 0, 1, 1, 0, 1 };
     var time: u32 = 0;
-
-    for (inputs) |input| {
-        const output = dff.tick(input);
-        std.debug.print("  t{d} |   {d}   |          {d}              |   {d}\n", .{ time, input, output, dff.peek() });
+    for (tick_cases) |tc| {
+        const output = dff.tick(tc.input);
+        try testing.expectEqual(tc.expected_output, output);
+        std.debug.print("  t{d} |   {d}   |    {d}   |   {d}\n", .{ time, tc.input, output, dff.peek() });
         time += 1;
     }
+    std.debug.print("\nKey insight: Output at time t equals input at time t-1\n\n", .{});
 
-    std.debug.print("\nKey insight: Output at time t equals input at time t-1\n", .{});
-    std.debug.print("Example: At t1, input=0 but output=1 (from t0's input)\n\n", .{});
+    // Test peek does not advance state
+    dff.reset();
+    try testing.expectEqual(0, dff.peek());
+    _ = dff.tick(1);
+    try testing.expectEqual(1, dff.peek());
+    _ = dff.tick(0);
+    try testing.expectEqual(0, dff.peek());
 }

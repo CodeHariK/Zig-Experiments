@@ -160,6 +160,7 @@ const b12 = types.b12;
 const b13 = types.b13;
 const b14 = types.b14;
 const b15 = types.b15;
+const fb2 = types.fb2;
 const fb3 = types.fb3;
 const fb8 = types.fb8;
 const fb13 = types.fb13;
@@ -191,57 +192,55 @@ pub const RAM8 = struct {
     /// - Always reads from Register[address]
     /// - If load=1: writes input to Register[address]
     pub fn tick(self: *Self, input: [16]u1, address: [3]u1, load: u1) [16]u1 {
-        // Step 1: DMUX8WAY routes load signal to the correct register
-        const load_signals = logic.DMUX8WAY(load, address);
+        return self.registers[fb3(address)].tick(input, load);
 
-        // Step 2: All registers receive the same input, but only one gets load=1
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.registers[i].tick(input, load_signals[i]);
-        }
+        // // Step 1: DMUX8WAY routes load signal to the correct register
+        // const load_signals = logic.DMUX8WAY(load, address);
 
-        // Step 3: MUX8WAY16 selects output from the addressed register
-        const output = logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            address,
-        );
+        // // Step 2: All registers receive the same input, but only one gets load=1
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.registers[i].tick(input, load_signals[i]);
+        // }
 
-        return output;
+        // // Step 3: MUX8WAY16 selects output from the addressed register
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     address,
+        // );
+
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [3]u1) [16]u1 {
-        return logic.MUX8WAY16(
-            self.registers[0].peek(),
-            self.registers[1].peek(),
-            self.registers[2].peek(),
-            self.registers[3].peek(),
-            self.registers[4].peek(),
-            self.registers[5].peek(),
-            self.registers[6].peek(),
-            self.registers[7].peek(),
-            address,
-        );
+        return self.registers[fb3(address)].peek();
+
+        // return logic.MUX8WAY16(
+        //     self.registers[0].peek(),
+        //     self.registers[1].peek(),
+        //     self.registers[2].peek(),
+        //     self.registers[3].peek(),
+        //     self.registers[4].peek(),
+        //     self.registers[5].peek(),
+        //     self.registers[6].peek(),
+        //     self.registers[7].peek(),
+        //     address,
+        // );
     }
 
     /// Reset all registers to initial state (all bits set to 0).
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.registers[i].reset();
-        }
-    }
-
-    pub fn randomize(self: *Self) void {
-        inline for (0..8) |i| {
-            _ = self.registers[i].tick(toBits(16, i), 1);
-        }
+        self.registers = [_]register.Register16{.{}} ** 8;
+        // inline for (0..8) |i| {
+        //     self.registers[i].reset();
+        // }
     }
 
     pub fn print(self: *const Self) void {
@@ -251,8 +250,7 @@ pub const RAM8 = struct {
         std.debug.print("├─────────┼─────────┤\n", .{});
 
         inline for (0..8) |i| {
-            const j = 7 - i;
-            const value = self.registers[j].peek();
+            const value = self.registers[i].peek();
             std.debug.print("│  {d:3}    │  {d:3}    │\n", .{ i, fb16(value) });
         }
 
@@ -277,64 +275,69 @@ pub const RAM64 = struct {
     /// Update RAM64 with new input, address, and load signal.
     /// Returns the current output from the addressed register.
     pub fn tick(self: *Self, input: [16]u1, address: [6]u1, load: u1) [16]u1 {
-        // Split address: high 3 bits select RAM8, low 3 bits address within RAM8
-        // Reverse high bits because MUX/DMUX expect LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [3]u1 = address[3..6].*;
+        return self.ram8s[fb3(address[0..3].*)].tick(input, address[3..6].*, load);
 
-        // Step 1: DMUX8WAY routes load signal to the correct RAM8
-        const load_signals = logic.DMUX8WAY(load, high_bits);
+        // // Split address: high 3 bits select RAM8, low 3 bits address within RAM8
+        // // Reverse high bits because MUX/DMUX expect LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [3]u1 = address[3..6].*;
 
-        // Step 2: All RAM8s receive the same input and low address, but only one gets load=1
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram8s[i].tick(input, low_bits, load_signals[i]);
-        }
+        // // Step 1: DMUX8WAY routes load signal to the correct RAM8
+        // const load_signals = logic.DMUX8WAY(load, high_bits);
 
-        // Step 3: MUX8WAY16 selects output from the addressed RAM8
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // // Step 2: All RAM8s receive the same input and low address, but only one gets load=1
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram8s[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // // Step 3: MUX8WAY16 selects output from the addressed RAM8
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [6]u1) [16]u1 {
-        // Reverse high bits because MUX expects LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [3]u1 = address[3..6].*;
+        return self.ram8s[fb3(address[0..3].*)].peek(address[3..6].*);
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram8s[i].peek(low_bits);
-        }
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // // Reverse high bits because MUX expects LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [3]u1 = address[3..6].*;
+
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram8s[i].peek(low_bits);
+        // }
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Reset all RAM8s to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram8s[i].reset();
-        }
+        self.ram8s = [_]RAM8{.{}} ** 8;
+        // inline for (0..8) |i| {
+        //     self.ram8s[i].reset();
+        // }
     }
 };
 
@@ -350,60 +353,65 @@ pub const RAM512 = struct {
 
     /// Update RAM512 with new input, address, and load signal.
     pub fn tick(self: *Self, input: [16]u1, address: [9]u1, load: u1) [16]u1 {
-        // Reverse high bits because MUX/DMUX expect LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [6]u1 = address[3..9].*;
+        return self.ram64s[fb3(address[0..3].*)].tick(input, address[3..9].*, load);
 
-        const load_signals = logic.DMUX8WAY(load, high_bits);
+        // // Reverse high bits because MUX/DMUX expect LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [6]u1 = address[3..9].*;
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram64s[i].tick(input, low_bits, load_signals[i]);
-        }
+        // const load_signals = logic.DMUX8WAY(load, high_bits);
 
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram64s[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [9]u1) [16]u1 {
-        // Reverse high bits because MUX expects LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [6]u1 = address[3..9].*;
+        return self.ram64s[fb3(address[0..3].*)].peek(address[3..9].*);
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram64s[i].peek(low_bits);
-        }
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // // Reverse high bits because MUX expects LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [6]u1 = address[3..9].*;
+
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram64s[i].peek(low_bits);
+        // }
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Reset all RAM64s to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram64s[i].reset();
-        }
+        self.ram64s = [_]RAM64{.{}} ** 8;
+        // inline for (0..8) |i| {
+        //     self.ram64s[i].reset();
+        // }
     }
 };
 
@@ -419,60 +427,65 @@ pub const RAM4K = struct {
 
     /// Update RAM4K with new input, address, and load signal.
     pub fn tick(self: *Self, input: [16]u1, address: [12]u1, load: u1) [16]u1 {
-        // Reverse high bits because MUX/DMUX expect LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [9]u1 = address[3..12].*;
+        return self.ram512s[fb3(address[0..3].*)].tick(input, address[3..12].*, load);
 
-        const load_signals = logic.DMUX8WAY(load, high_bits);
+        // // Reverse high bits because MUX/DMUX expect LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [9]u1 = address[3..12].*;
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram512s[i].tick(input, low_bits, load_signals[i]);
-        }
+        // const load_signals = logic.DMUX8WAY(load, high_bits);
 
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram512s[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [12]u1) [16]u1 {
-        // Reverse high bits because MUX expects LSB-first selector
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [9]u1 = address[3..12].*;
+        return self.ram512s[fb3(address[0..3].*)].peek(address[3..12].*);
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram512s[i].peek(low_bits);
-        }
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // // Reverse high bits because MUX expects LSB-first selector
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [9]u1 = address[3..12].*;
+
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram512s[i].peek(low_bits);
+        // }
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Reset all RAM512s to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram512s[i].reset();
-        }
+        self.ram512s = [_]RAM512{.{}} ** 8;
+        // inline for (0..8) |i| {
+        //     self.ram512s[i].reset();
+        // }
     }
 };
 
@@ -488,55 +501,60 @@ pub const RAM8K = struct {
 
     /// Update RAM8K with new input, address, and load signal.
     pub fn tick(self: *Self, input: [16]u1, address: [13]u1, load: u1) [16]u1 {
-        // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
-        // Address is MSB-first: address[0] is MSB (bit 12)
-        const high_bit: u1 = address[0]; // MSB (bit 12)
-        const low_bits: [12]u1 = address[1..13].*;
+        return self.ram4ks[address[0]].tick(input, address[1..13].*, load);
 
-        // Route load signal to the correct RAM4K
-        // DMux(in, sel) returns [out_sel1, out_sel0]
-        // When sel=0: out[0]=0, out[1]=in (first RAM4K)
-        // When sel=1: out[0]=in, out[1]=0 (second RAM4K)
-        const load_signals = logic.DMUX(load, high_bit);
+        // // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
+        // // Address is MSB-first: address[0] is MSB (bit 12)
+        // const high_bit: u1 = address[0]; // MSB (bit 12)
+        // const low_bits: [12]u1 = address[1..13].*;
 
-        var outputs: [2][16]u1 = undefined;
-        inline for (0..2) |i| {
-            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
-        }
+        // // Route load signal to the correct RAM4K
+        // // DMux(in, sel) returns [out_sel1, out_sel0]
+        // // When sel=0: out[0]=0, out[1]=in (first RAM4K)
+        // // When sel=1: out[0]=in, out[1]=0 (second RAM4K)
+        // const load_signals = logic.DMUX(load, high_bit);
 
-        // MUX16 selects output from the addressed RAM4K
-        // MUX16(in1, in0, sel): sel=0 → in0, sel=1 → in1
-        return logic.MUX16(
-            outputs[0],
-            outputs[1],
-            high_bit,
-        );
+        // var outputs: [2][16]u1 = undefined;
+        // inline for (0..2) |i| {
+        //     outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // // MUX16 selects output from the addressed RAM4K
+        // // MUX16(in1, in0, sel): sel=0 → in0, sel=1 → in1
+        // return logic.MUX16(
+        //     outputs[0],
+        //     outputs[1],
+        //     high_bit,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [13]u1) [16]u1 {
-        // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
-        const high_bit: u1 = address[0]; // MSB (bit 12)
-        const low_bits: [12]u1 = address[1..13].*;
+        return self.ram4ks[address[0]].peek(address[1..13].*);
 
-        var outputs: [2][16]u1 = undefined;
-        inline for (0..2) |i| {
-            outputs[i] = self.ram4ks[i].peek(low_bits);
-        }
+        // // Split address: high bit (bit 12) selects RAM4K, low 12 bits address within that RAM4K
+        // const high_bit: u1 = address[0]; // MSB (bit 12)
+        // const low_bits: [12]u1 = address[1..13].*;
 
-        // MUX16 selects output from the addressed RAM4K
-        return logic.MUX16(
-            outputs[0],
-            outputs[1],
-            high_bit,
-        );
+        // var outputs: [2][16]u1 = undefined;
+        // inline for (0..2) |i| {
+        //     outputs[i] = self.ram4ks[i].peek(low_bits);
+        // }
+
+        // // MUX16 selects output from the addressed RAM4K
+        // return logic.MUX16(
+        //     outputs[0],
+        //     outputs[1],
+        //     high_bit,
+        // );
     }
 
     /// Reset all RAM4Ks to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..2) |i| {
-            self.ram4ks[i].reset();
-        }
+        self.ram4ks = [_]RAM4K{.{}} ** 2;
+        // inline for (0..2) |i| {
+        //     self.ram4ks[i].reset();
+        // }
     }
 };
 
@@ -552,54 +570,59 @@ pub const RAM16K = struct {
 
     /// Update RAM16K with new input, address, and load signal.
     pub fn tick(self: *Self, input: [16]u1, address: [14]u1, load: u1) [16]u1 {
-        // Reverse high bits because MUX/DMUX expect LSB-first selector
-        const high_bits_raw: [2]u1 = address[0..2].*;
-        const high_bits: [2]u1 = [2]u1{ high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [12]u1 = address[2..14].*;
+        return self.ram4ks[fb2(address[0..2].*)].tick(input, address[2..14].*, load);
 
-        // Use DMUX4WAY for 4-way selection
-        const load_signals = logic.DMUX4WAY(load, high_bits);
+        // // Reverse high bits because MUX/DMUX expect LSB-first selector
+        // const high_bits_raw: [2]u1 = address[0..2].*;
+        // const high_bits: [2]u1 = [2]u1{ high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [12]u1 = address[2..14].*;
 
-        var outputs: [4][16]u1 = undefined;
-        inline for (0..4) |i| {
-            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
-        }
+        // // Use DMUX4WAY for 4-way selection
+        // const load_signals = logic.DMUX4WAY(load, high_bits);
 
-        // Use MUX4WAY16 for 4-way output selection
-        return logic.MUX4WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            high_bits,
-        );
+        // var outputs: [4][16]u1 = undefined;
+        // inline for (0..4) |i| {
+        //     outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // // Use MUX4WAY16 for 4-way output selection
+        // return logic.MUX4WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     high_bits,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [14]u1) [16]u1 {
-        // Reverse high bits because MUX expects LSB-first selector
-        const high_bits_raw: [2]u1 = address[0..2].*;
-        const high_bits: [2]u1 = [2]u1{ high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [12]u1 = address[2..14].*;
+        return self.ram4ks[fb2(address[0..2].*)].peek(address[2..14].*);
 
-        var outputs: [4][16]u1 = undefined;
-        inline for (0..4) |i| {
-            outputs[i] = self.ram4ks[i].peek(low_bits);
-        }
-        return logic.MUX4WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            high_bits,
-        );
+        // // Reverse high bits because MUX expects LSB-first selector
+        // const high_bits_raw: [2]u1 = address[0..2].*;
+        // const high_bits: [2]u1 = [2]u1{ high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [12]u1 = address[2..14].*;
+
+        // var outputs: [4][16]u1 = undefined;
+        // inline for (0..4) |i| {
+        //     outputs[i] = self.ram4ks[i].peek(low_bits);
+        // }
+        // return logic.MUX4WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     high_bits,
+        // );
     }
 
     /// Reset all RAM4Ks to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..4) |i| {
-            self.ram4ks[i].reset();
-        }
+        self.ram4ks = [_]RAM4K{.{}} ** 4;
+        // inline for (0..4) |i| {
+        //     self.ram4ks[i].reset();
+        // }
     }
 };
 
@@ -615,68 +638,74 @@ pub const RAM32K = struct {
 
     /// Update RAM32K with new input, address, and load signal.
     pub fn tick(self: *Self, input: [16]u1, address: [15]u1, load: u1) [16]u1 {
-        // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
-        // Address is MSB-first: address[0] is MSB (bit 14)
-        // 15 bits total: 3 bits for selection (8 RAM4Ks) + 12 bits for address = 15 bits
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        // Reverse high bits because MUX/DMUX expect LSB-first selector
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [12]u1 = address[3..15].*;
+        return self.ram4ks[fb3(address[0..3].*)].tick(input, address[3..15].*, load);
 
-        // Use DMUX8WAY for 8-way selection
-        const load_signals = logic.DMUX8WAY(load, high_bits);
+        // // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
+        // // Address is MSB-first: address[0] is MSB (bit 14)
+        // // 15 bits total: 3 bits for selection (8 RAM4Ks) + 12 bits for address = 15 bits
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // // Reverse high bits because MUX/DMUX expect LSB-first selector
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [12]u1 = address[3..15].*;
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
-        }
+        // // Use DMUX8WAY for 8-way selection
+        // const load_signals = logic.DMUX8WAY(load, high_bits);
 
-        // Use MUX8WAY16 for 8-way output selection
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram4ks[i].tick(input, low_bits, load_signals[i]);
+        // }
+
+        // // Use MUX8WAY16 for 8-way output selection
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Get the current output from the addressed register without advancing time.
     pub fn peek(self: *const Self, address: [15]u1) [16]u1 {
-        // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
-        const high_bits_raw: [3]u1 = address[0..3].*;
-        // Reverse high bits because MUX expects LSB-first selector
-        const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
-        const low_bits: [12]u1 = address[3..15].*;
+        return self.ram4ks[fb3(address[0..3].*)].peek(address[3..15].*);
 
-        var outputs: [8][16]u1 = undefined;
-        inline for (0..8) |i| {
-            outputs[i] = self.ram4ks[i].peek(low_bits);
-        }
+        // // Split address: high 3 bits (bits 12-14) select RAM4K, low 12 bits address within that RAM4K
+        // const high_bits_raw: [3]u1 = address[0..3].*;
+        // // Reverse high bits because MUX expects LSB-first selector
+        // const high_bits: [3]u1 = [3]u1{ high_bits_raw[2], high_bits_raw[1], high_bits_raw[0] };
+        // const low_bits: [12]u1 = address[3..15].*;
 
-        // Use MUX8WAY16 for 8-way output selection
-        return logic.MUX8WAY16(
-            outputs[0],
-            outputs[1],
-            outputs[2],
-            outputs[3],
-            outputs[4],
-            outputs[5],
-            outputs[6],
-            outputs[7],
-            high_bits,
-        );
+        // var outputs: [8][16]u1 = undefined;
+        // inline for (0..8) |i| {
+        //     outputs[i] = self.ram4ks[i].peek(low_bits);
+        // }
+
+        // // Use MUX8WAY16 for 8-way output selection
+        // return logic.MUX8WAY16(
+        //     outputs[0],
+        //     outputs[1],
+        //     outputs[2],
+        //     outputs[3],
+        //     outputs[4],
+        //     outputs[5],
+        //     outputs[6],
+        //     outputs[7],
+        //     high_bits,
+        // );
     }
 
     /// Reset all RAM4Ks to initial state.
     pub fn reset(self: *Self) void {
-        inline for (0..8) |i| {
-            self.ram4ks[i].reset();
-        }
+        self.ram4ks = [_]RAM4K{.{}} ** 8;
+
+        // inline for (0..8) |i| {
+        //     self.ram4ks[i].reset();
+        // }
     }
 };
 

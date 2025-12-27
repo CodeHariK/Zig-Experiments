@@ -1,48 +1,60 @@
-1/25 mod.test.memory module: include all memory tests...OK
-2/25 dff.test.DFF: basic behavior - out(t) = in(t-1)...OK
-3/25 dff.test.DFF: reset clears state...OK
-4/25 dff.test.DFF: debug print - demonstrates out(t) = in(t-1)...
-=== DFF Debug Test: out(t) = in(t-1) ===
-Time | Input | Output (previous input) | State
------|-------|------------------------|-------
-  t0 |   1   |          0              |   1
-  t1 |   0   |          1              |   0
-  t2 |   1   |          0              |   1
-  t3 |   1   |          1              |   1
-  t4 |   0   |          1              |   0
-  t5 |   1   |          0              |   1
+1/13 mod.test.memory module: include all memory tests...OK
+2/13 dff.test.DFF: comprehensive behavior test...
+=== DFF: out(t) = in(t-1) ===
+Time | Input | Output | State
+-----|-------|--------|-------
+  t0 |   1   |    0   |   1
+  t1 |   0   |    1   |   0
+  t2 |   1   |    0   |   1
+  t3 |   1   |    1   |   1
+  t4 |   0   |    1   |   0
+  t5 |   1   |    0   |   1
 
 Key insight: Output at time t equals input at time t-1
-Example: At t1, input=0 but output=1 (from t0's input)
 
 OK
-5/25 bit.test.Bit: load=1 stores new value...OK
-6/25 bit.test.Bit: load=0 maintains current value...OK
-7/25 bit.test.Bit: sequence matches expected timeline...OK
-8/25 bit.test.Bit: alternating load behavior...OK
-9/25 bit.test.Bit: peek does not advance state...OK
-10/25 bit.test.Bit: reset clears state...OK
-11/25 register.test.Register16: basic behavior - stores and holds values...OK
-12/25 register.test.Register16: load=0 maintains current value...OK
-13/25 register.test.Register16: reset clears all bits...OK
-14/25 register.test.Register16: peek does not advance state...OK
-15/25 register.test.Register16: all bits operate independently...OK
-16/25 register.test.Register16: debug print - demonstrates register behavior...
-=== Register16 Debug Test ===
-Time | Load | Input    | Output (previous input)
------|------|----------|------------------------
-  t0 |  1   | 0x1234  | 0x0000
-  t1 |  1   | 0x5678  | 0x1234
-  t2 |  0   | 0x9ABC  | 0x5678
-  t3 |  1   | 0xDEF0  | 0x5678
-  t4 |  0   | 0x0000  | 0xDEF0
+3/13 bit.test.Bit: comprehensive behavior test...
+=== Bit: load=1 stores, load=0 maintains ===
+Time | Input | Load | Output | Stored
+-----|-------|------|--------|-------
+  t0 |   1   |  1   |   0    |   1
+  t1 |   0   |  1   |   1    |   0
+  t2 |   1   |  1   |   0    |   1
+  t3 |   0   |  0   |   1    |   1
+  t4 |   1   |  0   |   1    |   1
+
+=== Bit: Timeline sequence ===
+Time | Input | Load | Output | Stored
+-----|-------|------|--------|-------
+  t0 |   1   |  1   |   0    |   1
+  t1 |   0   |  0   |   1    |   1
+  t2 |   1   |  0   |   1    |   1
+  t3 |   1   |  1   |   1    |   1
+  t4 |   0   |  1   |   1    |   0
+  t5 |   1   |  0   |   0    |   0
+  t6 |   0   |  0   |   0    |   0
+
+OK
+4/13 register.test.Register16: comprehensive behavior test...
+=== Register16: load=1 stores, load=0 maintains ===
+Time | Load | Input    | Output (previous input) | Stored
+-----|------|----------|------------------------|--------
+  t0 |  1   | 0x1234  |        0x0000          | 0x1234
+  t1 |  1   | 0x5678  |        0x1234          | 0x5678
+  t2 |  0   | 0x9ABC  |        0x5678          | 0x5678
+  t3 |  0   | 0xDEF0  |        0x5678          | 0x5678
+  t4 |  1   | 0xABCD  |        0x5678          | 0xABCD
+  t5 |  0   | 0x0000  |        0xABCD          | 0xABCD
+  t6 |  0   | 0xFFFF  |        0xABCD          | 0xABCD
+  t7 |  1   | 0xAAAA  |        0xABCD          | 0xAAAA
+  t8 |  1   | 0x5555  |        0xAAAA          | 0x5555
 
 Key insight: Output at time t equals input at time t-1 (when load=1)
 When load=0, the register maintains its current value
 
 OK
-17/25 register.test.Register: generic N-bit register works for different sizes...OK
-18/25 ram.test.RAM8: comprehensive test...
+5/13 register.test.Register: generic N-bit register works for different sizes...OK
+6/13 ram.test.RAM8: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -217,7 +229,7 @@ OK
 | 170  | +21845 |   0  |       6   |  +21845  | +21845  | +21845  | +21845  |
 | 171  | +21845 |   0  |       7   |  +21845  | +21845  | +21845  | +21845  |
 OK
-19/25 ram.test.RAM64: comprehensive test...
+7/13 ram.test.RAM64: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -539,7 +551,7 @@ OK
 | 317  | +21845 |   0  |      53   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |      61   |  +21845  | +21845  | +21845  | +21845  |
 OK
-20/25 ram.test.RAM512: comprehensive test...
+8/13 ram.test.RAM512: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -861,7 +873,7 @@ OK
 | 317  | +21845 |   0  |     426   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |     490   |  +21845  | +21845  | +21845  | +21845  |
 OK
-21/25 ram.test.RAM4K: comprehensive test...
+9/13 ram.test.RAM4K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -1183,7 +1195,7 @@ OK
 | 317  | +21845 |   0  |    3413   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |    3925   |  +21845  | +21845  | +21845  | +21845  |
 OK
-22/25 ram.test.RAM8K: comprehensive test...
+10/13 ram.test.RAM8K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  | -17303 |   0  |    1774   |      +0  |     +0  |     +0  |     +0  |
 |   1  | +31260 |   1  |    1774   |      +0  |     +0  |     +0  | +31260  |
@@ -1236,7 +1248,7 @@ OK
 |  48  | -27865 |   0  |    1221   |   +2113  |  +2113  |  +2113  |  +2113  |
 |  49  |  -6275 |   1  |    1221   |   +2113  |  +2113  |  +2113  |  -6275  |
 OK
-23/25 ram.test.RAM16K: comprehensive test...
+11/13 ram.test.RAM16K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
 |   1  |     +0 |   0  |       0   |      +0  |     +0  |     +0  |     +0  |
@@ -1558,7 +1570,7 @@ OK
 | 317  | +21845 |   0  |   13653   |  +21845  | +21845  | +21845  | +21845  |
 | 318  | +21845 |   0  |   15701   |  +21845  | +21845  | +21845  | +21845  |
 OK
-24/25 ram.test.RAM32K: comprehensive test...
+12/13 ram.test.RAM32K: comprehensive test...
 | time |   in   | load |  address  | expected |    out  |  out_i  |   peek  |
 |   0  | -17303 |   0  |   26350   |      +0  |     +0  |     +0  |     +0  |
 |   1  | +31260 |   1  |   26350   |      +0  |     +0  |     +0  | +31260  |
@@ -1611,7 +1623,7 @@ OK
 |  48  | -27865 |   0  |   25797   |   +2113  |  +2113  |  +2113  |  +2113  |
 |  49  |  -6275 |   1  |   25797   |   +2113  |  +2113  |  +2113  |  -6275  |
 OK
-25/25 pc.test.PC_I comprehensive test with print statements...
+13/13 pc.test.PC_I comprehensive test with print statements...
 | time |   in   |reset|load | inc |  out   |  out_i  |
 |------|--------|-----|-----|-----|--------|--------|
 |   0+ |     +0 |  0  |  0  |  0  |     +0 |     +0 |
@@ -1645,4 +1657,4 @@ OK
 |  14+ | +22222 |  1  |  0  |  0  |     +1 |     +1 |
 |   15 | +22222 |  1  |  0  |  0  |     +0 |     +0 |
 OK
-All 25 tests passed.
+All 13 tests passed.

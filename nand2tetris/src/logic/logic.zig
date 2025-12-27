@@ -133,11 +133,9 @@ pub const Logic = struct {
     pub const RIPPLE_ADDER_16 = adder.RIPPLE_ADDER_16;
     pub const INCN = adder.INCN;
     pub const INC16 = adder.INC16;
+};
 
-    // ========================================================================
-    // 16-Bit Gates (Integer Version) - Suffix _I
-    // ========================================================================
-
+pub const Logic_I = struct {
     /// 16-bit NOT (integer version).
     pub inline fn NOT16_I(in: u16) u16 {
         return ~in;
@@ -184,12 +182,6 @@ pub const Logic = struct {
 // Tests
 // ============================================================================
 
-test "run all gate tests" {
-    _ = @import("mux.zig");
-    _ = @import("adder.zig");
-    _ = @import("two_complement.zig");
-}
-
 test "single-bit gates follow truth tables" {
     // Expected outputs indexed by [a * 2 + b] for 2-input gates
     const NOT_EXPECTED = [2]u1{ 1, 0 };
@@ -230,30 +222,24 @@ test "single-bit gates follow truth tables" {
             });
         }
     }
-}
 
-test "16-bit gates (bit-array version)" {
     try testing.expectEqual(b16(0x0000), Logic.NOT16(b16(0xFFFF)));
     try testing.expectEqual(b16(0xFFFF), Logic.NOT16(b16(0x0000)));
     try testing.expectEqual(b16(0xFFFF), Logic.OR16(b16(0xFFFF), b16(0x0000)));
     try testing.expectEqual(b16(0x0000), Logic.AND16(b16(0xFFFF), b16(0x0000)));
     try testing.expectEqual(b16(0x00FF), Logic.AND16(b16(0xFFFF), b16(0x00FF)));
-}
 
-test "16-bit gates (integer version)" {
-    try testing.expectEqual(@as(u16, 0x0000), Logic.NOT16_I(0xFFFF));
-    try testing.expectEqual(@as(u16, 0xFFFF), Logic.NOT16_I(0x0000));
-    try testing.expectEqual(@as(u16, 0xFFFF), Logic.OR16_I(0xFFFF, 0x0000));
-    try testing.expectEqual(@as(u16, 0x0000), Logic.AND16_I(0xFFFF, 0x0000));
-    try testing.expectEqual(@as(u16, 0x00FF), Logic.AND16_I(0xFFFF, 0x00FF));
-}
+    try testing.expectEqual(@as(u16, 0x0000), Logic_I.NOT16_I(0xFFFF));
+    try testing.expectEqual(@as(u16, 0xFFFF), Logic_I.NOT16_I(0x0000));
+    try testing.expectEqual(@as(u16, 0xFFFF), Logic_I.OR16_I(0xFFFF, 0x0000));
+    try testing.expectEqual(@as(u16, 0x0000), Logic_I.AND16_I(0xFFFF, 0x0000));
+    try testing.expectEqual(@as(u16, 0x00FF), Logic_I.AND16_I(0xFFFF, 0x00FF));
 
-test "OR8WAY returns 1 if any bit is set" {
     try testing.expectEqual(@as(u1, 1), Logic.OR8WAY(b8(0b10101010)));
     try testing.expectEqual(@as(u1, 1), Logic.OR8WAY(b8(0b00000001)));
     try testing.expectEqual(@as(u1, 0), Logic.OR8WAY(b8(0b00000000)));
 
-    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY_I(0b10101010));
-    try testing.expectEqual(@as(u1, 1), Logic.OR8WAY_I(0b00000001));
-    try testing.expectEqual(@as(u1, 0), Logic.OR8WAY_I(0b00000000));
+    try testing.expectEqual(@as(u1, 1), Logic_I.OR8WAY_I(0b10101010));
+    try testing.expectEqual(@as(u1, 1), Logic_I.OR8WAY_I(0b00000001));
+    try testing.expectEqual(@as(u1, 0), Logic_I.OR8WAY_I(0b00000000));
 }

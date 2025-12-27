@@ -161,6 +161,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const logic = @import("logic").Logic;
+const logic_i = @import("logic").Logic_I;
 
 const register = @import("register.zig");
 const types = @import("types");
@@ -196,17 +197,17 @@ pub const PC = struct {
         const inc_val = inc_result.sum;
 
         // Step 2: Choose between current and incremented value based on inc
-        // MUX16(in1, in0, sel): sel==0 → in0, sel==1 → in1
+        // MUX16(in0, in1, sel): sel==0 → in0, sel==1 → in1
         // If inc==1, we want inc_val; if inc==0, we want current
-        const after_inc = logic.MUX16(inc_val, current, inc);
+        const after_inc = logic.MUX16(current, inc_val, inc);
 
         // Step 3: Choose between after_inc and input based on load
         // If load==1, we want input; if load==0, we want after_inc
-        const after_load = logic.MUX16(input, after_inc, load);
+        const after_load = logic.MUX16(after_inc, input, load);
 
         // Step 4: Choose between after_load and 0 based on reset_signal
         // If reset_signal==1, we want 0; if reset_signal==0, we want after_load
-        const new_value = logic.MUX16(b16(0), after_load, reset_signal);
+        const new_value = logic.MUX16(after_load, b16(0), reset_signal);
 
         // Step 5: Store new value in register (always load, since we computed the value)
         // Register.tick() returns the current value (before update) and stores new_value
@@ -252,19 +253,19 @@ pub const PC_I = struct {
         const current = self.register.peek();
 
         // Step 1: Increment current value
-        const inc_result = logic.INC16_I(current);
+        const inc_result = logic_i.INC16_I(current);
         const inc_val = inc_result.sum;
 
         // Step 2: Choose between current and incremented value based on inc
-        // MUX16_I(in1, in0, sel): sel==0 → in0, sel==1 → in1
-        const after_inc = logic.MUX16_I(inc_val, current, inc);
+        // MUX16_I(in0, in1, sel): sel==0 → in0, sel==1 → in1
+        const after_inc = logic_i.MUX16_I(current, inc_val, inc);
 
         // Step 3: Choose between after_inc and input based on load
-        const after_load = logic.MUX16_I(input, after_inc, load);
+        const after_load = logic_i.MUX16_I(after_inc, input, load);
 
         // Step 4: Choose between after_load and 0 based on reset_signal
         // If reset_signal==1, we want 0; if reset_signal==0, we want after_load
-        const new_value = logic.MUX16_I(0, after_load, reset_signal);
+        const new_value = logic_i.MUX16_I(after_load, 0, reset_signal);
 
         // Step 5: Store new value in register (always load, since we computed the value)
         _ = self.register.tick(new_value, 1);

@@ -226,9 +226,7 @@ test "TWO_COMPLEMENT_4" {
 
         std.debug.print("-{} = {} (binary: {b:0>4})\n", .{ in, result_i, result_i });
     }
-}
 
-test "TWO_COMPLEMENT_16" {
     std.debug.print("\nTWO_COMPLEMENT_16------------------\n", .{});
     const TestCase = struct { in: u16, out: u16 };
     const cases = [_]TestCase{
@@ -253,9 +251,7 @@ test "TWO_COMPLEMENT_16" {
 
         std.debug.print("-{} = {} (hex: 0x{X:0>4})\n", .{ tc.in, result_i, result_i });
     }
-}
 
-test "double negation returns original value" {
     std.debug.print("\nDOUBLE NEGATION------------------\n", .{});
     const values = [_]u16{ 0, 1, 2, 100, 1000, 32767, 0xFFFF, 0xFFFE };
     for (values) |val| {

@@ -115,8 +115,8 @@ pub const Bit = struct {
     /// - If load=0: maintains the current stored value
     pub fn tick(self: *Bit, input: u1, load: u1) u1 {
         const dff_out = self.dff.peek();
-        // MUX selects: in when load=1, dff_out when load=0
-        const mux_out = logic.MUX(input, dff_out, load);
+        // MUX selects: input when load=1, dff_out when load=0
+        const mux_out = logic.MUX(dff_out, input, load);
         return self.dff.tick(mux_out);
     }
 
@@ -135,91 +135,77 @@ pub const Bit = struct {
 // Tests
 // =============================================================================
 
-test "Bit: load=1 stores new value" {
+test "Bit: comprehensive behavior test" {
+    const TestCase = struct {
+        input: u1,
+        load: u1,
+        expected_output: u1,
+        expected_peek: u1,
+    };
+
     var bit = Bit{};
 
-    // First tick: load=1, in=1 → stores 1
-    try testing.expectEqual(0, bit.tick(1, 1));
+    // Initial state: output is 0
+    try testing.expectEqual(0, bit.peek());
 
-    // Second tick: load=1, in=0 → stores 0, outputs previous (1)
-    try testing.expectEqual(1, bit.tick(0, 1));
+    // Test cases: load=1 stores new value, load=0 maintains current value
+    const tick_cases = [_]TestCase{
+        .{ .input = 1, .load = 1, .expected_output = 0, .expected_peek = 1 }, // First tick outputs previous (0), stores 1
+        .{ .input = 0, .load = 1, .expected_output = 1, .expected_peek = 0 }, // Outputs previous (1), stores 0
+        .{ .input = 1, .load = 1, .expected_output = 0, .expected_peek = 1 }, // Outputs previous (0), stores 1
+        .{ .input = 0, .load = 0, .expected_output = 1, .expected_peek = 1 }, // Outputs current (1), maintains 1
+        .{ .input = 1, .load = 0, .expected_output = 1, .expected_peek = 1 }, // Outputs current (1), maintains 1
+    };
 
-    // Third tick: load=1, in=1 → stores 1, outputs previous (0)
-    try testing.expectEqual(0, bit.tick(1, 1));
-}
+    std.debug.print("\n=== Bit: load=1 stores, load=0 maintains ===\n", .{});
+    std.debug.print("Time | Input | Load | Output | Stored\n", .{});
+    std.debug.print("-----|-------|------|--------|-------\n", .{});
 
-test "Bit: load=0 maintains current value" {
-    var bit = Bit{};
+    var time: u32 = 0;
+    for (tick_cases) |tc| {
+        const output = bit.tick(tc.input, tc.load);
+        try testing.expectEqual(tc.expected_output, output);
+        try testing.expectEqual(tc.expected_peek, bit.peek());
+        std.debug.print("  t{d} |   {d}   |  {d}   |   {d}    |   {d}\n", .{ time, tc.input, tc.load, output, bit.peek() });
+        time += 1;
+    }
+    std.debug.print("\n", .{});
 
-    // Set initial value
-    _ = bit.tick(1, 1);
-    try testing.expectEqual(1, bit.peek());
-
-    // load=0, in changes but value is maintained
-    try testing.expectEqual(1, bit.tick(0, 0));
-    try testing.expectEqual(1, bit.tick(1, 0));
-    try testing.expectEqual(1, bit.tick(0, 0));
-    try testing.expectEqual(1, bit.peek());
-}
-
-test "Bit: sequence matches expected timeline" {
-    var bit = Bit{};
-
-    // Timeline from documentation:
+    // Timeline sequence from documentation
     // Time:     t0   t1   t2   t3   t4   t5   t6
     // in:        1    0    1    1    0    1    0
     // load:      1    0    0    1    1    0    0
-    // out:       ?    1    1    1    1    0    0
+    // out:       0    1    1    1    1    0    0
+    bit.reset();
+    const timeline_cases = [_]TestCase{
+        .{ .input = 1, .load = 1, .expected_output = 0, .expected_peek = 1 },
+        .{ .input = 0, .load = 0, .expected_output = 1, .expected_peek = 1 },
+        .{ .input = 1, .load = 0, .expected_output = 1, .expected_peek = 1 },
+        .{ .input = 1, .load = 1, .expected_output = 1, .expected_peek = 1 },
+        .{ .input = 0, .load = 1, .expected_output = 1, .expected_peek = 0 },
+        .{ .input = 1, .load = 0, .expected_output = 0, .expected_peek = 0 },
+        .{ .input = 0, .load = 0, .expected_output = 0, .expected_peek = 0 },
+    };
 
-    const inputs = [_]u1{ 1, 0, 1, 1, 0, 1, 0 };
-    const loads = [_]u1{ 1, 0, 0, 1, 1, 0, 0 };
-    const expected_outputs = [_]u1{ 0, 1, 1, 1, 1, 0, 0 };
+    std.debug.print("=== Bit: Timeline sequence ===\n", .{});
+    std.debug.print("Time | Input | Load | Output | Stored\n", .{});
+    std.debug.print("-----|-------|------|--------|-------\n", .{});
 
-    for (inputs, loads, expected_outputs) |input, load, expected| {
-        const output = bit.tick(input, load);
-        try testing.expectEqual(expected, output);
+    time = 0;
+    for (timeline_cases) |tc| {
+        const output = bit.tick(tc.input, tc.load);
+        try testing.expectEqual(tc.expected_output, output);
+        try testing.expectEqual(tc.expected_peek, bit.peek());
+        std.debug.print("  t{d} |   {d}   |  {d}   |   {d}    |   {d}\n", .{ time, tc.input, tc.load, output, bit.peek() });
+        time += 1;
     }
-}
+    std.debug.print("\n", .{});
 
-test "Bit: alternating load behavior" {
-    var bit = Bit{};
-
-    // Store 1
-    try testing.expectEqual(0, bit.tick(1, 1));
-    try testing.expectEqual(1, bit.peek());
-
-    // Hold (load=0, in=0 doesn't matter)
-    try testing.expectEqual(1, bit.tick(0, 0));
-    try testing.expectEqual(1, bit.peek());
-
-    // Store 0
-    try testing.expectEqual(1, bit.tick(0, 1));
-    try testing.expectEqual(0, bit.peek());
-
-    // Hold (load=0, in=1 doesn't matter)
-    try testing.expectEqual(0, bit.tick(1, 0));
-    try testing.expectEqual(0, bit.peek());
-}
-
-test "Bit: peek does not advance state" {
-    var bit = Bit{};
-
-    _ = bit.tick(1, 1);
-    try testing.expectEqual(1, bit.peek());
-    try testing.expectEqual(1, bit.peek()); // Still same value
-
-    _ = bit.tick(0, 1);
-    try testing.expectEqual(0, bit.peek());
-}
-
-test "Bit: reset clears state" {
-    var bit = Bit{};
-
-    _ = bit.tick(1, 1);
-    _ = bit.tick(1, 1);
-    try testing.expectEqual(1, bit.peek());
-
+    // Test peek does not advance state
     bit.reset();
     try testing.expectEqual(0, bit.peek());
-    try testing.expectEqual(0, bit.tick(0, 0));
+    _ = bit.tick(1, 1);
+    try testing.expectEqual(1, bit.peek());
+    _ = bit.tick(0, 1);
+    try testing.expectEqual(0, bit.peek());
 }

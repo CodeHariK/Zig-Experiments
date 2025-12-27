@@ -55,6 +55,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const logic = @import("logic").Logic;
+const logic_i = @import("logic").Logic_I;
 
 const types = @import("types");
 const b16 = types.b16;
@@ -152,48 +153,50 @@ const ZERO16 = [16]u1{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 /// Also outputs zero flag (zr) and negative flag (ng).
 pub inline fn ALU(x: [16]u1, y: [16]u1, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, no: u1) ALUResult {
     // if (zx==1) set x = 0
-    // Mux16(a=x,b=false,sel=zx,out=zxout);
-    const zxout = logic.MUX16(ZERO16, x, zx);
+    // Mux16(in0=x, in1=0, sel=zx): when zx=0 select x, when zx=1 select 0
+    const zxout = logic.MUX16(x, ZERO16, zx);
 
     // if (zy==1) set y = 0
-    // Mux16(a=y,b=false,sel=zy,out=zyout);
-    const zyout = logic.MUX16(ZERO16, y, zy);
+    // Mux16(in0=y, in1=0, sel=zy): when zy=0 select y, when zy=1 select 0
+    const zyout = logic.MUX16(y, ZERO16, zy);
 
     // if (nx==1) set x = ~x
     // if (ny==1) set y = ~y
     // Not16(in=zxout,out=notx);
     // Not16(in=zyout,out=noty);
-    // Mux16(a=zxout,b=notx,sel=nx,out=nxout);
-    // Mux16(a=zyout,b=noty,sel=ny,out=nyout);
+    // Mux16(in0=zxout, in1=notx, sel=nx): when nx=0 select zxout, when nx=1 select notx
+    // Mux16(in0=zyout, in1=noty, sel=ny): when ny=0 select zyout, when ny=1 select noty
     const notx = logic.NOT16(zxout);
     const noty = logic.NOT16(zyout);
-    const nxout = logic.MUX16(notx, zxout, nx);
-    const nyout = logic.MUX16(noty, zyout, ny);
+    const nxout = logic.MUX16(zxout, notx, nx);
+    const nyout = logic.MUX16(zyout, noty, ny);
 
     // if (f==1)  set out = x + y
     // if (f==0)  set out = x & y
     // Add16(a=nxout,b=nyout,out=addout);
     // And16(a=nxout,b=nyout,out=andout);
-    // Mux16(a=andout,b=addout,sel=f,out=fout);
+    // Mux16(in0=andout, in1=addout, sel=f): when f=0 select andout, when f=1 select addout
     const addout = logic.RIPPLE_ADDER_16(nxout, nyout).sum;
     const andout = logic.AND16(nxout, nyout);
-    const fout = logic.MUX16(addout, andout, f);
+    const fout = logic.MUX16(andout, addout, f);
 
     // if (no==1) set out = ~out
     // 1 if (out<0),  0 otherwise
     // Not16(in=fout,out=nfout);
-    // Mux16(a=fout,b=nfout,sel=no,out=out,out[0..7]=zr1,out[8..15]=zr2,out[15]=ng);
+    // Mux16(in0=fout, in1=nfout, sel=no): when no=0 select fout, when no=1 select nfout
     const nfout = logic.NOT16(fout);
-    const out = logic.MUX16(nfout, fout, no);
-    const ng = out[0]; // MSB (bit 15) indicates negative in two's complement
+    const out = logic.MUX16(fout, nfout, no);
+    // With LSB-first: out[15] is MSB (bit 15) which indicates negative in two's complement
+    const ng = out[15];
 
     // 1 if (out==0), 0 otherwise
     // Or8Way(in=zr1,out=or1);
     // Or8Way(in=zr2,out=or2);
     // Or(a=or1,b=or2,out=or3);
     // Not(in=or3,out=zr);
-    const zr1: [8]u1 = out[8..16].*; // low 8 bits (indices 8-15)
-    const zr2: [8]u1 = out[0..8].*; // high 8 bits (indices 0-7)
+    // With LSB-first: out[0..8] are bits 0-7 (low 8 bits), out[8..16] are bits 8-15 (high 8 bits)
+    const zr1: [8]u1 = out[0..8].*; // low 8 bits (bits 0-7)
+    const zr2: [8]u1 = out[8..16].*; // high 8 bits (bits 8-15)
     const or1 = logic.OR8WAY(zr1);
     const or2 = logic.OR8WAY(zr2);
     const or3 = logic.OR(or1, or2);
@@ -208,39 +211,39 @@ pub inline fn ALU(x: [16]u1, y: [16]u1, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, n
 /// Also outputs zero flag (zr) and negative flag (ng).
 pub inline fn ALU_I(x: u16, y: u16, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, no: u1) ALUResult_I {
     // if (zx==1) set x = 0
-    // Mux16(a=x,b=false,sel=zx,out=zxout);
-    const zxout = logic.MUX16_I(0, x, zx);
+    // Mux16(in0=x, in1=0, sel=zx): when zx=0 select x, when zx=1 select 0
+    const zxout = logic_i.MUX16_I(x, 0, zx);
 
     // if (zy==1) set y = 0
-    // Mux16(a=y,b=false,sel=zy,out=zyout);
-    const zyout = logic.MUX16_I(0, y, zy);
+    // Mux16(in0=y, in1=0, sel=zy): when zy=0 select y, when zy=1 select 0
+    const zyout = logic_i.MUX16_I(y, 0, zy);
 
     // if (nx==1) set x = ~x
     // if (ny==1) set y = ~y
     // Not16(in=zxout,out=notx);
     // Not16(in=zyout,out=noty);
-    // Mux16(a=zxout,b=notx,sel=nx,out=nxout);
-    // Mux16(a=zyout,b=noty,sel=ny,out=nyout);
-    const notx = logic.NOT16_I(zxout);
-    const noty = logic.NOT16_I(zyout);
-    const nxout = logic.MUX16_I(notx, zxout, nx);
-    const nyout = logic.MUX16_I(noty, zyout, ny);
+    // Mux16(in0=zxout, in1=notx, sel=nx): when nx=0 select zxout, when nx=1 select notx
+    // Mux16(in0=zyout, in1=noty, sel=ny): when ny=0 select zyout, when ny=1 select noty
+    const notx = logic_i.NOT16_I(zxout);
+    const noty = logic_i.NOT16_I(zyout);
+    const nxout = logic_i.MUX16_I(zxout, notx, nx);
+    const nyout = logic_i.MUX16_I(zyout, noty, ny);
 
     // if (f==1)  set out = x + y
     // if (f==0)  set out = x & y
     // Add16(a=nxout,b=nyout,out=addout);
     // And16(a=nxout,b=nyout,out=andout);
-    // Mux16(a=andout,b=addout,sel=f,out=fout);
-    const addout = logic.RIPPLE_ADDER_16_I(nxout, nyout).sum;
-    const andout = logic.AND16_I(nxout, nyout);
-    const fout = logic.MUX16_I(addout, andout, f);
+    // Mux16(in0=andout, in1=addout, sel=f): when f=0 select andout, when f=1 select addout
+    const addout = logic_i.RIPPLE_ADDER_16_I(nxout, nyout).sum;
+    const andout = logic_i.AND16_I(nxout, nyout);
+    const fout = logic_i.MUX16_I(andout, addout, f);
 
     // if (no==1) set out = ~out
     // 1 if (out<0),  0 otherwise
     // Not16(in=fout,out=nfout);
-    // Mux16(a=fout,b=nfout,sel=no,out=out,out[0..7]=zr1,out[8..15]=zr2,out[15]=ng);
-    const nfout = logic.NOT16_I(fout);
-    const out = logic.MUX16_I(nfout, fout, no);
+    // Mux16(in0=fout, in1=nfout, sel=no): when no=0 select fout, when no=1 select nfout
+    const nfout = logic_i.NOT16_I(fout);
+    const out = logic_i.MUX16_I(fout, nfout, no);
 
     // Step 5: Compute flags
     const ng: u1 = @truncate(out >> 15); // MSB indicates negative
@@ -252,8 +255,8 @@ pub inline fn ALU_I(x: u16, y: u16, zx: u1, nx: u1, zy: u1, ny: u1, f: u1, no: u
     // Not(in=or3,out=zr);
     const zr1: u8 = @truncate(out);
     const zr2: u8 = @truncate(out >> 8);
-    const or1 = logic.OR8WAY_I(zr1);
-    const or2 = logic.OR8WAY_I(zr2);
+    const or1 = logic_i.OR8WAY_I(zr1);
+    const or2 = logic_i.OR8WAY_I(zr2);
     const or3 = logic.OR(or1, or2);
     const zr = logic.NOT(or3);
 

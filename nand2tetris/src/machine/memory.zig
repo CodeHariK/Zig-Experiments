@@ -63,7 +63,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const memory = @import("memory").Memory;
-const logic = @import("gates").Logic;
+const logic = @import("logic").Logic;
 
 const types = @import("types");
 const b14 = types.b14;
@@ -102,47 +102,69 @@ pub const Memory = struct {
     ///   - If load=1, writes input to the addressed location
     ///   - Write takes effect in the next time step
     pub fn tick(self: *Self, input: [16]u1, address: [15]u1, load: u1) [16]u1 {
-        // Map nand2tetris address bits (LSB-first) to our MSB-first system:
-        // nand2tetris address[14] (MSB) → our address[0] (MSB)
-        // nand2tetris address[13] → our address[1]
-        // nand2tetris address[0..13] → our address[1..15] (14 bits for RAM16K)
-        // nand2tetris address[0..12] → our address[2..15] (13 bits for Screen)
-        // nand2tetris address[0..7] → our address[7..14] (8 bits)
-        // nand2tetris address[8..12] → our address[2..6] (5 bits)
+        const inf = self.info(address);
 
-        const addr_14: u1 = address[0]; // nand2tetris address[14] - selects RAM (0) or Screen/Keyboard (1)
-        const addr_13: u1 = address[1]; // nand2tetris address[13] - selects Screen (0) or Keyboard (1) when addr_14=1
-        const addr_0_13: [14]u1 = address[1..15].*; // nand2tetris address[0..13] - RAM16K address
-        const addr_0_12: [13]u1 = address[2..15].*; // nand2tetris address[0..12] - Screen address
+        const ram_sk_dmux = logic.DMUX(load, inf.addr_14);
+        const ramload: u1 = ram_sk_dmux[0]; // When addr_14=0 (RAM) - 'a' gets input
+        const skload: u1 = ram_sk_dmux[1]; // When addr_14=1 (Screen/Keyboard) - 'b' gets input
 
-        // Step 1: DMux on address[14] to route load signal
-        // DMux(in, sel) returns [out_sel1, out_sel0]
-        // When sel=0: out[0]=0, out[1]=in (RAM selected)
-        // When sel=1: out[0]=in, out[1]=0 (Screen/Keyboard selected)
-        const ram_sk_dmux = logic.DMUX(load, addr_14);
-        const ramload: u1 = ram_sk_dmux[1]; // When addr_14=0 (RAM) - out[1] gets input
-        const skload: u1 = ram_sk_dmux[0]; // When addr_14=1 (Screen/Keyboard) - out[0] gets input
+        const screen_kbd_dmux = logic.DMUX(skload, inf.addr_13);
+        const sload: u1 = screen_kbd_dmux[0]; // When addr_13=0 (Screen) - 'a' gets input
+        const ramout = self.ram.tick(input, inf.addr_0_13, ramload);
+        const screenout = self.screen.tick(input, inf.addr_0_12, sload);
 
-        // Step 2: DMux on address[13] to route Screen/Keyboard load signal
-        const screen_kbd_dmux = logic.DMUX(skload, addr_13);
-        const sload: u1 = screen_kbd_dmux[1]; // When addr_13=0 (Screen) - out[1] gets input
-        // nothing = screen_kbd_dmux[0] when addr_13=1 (Keyboard - read-only, so no load)
+        // When address[13]=0, select screenout; when address[13]=1, select kbdout
+        const outsk = logic.MUX16(screenout, inf.kbd, inf.addr_13);
 
-        // Step 3: Load RAM16K and Screen
-        const ramout = self.ram.tick(input, addr_0_13, ramload);
-        const screenout = self.screen.tick(input, addr_0_12, sload);
+        // When address[14]=0, select ramout; when address[14]=1, select outsk
+        const out = logic.MUX16(ramout, outsk, inf.addr_14);
 
-        // Step 4: Handle Keyboard
-        // Keyboard is at address 0x6000, which means:
-        //   nand2tetris: address[14]=1, address[13]=1, address[0..12]=0
-        //   our system: address[0]=1, address[1]=1, address[2..14]=0
-        // Check if address[0..12] (nand2tetris) = address[2..14] (our system) are all 0
-        // nand2tetris address[0..7] → our address[7..14] (8 bits)
-        const addr_0_7: [8]u1 = address[7..15].*; // nand2tetris address[0..7]
+        return out;
+    }
+
+    /// Get the current value at the specified address without advancing time.
+    pub fn peek(self: *const Self, address: [15]u1) [16]u1 {
+        const inf = self.info(address);
+
+        // Read from RAM16K
+        const ramout = self.ram.peek(inf.addr_0_13);
+
+        // Read from Screen
+        const screenout = self.screen.peek(inf.addr_0_12);
+
+        // Mux16(a=screenout, b=kbdout, sel=address[13], out=outsk)
+        // When address[13]=0, select screenout; when address[13]=1, select kbdout
+        const outsk = logic.MUX16(screenout, inf.kbd, inf.addr_13);
+
+        // Mux16(a=ramout, b=outsk, sel=address[14], out=out)
+        // When address[14]=0, select ramout; when address[14]=1, select outsk
+        const out = logic.MUX16(ramout, outsk, inf.addr_14);
+
+        return out;
+    }
+
+    /// Get address information and device selection for a given address.
+    pub fn info(self: *const Self, address: [15]u1) struct {
+        device: []const u8,
+        addr_14: u1,
+        addr_13: u1,
+        addr_0_13: [14]u1,
+        addr_0_12: [13]u1,
+        notkbd: u1,
+        kbd: [16]u1,
+    } {
+        // With LSB-first: address[0] is LSB (bit 0), address[14] is MSB (bit 14)
+        const addr_14: u1 = address[14]; // MSB - selects RAM (0) or Screen/Keyboard (1)
+        const addr_13: u1 = address[13]; // Selects Screen (0) or Keyboard (1) when addr_14=1
+        const addr_0_13: [14]u1 = address[0..14].*; // address[0..13] - RAM16K address
+        const addr_0_12: [13]u1 = address[0..13].*; // address[0..12] - Screen address
+
+        // Handle Keyboard (same logic as tick)
+        // Or8Way(in=address[0..7], out=notkbd1)
+        const addr_0_7: [8]u1 = address[0..8].*;
         const notkbd1 = logic.OR8WAY(addr_0_7);
-        // nand2tetris address[8..12] → our address[2..6] (5 bits)
-        const addr_8_12: [5]u1 = address[2..7].*; // nand2tetris address[8..12]
-        // Pad to 8 bits for OR8WAY (in[0..4]=address[8..12], in[5..7]=false)
+        // Or8Way(in[0..4]=address[8..12], in[5..7]=false, out=notkbd2)
+        const addr_8_12: [5]u1 = address[8..13].*;
         var addr_8_12_padded: [8]u1 = undefined;
         addr_8_12_padded[0..5].* = addr_8_12;
         addr_8_12_padded[5..8].* = [3]u1{ 0, 0, 0 };
@@ -151,54 +173,19 @@ pub const Memory = struct {
 
         const kbd = self.keyboard.read();
         // Mux16(a=kbd, b=false, sel=notkbd, out=kbdout)
-        // If notkbd=1 (any bit set), output false (0), else output kbd
-        const kbdout = logic.MUX16(b16(0), kbd, notkbd);
+        const kbdout = logic.MUX16(kbd, b16(0), notkbd);
 
-        // Step 5: Determine which is the output
-        // Mux16(a=screenout, b=kbdout, sel=address[13], out=outsk)
-        // sel=0 → screenout, sel=1 → kbdout
-        const outsk = logic.MUX16(kbdout, screenout, addr_13);
+        const device = if (addr_14 == 0) "RAM" else if (notkbd == 0) "Kbd" else "Screen";
 
-        // Mux16(a=ramout, b=outsk, sel=address[14], out=out)
-        // sel=0 → ramout, sel=1 → outsk
-        const out = logic.MUX16(outsk, ramout, addr_14);
-
-        return out;
-    }
-
-    /// Get the current value at the specified address without advancing time.
-    pub fn peek(self: *const Self, address: [15]u1) [16]u1 {
-        // Map nand2tetris address bits (LSB-first) to our MSB-first system
-        const addr_14: u1 = address[0]; // nand2tetris address[14]
-        const addr_13: u1 = address[1]; // nand2tetris address[13]
-        const addr_0_13: [14]u1 = address[1..15].*; // nand2tetris address[0..13] - RAM16K address
-        const addr_0_12: [13]u1 = address[2..15].*; // nand2tetris address[0..12] - Screen address
-
-        // Read from RAM16K
-        const ramout = self.ram.peek(addr_0_13);
-
-        // Read from Screen
-        const screenout = self.screen.peek(addr_0_12);
-
-        // Handle Keyboard (same logic as tick)
-        // nand2tetris address[0..7] → our address[7..14]
-        const addr_0_7: [8]u1 = address[7..15].*;
-        const notkbd1 = logic.OR8WAY(addr_0_7);
-        // nand2tetris address[8..12] → our address[2..6]
-        const addr_8_12: [5]u1 = address[2..7].*;
-        var addr_8_12_padded: [8]u1 = undefined;
-        addr_8_12_padded[0..5].* = addr_8_12;
-        addr_8_12_padded[5..8].* = [3]u1{ 0, 0, 0 };
-        const notkbd2 = logic.OR8WAY(addr_8_12_padded);
-        const notkbd = logic.OR(notkbd1, notkbd2);
-
-        const kbd = self.keyboard.read();
-        const kbdout = logic.MUX16(b16(0), kbd, notkbd);
-
-        const outsk = logic.MUX16(kbdout, screenout, addr_13);
-        const out = logic.MUX16(outsk, ramout, addr_14);
-
-        return out;
+        return .{
+            .device = device,
+            .addr_14 = addr_14,
+            .addr_13 = addr_13,
+            .addr_0_13 = addr_0_13,
+            .addr_0_12 = addr_0_12,
+            .notkbd = notkbd,
+            .kbd = kbdout,
+        };
     }
 
     /// Reset all memory components to initial state.
@@ -213,3 +200,134 @@ pub const Memory = struct {
         self.keyboard.setKey(key_code);
     }
 };
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+test "Memory: comprehensive test vectors" {
+    const TestCase = struct {
+        in: i32,
+        load: u1,
+        address_str: u15,
+        expected: i32,
+    };
+
+    const test_cases = [_]TestCase{
+        .{ .in = 12345, .load = 1, .address_str = 0b010000000000000, .expected = 0 },
+        .{ .in = 12345, .load = 1, .address_str = 0b010000000000000, .expected = 12345 },
+        .{ .in = 12345, .load = 1, .address_str = 0b100000000000000, .expected = 0 },
+        .{ .in = 12345, .load = 1, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = -1, .load = 1, .address_str = 0b000000000000000, .expected = 0 },
+        .{ .in = -1, .load = 1, .address_str = 0b000000000000000, .expected = -1 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000000, .expected = -1 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000000, .expected = -1 },
+        .{ .in = 9999, .load = 0, .address_str = 0b010000000000000, .expected = 12345 },
+        .{ .in = 9999, .load = 0, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = 12345, .load = 1, .address_str = 0b000000000000000, .expected = -1 },
+        .{ .in = 12345, .load = 1, .address_str = 0b000000000000000, .expected = 12345 },
+        .{ .in = 12345, .load = 1, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = 12345, .load = 1, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = 2222, .load = 1, .address_str = 0b010000000000000, .expected = 12345 },
+        .{ .in = 2222, .load = 1, .address_str = 0b010000000000000, .expected = 2222 },
+        .{ .in = 9999, .load = 0, .address_str = 0b010000000000000, .expected = 2222 },
+        .{ .in = 9999, .load = 0, .address_str = 0b010000000000000, .expected = 2222 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000000, .expected = 12345 },
+        .{ .in = 9999, .load = 0, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000001, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000010, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000000100, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000001000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000010000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000000100000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000001000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000010000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000000100000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000001000000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000010000000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b000100000000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b001000000000000, .expected = 0 },
+        .{ .in = 9999, .load = 0, .address_str = 0b010000000000000, .expected = 2222 },
+        .{ .in = 1234, .load = 1, .address_str = 0b001001000110100, .expected = 0 },
+        .{ .in = 1234, .load = 1, .address_str = 0b001001000110100, .expected = 1234 },
+        .{ .in = 1234, .load = 0, .address_str = 0b010001000110100, .expected = 0 },
+        .{ .in = 1234, .load = 0, .address_str = 0b110001000110100, .expected = 0 },
+        .{ .in = 2345, .load = 1, .address_str = 0b010001101000101, .expected = 0 },
+        .{ .in = 2345, .load = 1, .address_str = 0b010001101000101, .expected = 2345 },
+        .{ .in = 2345, .load = 0, .address_str = 0b000001101000101, .expected = 0 },
+        .{ .in = 2345, .load = 0, .address_str = 0b100001101000101, .expected = 0 },
+        .{ .in = 0, .load = 1, .address_str = 0b100000000000000, .expected = 12345 },
+        .{ .in = 0, .load = 1, .address_str = 0b100000000000000, .expected = 0 },
+        .{ .in = 0, .load = 1, .address_str = 0b110000000000000, .expected = 75 },
+        .{ .in = 12345, .load = 1, .address_str = 0b000111111001111, .expected = 0 },
+        .{ .in = 12345, .load = 1, .address_str = 0b000111111001111, .expected = 12345 },
+        .{ .in = 12345, .load = 1, .address_str = 0b010111111001111, .expected = 0 },
+        .{ .in = 12345, .load = 1, .address_str = 0b010111111001111, .expected = 12345 },
+        .{ .in = -1, .load = 1, .address_str = 0b100111111001111, .expected = 0 },
+        .{ .in = -1, .load = 1, .address_str = 0b100111111001111, .expected = -1 },
+        .{ .in = -1, .load = 1, .address_str = 0b101000001001111, .expected = 0 },
+        .{ .in = -1, .load = 1, .address_str = 0b101000001001111, .expected = -1 },
+        .{ .in = -1, .load = 1, .address_str = 0b000111111001111, .expected = 12345 },
+        .{ .in = -1, .load = 1, .address_str = 0b010111111001111, .expected = 12345 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111001110, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111001101, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111001011, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111000111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111011111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111111101111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111110001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111101001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100111011001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100110111001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100101111001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b100011111001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b101111111001111, .expected = 0 },
+        .{ .in = -1, .load = 0, .address_str = 0b110000000000000, .expected = 89 },
+    };
+
+    var mem = Memory{};
+    mem.reset();
+    // Set keyboard to return 75 initially (for test case at index 33)
+    mem.setKeyboardKey(75);
+
+    std.debug.print("\n|   in   |load |     address     |  out   | expected | device | peek |\n", .{});
+
+    for (test_cases, 0..) |tc, i| {
+        // Update keyboard to 89 before the last test case (which expects 89)
+        if (i == test_cases.len - 1) {
+            mem.setKeyboardKey(89);
+        }
+
+        const address = b15(tc.address_str);
+        const input_u16: u16 = @bitCast(@as(i16, @intCast(tc.in)));
+        const input = b16(input_u16);
+
+        const output = mem.tick(input, address, tc.load);
+        const output_value = @as(i16, @bitCast(fb16(output)));
+        const expected_value = tc.expected;
+
+        const inf = mem.info(address);
+        const peek_bits = mem.peek(address);
+        const peek_value = @as(i16, @bitCast(fb16(peek_bits)));
+
+        const passed = output_value == expected_value;
+        const status = if (passed) "✓" else "✗";
+
+        std.debug.print("| {d:6} |  {d}  | {b:0>15} | {d:6} | {d:8} | {s:6} | {d:5}  {s}\n", .{
+            tc.in,
+            tc.load,
+            fromBits(15, address),
+            output_value,
+            expected_value,
+            inf.device,
+            peek_value,
+            status,
+        });
+
+        if (!passed) {
+            std.debug.print("  FAILED: expected {d}, got {d}\n", .{ expected_value, output_value });
+        }
+
+        try testing.expectEqual(expected_value, output_value);
+    }
+}

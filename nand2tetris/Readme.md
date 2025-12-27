@@ -1,18 +1,5 @@
 ## Nand2Tetris
 
-### Note
-
-* Nand2Tetris uses LSB (Least Significant Bit) first encoding.
-* 1 -> 1000
-* 2 -> 0100
-* 4 -> 0010
-
-* In this project, we will use MSB (Most Significant Bit) first encoding.
-* All inputs and outputs are in MSB first encoding.
-* 1 -> 0001
-* 2 -> 0010
-* 4 -> 0100
-
 ## Nand2Tetris
 
 * https://nandgame.com/

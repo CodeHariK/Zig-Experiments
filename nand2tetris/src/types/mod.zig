@@ -28,6 +28,7 @@ pub const b16 = uintn.b16;
 pub const fb2 = uintn.fb2;
 pub const fb3 = uintn.fb3;
 pub const fb4 = uintn.fb4;
+pub const fb6 = uintn.fb6;
 pub const fb8 = uintn.fb8;
 pub const fb12 = uintn.fb12;
 pub const fb13 = uintn.fb13;

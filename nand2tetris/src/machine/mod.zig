@@ -127,7 +127,7 @@ test "gates module: include all gate tests" {
     _ = @import("keyboard.zig");
     _ = @import("screen.zig");
     _ = @import("rom.zig");
-    // _ = @import("memory.zig");
+    _ = @import("memory.zig");
     // _ = @import("computer.zig");
     // _ = @import("cpu.zig");
 }

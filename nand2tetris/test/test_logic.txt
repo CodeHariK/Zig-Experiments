@@ -1,6 +1,5 @@
-1/20 mod.test.gates module: include all gate tests...OK
-2/20 logic.test.run all gate tests...OK
-3/20 logic.test.single-bit gates follow truth tables...
+1/5 mod.test.gates module: include all gate tests...OK
+2/5 logic.test.single-bit gates follow truth tables...
 LOGIC GATES TEST------------------
 a  b  | NOT  AND  OR  XOR  NAND  NOR  XNOR
 0  0  |  1    0   0    0    1     1    1
@@ -8,67 +7,58 @@ a  b  | NOT  AND  OR  XOR  NAND  NOR  XNOR
 1  0  |  0    0   1    1    1     0    0
 1  1  |  0    1   1    0    0     0    1
 OK
-4/20 logic.test.16-bit gates (bit-array version)...OK
-5/20 logic.test.16-bit gates (integer version)...OK
-6/20 logic.test.OR8WAY returns 1 if any bit is set...OK
-7/20 mux.test.MUX/DMUX...
+3/5 mux.test.MUX/DMUX...
 MUX TEST------------------
-sel  in1  in0  MUX   DMUX
+sel  in0  in1  MUX   DMUX
  0    0    0    0    0,0
- 0    0    1    1    0,0
- 0    1    0    0    0,1
- 0    1    1    1    0,1
+ 0    1    0    1    0,0
+ 0    0    1    0    1,0
+ 0    1    1    1    1,0
  1    0    0    0    0,0
- 1    0    1    0    0,0
- 1    1    0    1    1,0
- 1    1    1    1    1,0
-OK
-8/20 mux.test.MUX16...OK
-9/20 mux.test.MUX4WAY16...
+ 1    1    0    0    0,0
+ 1    0    1    1    0,1
+ 1    1    1    1    0,1
+
 MUX4WAY16------------------
-8, 4, 2, 1  sel=00:0 -> 1
-8, 4, 2, 1  sel=01:1 -> 2
-8, 4, 2, 1  sel=10:2 -> 4
-8, 4, 2, 1  sel=11:3 -> 8
-OK
-10/20 mux.test.MUX8WAY16...
+0, 1, 2, 3  sel=00:0 -> 0:0
+0, 1, 2, 3  sel=01:1 -> 1:1
+0, 1, 2, 3  sel=10:2 -> 2:2
+0, 1, 2, 3  sel=11:3 -> 3:3
+
 MUX8WAY16------------------
-128, 64, 32, 16, 8, 4, 2, 1  sel=000:0 -> 1 1
-128, 64, 32, 16, 8, 4, 2, 1  sel=001:1 -> 2 2
-128, 64, 32, 16, 8, 4, 2, 1  sel=010:2 -> 4 4
-128, 64, 32, 16, 8, 4, 2, 1  sel=011:3 -> 8 8
-128, 64, 32, 16, 8, 4, 2, 1  sel=100:4 -> 16 16
-128, 64, 32, 16, 8, 4, 2, 1  sel=101:5 -> 32 32
-128, 64, 32, 16, 8, 4, 2, 1  sel=110:6 -> 64 64
-128, 64, 32, 16, 8, 4, 2, 1  sel=111:7 -> 128 128
-OK
-11/20 mux.test.DMUX4WAY...
+0, 1, 2, 3, 4, 5, 6, 7  sel=000:0 -> 0:0
+0, 1, 2, 3, 4, 5, 6, 7  sel=001:1 -> 1:1
+0, 1, 2, 3, 4, 5, 6, 7  sel=010:2 -> 2:2
+0, 1, 2, 3, 4, 5, 6, 7  sel=011:3 -> 3:3
+0, 1, 2, 3, 4, 5, 6, 7  sel=100:4 -> 4:4
+0, 1, 2, 3, 4, 5, 6, 7  sel=101:5 -> 5:5
+0, 1, 2, 3, 4, 5, 6, 7  sel=110:6 -> 6:6
+0, 1, 2, 3, 4, 5, 6, 7  sel=111:7 -> 7:7
+
 DMUX4WAY------------------
-sel=00:0 -> { 0, 0, 0, 1 }
-sel=01:1 -> { 0, 0, 1, 0 }
-sel=10:2 -> { 0, 1, 0, 0 }
-sel=11:3 -> { 1, 0, 0, 0 }
-OK
-12/20 mux.test.DMUX8WAY...
+sel=00:0 -> { 1, 0, 0, 0 }:1
+sel=01:1 -> { 0, 1, 0, 0 }:2
+sel=10:2 -> { 0, 0, 1, 0 }:4
+sel=11:3 -> { 0, 0, 0, 1 }:8
+
 DMUX8WAY------------------
-sel=000:0 -> { 0, 0, 0, 0, 0, 0, 0, 1 } 1
-sel=001:1 -> { 0, 0, 0, 0, 0, 0, 1, 0 } 2
-sel=010:2 -> { 0, 0, 0, 0, 0, 1, 0, 0 } 4
-sel=011:3 -> { 0, 0, 0, 0, 1, 0, 0, 0 } 8
-sel=100:4 -> { 0, 0, 0, 1, 0, 0, 0, 0 } 16
-sel=101:5 -> { 0, 0, 1, 0, 0, 0, 0, 0 } 32
-sel=110:6 -> { 0, 1, 0, 0, 0, 0, 0, 0 } 64
-sel=111:7 -> { 1, 0, 0, 0, 0, 0, 0, 0 } 128
+sel=000:0 -> { 1, 0, 0, 0, 0, 0, 0, 0 }:1
+sel=001:1 -> { 0, 1, 0, 0, 0, 0, 0, 0 }:2
+sel=010:2 -> { 0, 0, 1, 0, 0, 0, 0, 0 }:4
+sel=011:3 -> { 0, 0, 0, 1, 0, 0, 0, 0 }:8
+sel=100:4 -> { 0, 0, 0, 0, 1, 0, 0, 0 }:16
+sel=101:5 -> { 0, 0, 0, 0, 0, 1, 0, 0 }:32
+sel=110:6 -> { 0, 0, 0, 0, 0, 0, 1, 0 }:64
+sel=111:7 -> { 0, 0, 0, 0, 0, 0, 0, 1 }:128
 OK
-13/20 adder.test.HALF_ADDER...
+4/5 adder.test.ADDER...
 HALF_ADDER------------------
 a b -> carry sum
 0 0 ->   0    0
 0 1 ->   0    1
 1 0 ->   0    1
 1 1 ->   1    0
-OK
-14/20 adder.test.FULL_ADDER...
+
 FULL_ADDER------------------
 a b cin -> cout sum
 0 0  0  ->  0   0
@@ -79,30 +69,27 @@ a b cin -> cout sum
 1 0  1  ->  1   0
 1 1  0  ->  1   0
 1 1  1  ->  1   1
-OK
-15/20 adder.test.RIPPLE_ADDER 4-bit...
+
 RIPPLE_ADDER u4------------------
 5 + 3 = 8 (carry=0)
 10 + 5 = 15 (carry=0)
 15 + 1 = 0 (carry=1)
 9 + 9 = 2 (carry=1)
-OK
-16/20 adder.test.RIPPLE_ADDER 16-bit...
+
 RIPPLE_ADDER u16------------------
 1000 + 2000 = 3000 (carry=0)
 65535 + 1 = 0 (carry=1)
 32768 + 32768 = 0 (carry=1)
 12345 + 54321 = 1130 (carry=1)
 4660 + 39030 = 43690 (carry=0)
-OK
-17/20 adder.test.INC16...
+
 INC16------------------
 0 + 1 = 1 (carry=0)
 1 + 1 = 2 (carry=0)
 65531 + 1 = 65532 (carry=0)
 65535 + 1 = 0 (carry=1)
 OK
-18/20 two_complement.test.TWO_COMPLEMENT_4...
+5/5 two_complement.test.TWO_COMPLEMENT_4...
 TWO_COMPLEMENT_4------------------
 -0 = 0 (binary: 0000)
 -1 = 15 (binary: 1111)
@@ -120,8 +107,7 @@ TWO_COMPLEMENT_4------------------
 -13 = 3 (binary: 0011)
 -14 = 2 (binary: 0010)
 -15 = 1 (binary: 0001)
-OK
-19/20 two_complement.test.TWO_COMPLEMENT_16...
+
 TWO_COMPLEMENT_16------------------
 -0 = 0 (hex: 0x0000)
 -1 = 65535 (hex: 0xFFFF)
@@ -133,8 +119,7 @@ TWO_COMPLEMENT_16------------------
 -65535 = 1 (hex: 0x0001)
 -65534 = 2 (hex: 0x0002)
 -4660 = 60876 (hex: 0xEDCC)
-OK
-20/20 two_complement.test.double negation returns original value...
+
 DOUBLE NEGATION------------------
 -(-0) = 0
 -(-1) = 1
@@ -145,4 +130,4 @@ DOUBLE NEGATION------------------
 -(-65535) = 65535
 -(-65534) = 65534
 OK
-All 20 tests passed.
+All 5 tests passed.
