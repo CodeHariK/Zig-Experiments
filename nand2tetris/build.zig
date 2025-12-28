@@ -45,6 +45,7 @@ pub fn build(b: *std.Build) void {
     machine_mod.addImport("types", types_mod);
     machine_mod.addImport("logic", logic_mod);
     machine_mod.addImport("memory", memory_mod);
+    machine_mod.addImport("machine_language", machine_language_mod);
 
     // ---- root module (src/) ----
     const root_mod = b.createModule(.{
@@ -57,6 +58,7 @@ pub fn build(b: *std.Build) void {
     root_mod.addImport("types", types_mod);
     root_mod.addImport("logic", logic_mod);
     root_mod.addImport("memory", memory_mod);
+    root_mod.addImport("machine_language", machine_language_mod);
     root_mod.addImport("machine", machine_mod);
 
     // ---- executable ----

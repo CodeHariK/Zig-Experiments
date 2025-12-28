@@ -69,15 +69,18 @@ pub const Instruction = union(enum) {
     /// Decode 16-bit binary to instruction
     /// Automatically determines if it's an A or C instruction
     pub fn decode(binary: u16) !Self {
-        // Check if it's a C-instruction (bit 15 = 1)
+        // Try C-instruction first (bit 15 = 1)
         if (CInstruction.decode(binary)) |c_inst| {
             return Self{ .c = c_inst };
+        } else |err| {
+            // If it's not a C-instruction, try A-instruction
+            if (err == ERR.NotCInstruction) {
+                const a_inst = try AInstruction.decode(binary);
+                return Self{ .a = a_inst };
+            }
+            // Some other error occurred
+            return err;
         }
-        // Must be an A-instruction (bit 15 = 0)
-        if (AInstruction.decode(binary)) |a_inst| {
-            return Self{ .a = a_inst };
-        }
-        return ERR.InvalidInstruction;
     }
 
     /// Check if instruction is an A-instruction

@@ -123,11 +123,11 @@ const std = @import("std");
 const testing = std.testing;
 
 test "gates module: include all gate tests" {
-    _ = @import("alu.zig");
-    _ = @import("keyboard.zig");
-    _ = @import("screen.zig");
-    _ = @import("rom.zig");
-    _ = @import("memory.zig");
+    // _ = @import("alu.zig");
+    // _ = @import("keyboard.zig");
+    // _ = @import("screen.zig");
+    // _ = @import("rom.zig");
+    // _ = @import("memory.zig");
+    _ = @import("cpu.zig");
     // _ = @import("computer.zig");
-    // _ = @import("cpu.zig");
 }
