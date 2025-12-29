@@ -463,6 +463,15 @@ test "Computer: basic initialization and reset" {
     try testing.expectEqual(@as(u15, 0), fb15(pc));
 }
 
+const add_program_assembly = [_][]const u8{
+    "@2", // Load 2 into A register
+    "D=A", // Copy A (2) to D register
+    "@3", // Load 3 into A register
+    "D=D+A", // Add A (3) to D (2), result (5) in D
+    "@0", // Load 0 into A register (address for result)
+    "M=D", // Store D (5) into RAM[0]
+};
+
 test "Computer: Add.hack program execution" {
     var computer = Computer{};
     computer.reset();
@@ -470,20 +479,11 @@ test "Computer: Add.hack program execution" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-    var symbol_table = try machine_language.SymbolTable.init(allocator);
-    defer symbol_table.deinit();
 
-    var add_program = machine_language.Program.init();
+    var add_program = try machine_language.Program.init(allocator);
     defer add_program.deinit(allocator);
-    const assembly_lines = [_][]const u8{
-        "@2", // Load 2 into A register
-        "D=A", // Copy A (2) to D register
-        "@3", // Load 3 into A register
-        "D=D+A", // Add A (3) to D (2), result (5) in D
-        "@0", // Load 0 into A register (address for result)
-        "M=D", // Store D (5) into RAM[0]
-    };
-    try add_program.fromAssemblyArray(allocator, &assembly_lines, &symbol_table);
+
+    try add_program.fromAssemblyArray(allocator, &add_program_assembly);
 
     try computer.loadProgram(allocator, &add_program);
 
@@ -532,4 +532,219 @@ test "Computer: Add.hack program execution" {
         printState(time, 0, &computer);
         time += 1;
     }
+}
+
+// Mult.asm - Multiplication program: R2 = R0 * R1
+
+const mult_program_assembly = [_][]const u8{
+    "@sum",
+    "M=0",
+    "@i",
+    "M=1",
+    "(LOOP)",
+    "@i",
+    "D=M",
+    "@R0",
+    "D=D-M",
+    "@END",
+    "D;JGT",
+    "@R1",
+    "D=M",
+    "@sum",
+    "M=D+M",
+    "@i",
+    "M=M+1",
+    "@LOOP",
+    "0;JMP",
+    "(END)",
+    "@sum",
+    "D=M",
+    "@R2",
+    "M=D",
+};
+
+test "Computer: Mult.hack program execution" {
+    var computer = Computer{};
+    computer.reset();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var mult_program = try machine_language.Program.init(allocator);
+    defer mult_program.deinit(allocator);
+
+    // Labels will be automatically collected during fromAssemblyArray
+    // Variables will be automatically added when first encountered
+    try mult_program.fromAssemblyArray(allocator, &mult_program_assembly);
+
+    try computer.loadProgram(allocator, &mult_program);
+
+    // Helper to set RAM value
+    const setRAM = struct {
+        fn set(comp: *Computer, address: u16, value: i16) void {
+            const mem = comp.getMemory();
+            const addr_bits = types.b15(address);
+            const val_bits = types.b16(@as(u16, @bitCast(value)));
+            _ = mem.tick(val_bits, addr_bits, 1);
+        }
+    }.set;
+
+    // Helper function to print state (similar to Add.hack test)
+    const printState = struct {
+        fn print(time_val: u32, reset_val: u1, comp: *Computer) void {
+            const a_reg = types.fb16(comp.getA());
+            const d_reg = types.fb16(comp.getD());
+            const pc = types.fb15(comp.getPC());
+            const memory = comp.getMemory();
+            const ram0 = types.fb16(memory.peek(types.b15(0)));
+            const ram1 = types.fb16(memory.peek(types.b15(1)));
+            const ram2 = types.fb16(memory.peek(types.b15(2)));
+            std.debug.print("|{d:4} |{d:4} |{d:8} |{d:8} |{d:3}|{d:8} |{d:8} |{d:8} |\n", .{
+                time_val, reset_val, a_reg, d_reg, pc, ram0, ram1, ram2,
+            });
+        }
+    }.print;
+
+    // Print header
+    std.debug.print("\n|time |reset|ARegister|DRegister|PC[]|RAM16K[0]|RAM16K[1]|RAM16K[2]|\n", .{});
+
+    // Helper function to run a test case
+    const runTestCase = struct {
+        var time_counter: u32 = 0;
+
+        fn run(comp: *Computer, r0: i16, r1: i16, ticks: u32, print_intermediate: bool) void {
+            // Reset only CPU and memory (not ROM, since program is already loaded)
+            comp.cpu.reset();
+            comp.memory.reset();
+
+            if (print_intermediate) {
+                printState(time_counter, 0, comp);
+                time_counter += 1;
+            }
+
+            setRAM(comp, 0, r0);
+            setRAM(comp, 1, r1);
+            setRAM(comp, 2, -1);
+
+            var i: u32 = 0;
+            while (i < ticks) : (i += 1) {
+                comp.tick(0);
+                if (print_intermediate) {
+                    printState(time_counter, 0, comp);
+                    time_counter += 1;
+                }
+            }
+
+            // Restore R0 and R1 in case the program changed them
+            setRAM(comp, 0, r0);
+            setRAM(comp, 1, r1);
+
+            // Always print final state
+            printState(time_counter, 0, comp);
+            time_counter += 1;
+        }
+    }.run;
+
+    // Test case 1: 0 * 0
+    runTestCase(&computer, 0, 0, 20, false);
+
+    // Test case 2: 1 * 0
+    runTestCase(&computer, 1, 0, 50, false);
+
+    // Test case 3: 0 * 2
+    runTestCase(&computer, 0, 2, 80, false);
+
+    // Test case 4: 3 * 1
+    runTestCase(&computer, 3, 1, 120, false);
+
+    // Test case 5: 2 * 4
+    runTestCase(&computer, 2, 4, 150, false);
+
+    // Test case 6: 6 * 7
+    runTestCase(&computer, 6, 7, 210, false);
+}
+
+// Sum.asm - Adds 1+2+...+100
+const sum_program_assembly = [_][]const u8{
+    "@i", // @i (16) : A = 16 : i variable
+    "M=1", // RAM[i] = 1 : initialize i to 1
+    "@sum", // @sum (17) : A = 17 : sum variable
+    "M=0", // RAM[sum] = 0 : initialize sum to 0
+    "(LOOP)", // Loop label
+    "@i", // @i : A = i variable address
+    "D=M", // D = RAM[i] : load i into D
+    "@100", // @100 : A = 100
+    "D=D-A", // D = D - 100 : check if i > 100
+    "@END", // @END : A = END label address
+    "D;JGT", // if D > 0, jump to END
+    "@i", // @i : A = i variable address
+    "D=M", // D = RAM[i] : load i into D
+    "@sum", // @sum : A = sum variable address
+    "M=D+M", // RAM[sum] = RAM[sum] + RAM[i] : add i to sum
+    "@i", // @i : A = i variable address
+    "M=M+1", // RAM[i] = RAM[i] + 1 : increment i
+    "@LOOP", // @LOOP : A = LOOP label address
+    "0;JMP", // 0;JMP : jump to LOOP
+    "(END)", // (END) : end label
+    "@END", // @END : A = END label address
+    "0;JMP", // 0;JMP : infinite loop
+};
+
+test "Computer: Sum.hack program execution (1+...+100)" {
+    var computer = Computer{};
+    computer.reset();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var sum_program = try machine_language.Program.init(allocator);
+    defer sum_program.deinit(allocator);
+
+    // Labels and variables will be automatically collected/added during fromAssemblyArray
+    try sum_program.fromAssemblyArray(allocator, &sum_program_assembly);
+
+    try computer.loadProgram(allocator, &sum_program);
+
+    // Helper function to print state
+    const printState = struct {
+        fn print(time_val: u32, reset_val: u1, comp: *Computer) void {
+            const a_reg = types.fb16(comp.getA());
+            const d_reg = types.fb16(comp.getD());
+            const pc = types.fb15(comp.getPC());
+            const memory = comp.getMemory();
+            // Print i (RAM[16]), sum (RAM[17])
+            const i_val = types.fb16(memory.peek(types.b15(16)));
+            const sum_val = types.fb16(memory.peek(types.b15(17)));
+            std.debug.print("|{d:4} |{d:4} |{d:8} |{d:8} |{d:3}|{d:8} |{d:8} |\n", .{
+                time_val, reset_val, a_reg, d_reg, pc, i_val, sum_val,
+            });
+        }
+    }.print;
+
+    // Print header
+    std.debug.print("\n|time |reset|ARegister|DRegister|PC[]|RAM16K[16](i)|RAM16K[17](sum)|\n", .{});
+
+    // Reset only CPU and memory (not ROM, since program is already loaded)
+    computer.cpu.reset();
+    computer.memory.reset();
+
+    var time: u32 = 0;
+    printState(time, 0, &computer);
+    time += 1;
+
+    // Run for 1500 cycles
+    var i: u32 = 0;
+    while (i < 1500) : (i += 1) {
+        computer.tick(0);
+        // Print every 100th cycle
+        if (time % 100 == 0) {
+            printState(time, 0, &computer);
+        }
+        time += 1;
+    }
+
+    // Print final result after 1500 cycles
+    printState(time - 1, 0, &computer);
 }

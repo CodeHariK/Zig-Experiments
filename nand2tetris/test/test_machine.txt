@@ -1,6 +1,6 @@
-1/9 mod.test.gates module: include all gate tests...OK
-2/9 computer.test.Computer: basic initialization and reset...OK
-3/9 computer.test.Computer: Add.hack program execution...
+1/11 mod.test.gates module: include all gate tests...OK
+2/11 computer.test.Computer: basic initialization and reset...OK
+3/11 computer.test.Computer: Add.hack program execution...
 |time |reset|ARegister|DRegister|PC[]|RAM16K[0]|RAM16K[1]|RAM16K[2]|
 |   0 |   0 |       0 |       0 |  0|       0 |       0 |       0 |
 |   1 |   0 |       2 |       0 |  1|       0 |       0 |       0 |
@@ -17,7 +17,36 @@
 |  12 |   0 |       0 |       5 |  5|       0 |       0 |       0 |
 |  13 |   0 |       0 |       5 |  6|       5 |       0 |       0 |
 OK
-4/9 cpu.test.CPU: comprehensive test vectors...
+4/11 computer.test.Computer: Mult.hack program execution...
+|time |reset|ARegister|DRegister|PC[]|RAM16K[0]|RAM16K[1]|RAM16K[2]|
+|   0 |   0 |       0 |       0 | 28|       0 |       0 |       0 |
+|   1 |   0 |       0 |       0 | 44|       1 |       0 |       0 |
+|   2 |   0 |       0 |       0 | 88|       0 |       2 |       0 |
+|   3 |   0 |       0 |       3 | 86|       3 |       1 |       3 |
+|   4 |   0 |       0 |       8 |130|       2 |       4 |       8 |
+|   5 |   0 |       0 |      42 |134|       6 |       7 |      42 |
+OK
+5/11 computer.test.Computer: Sum.hack program execution (1+...+100)...
+|time |reset|ARegister|DRegister|PC[]|RAM16K[16](i)|RAM16K[17](sum)|
+|   0 |   0 |       0 |       0 |  0|       0 |       0 |
+| 100 |   0 |      16 |       7 | 16|       8 |      28 |
+| 200 |   0 |       4 |      14 |  4|      15 |     105 |
+| 300 |   0 |      16 |      22 |  6|      22 |     231 |
+| 400 |   0 |     100 |   65465 |  8|      29 |     406 |
+| 500 |   0 |      18 |   65472 | 10|      36 |     630 |
+| 600 |   0 |      16 |      43 | 12|      43 |     903 |
+| 700 |   0 |      17 |      50 | 14|      50 |    1275 |
+| 800 |   0 |      16 |      57 | 16|      58 |    1653 |
+| 900 |   0 |       4 |      64 |  4|      65 |    2080 |
+|1000 |   0 |      16 |      72 |  6|      72 |    2556 |
+|1100 |   0 |     100 |   65515 |  8|      79 |    3081 |
+|1200 |   0 |      18 |   65522 | 10|      86 |    3655 |
+|1300 |   0 |      16 |      93 | 12|      93 |    4278 |
+|1400 |   0 |      17 |     100 | 14|     100 |    5050 |
+|1500 |   0 |      18 |       1 | 18|     101 |    5050 |
+|1500 |   0 |      18 |       1 | 18|     101 |    5050 |
+OK
+6/11 cpu.test.CPU: comprehensive test vectors...
 |  t |  inM  |   instruction    | reset | outM:ALUout | writeM | addrM:Aout |  pc  | DRegister | pass| asm 
 |  1 |     0 | 0011000000111001 |    0  |          +0 |    0   |   12345  |      1 |       +0  |  ✓  |  @12345
 |  2 |     0 | 1110110000010000 |    0  |      +12345 |    0   |   12345  |      2 |   +12345  |  ✓  |  D=A
@@ -71,8 +100,8 @@ OK
 | 45 | 11111 | 1110001100000111 |    1  |          +1 |    0   |    1000  |      0 |       +1  |  ✓  |  D;JMP
 | 46 | 11111 | 0111111111111111 |    0  |          +1 |    0   |   32767  |      1 |       +1  |  ✓  |  @32767
 OK
-5/9 rom.test.ROM32K and ROM32K_I produce identical results...OK
-6/9 memory.test.Memory: comprehensive test vectors...
+7/11 rom.test.ROM32K and ROM32K_I produce identical results...OK
+8/11 memory.test.Memory: comprehensive test vectors...
 |   in   |load |     address     |  out   | expected | device | peek |
 | +12345 |  1  | 010000000000000 |     +0 |       +0 |    RAM | +12345  ✓
 | +12345 |  1  | 010000000000000 | +12345 |   +12345 |    RAM | +12345  ✓
@@ -144,9 +173,9 @@ OK
 |     -1 |  0  | 101111111001111 |     +0 |       +0 | Screen |    +0  ✓
 |     -1 |  0  | 110000000000000 |    +89 |      +89 |    Kbd |   +89  ✓
 OK
-7/9 screen.test.Screen: Screen and Screen_I produce identical results...OK
-8/9 keyboard.test.Keyboard and Keyboard_I produce identical results...OK
-9/9 alu.test.ALU...
+9/11 screen.test.Screen: Screen and Screen_I produce identical results...OK
+10/11 keyboard.test.Keyboard and Keyboard_I produce identical results...OK
+11/11 alu.test.ALU...
 ALU TEST------------------
 |        x         |        y         |zx |nx |zy |ny | f |no |       out        |zr |ng |
 | 0000000000000000 | 1111111111111111 | 1 | 0 | 1 | 0 | 1 | 0 | 0000000000000000 | 1 | 0 |
@@ -186,4 +215,4 @@ ALU TEST------------------
 | 0000000000010001 | 0000000000000011 | 0 | 0 | 0 | 0 | 0 | 0 | 0000000000000001 | 0 | 0 |
 | 0000000000010001 | 0000000000000011 | 0 | 1 | 0 | 1 | 0 | 1 | 0000000000010011 | 0 | 0 |
 OK
-All 9 tests passed.
+All 11 tests passed.

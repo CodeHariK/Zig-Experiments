@@ -280,7 +280,8 @@ pub fn screenCol(address: u16) ?u16 {
 /// Handles predefined symbols, labels, and variables
 pub const SymbolTable = struct {
     const HashMap = std.StringHashMap(u16);
-    map: HashMap,
+    map: HashMap, // All symbols: predefined, labels, and variables
+    label_names: std.StringHashMap(void), // Track which symbols are labels (not variables)
     next_variable_addr: u16 = 16, // Variables start at RAM[16]
 
     const Self = @This();
@@ -289,6 +290,7 @@ pub const SymbolTable = struct {
     pub fn init(allocator: std.mem.Allocator) !Self {
         var table = Self{
             .map = HashMap.init(allocator),
+            .label_names = std.StringHashMap(void).init(allocator),
             .next_variable_addr = 16,
         };
 
@@ -328,6 +330,7 @@ pub const SymbolTable = struct {
     /// Deinitialize symbol table
     pub fn deinit(self: *Self) void {
         self.map.deinit();
+        self.label_names.deinit();
     }
 
     /// Look up a symbol and return its address
@@ -344,6 +347,7 @@ pub const SymbolTable = struct {
             return error.SymbolAlreadyExists;
         }
         try self.map.put(label, address);
+        try self.label_names.put(label, {});
     }
 
     /// Add a variable (auto-assigns next available address starting at 16)

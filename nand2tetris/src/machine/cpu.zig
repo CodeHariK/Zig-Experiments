@@ -698,7 +698,7 @@ test "CPU: comprehensive test vectors" {
         const ins = try machine_language.Instruction.decodeBinary(tc.instruction);
         var asm_str: []const u8 = undefined;
         if (ins.isA()) {
-            asm_str = try ins.a.toAssembly(&buffer, &symbol_table);
+            asm_str = try ins.a.toAssembly(&buffer, &symbol_table, true);
         } else {
             asm_str = try ins.c.toAssembly(&buffer);
         }

@@ -25,15 +25,13 @@ Generated binary:
 1111110000010000
 0000000000000010
 1110001100001000
-
 ✓ All binary instructions match expected output!
-
-=== Testing round-trip conversion ===
-Converted back to assembly:
+Converted back to assembly (with symbols):
 @sum
 M=0
 @i
 M=1
+(LOOP)
 @i
 D=M
 @R0
@@ -48,9 +46,34 @@ M=D+M
 M=M+1
 @LOOP
 0;JMP
+(END)
 @sum
 D=M
 @R2
+M=D
+
+Converted back to assembly (numeric addresses):
+@16
+M=0
+@17
+M=1
+@17
+D=M
+@0
+D=D-M
+@18
+D;JGT
+@1
+D=M
+@16
+M=D+M
+@17
+M=M+1
+@4
+0;JMP
+@16
+D=M
+@2
 M=D
 ✓ Round-trip conversion successful!
 ✓ Binary array conversion successful!
@@ -231,8 +254,8 @@ OK
   ✓ Round-trip: "@32767 // max value" -> "@32767"
 [33/35] 5
   ✓ Correctly rejected with error: error.InvalidAssembly
-[34/35] @UNKNOWN
-  ✓ Correctly rejected with error: error.SymbolNotFound
+[34/35] -1
+  ✓ Correctly rejected with error: error.InvalidAssembly
 [35/35] @32768
   ✓ Correctly rejected with error: error.NotAInstruction
 === Assembly Test Summary ===

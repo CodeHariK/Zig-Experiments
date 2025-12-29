@@ -115,7 +115,8 @@ pub const AInstruction = struct {
     /// Assembly format: @value or @symbol
     /// Examples: "@5", "@100", "@LOOP", "@R0"
     /// Uses symbol table to resolve symbols
-    pub fn fromAssembly(assembly: []const u8, symbol_table: *const SymbolTable) !Self {
+    /// Automatically adds variables when first encountered
+    pub fn fromAssembly(assembly: []const u8, symbol_table: *SymbolTable) !Self {
         // Remove leading whitespace (spaces, tabs, etc.)
         var trimmed = assembly;
         while (trimmed.len > 0 and (trimmed[0] == ' ' or trimmed[0] == '\t')) {
@@ -148,7 +149,9 @@ pub const AInstruction = struct {
             if (symbol_table.lookup(clean_value)) |addr| {
                 return decode(addr);
             } else {
-                return ERR.SymbolNotFound;
+                // Symbol not found - automatically add it as a variable
+                const addr = try symbol_table.addVariable(clean_value);
+                return decode(addr);
             }
         }
     }
@@ -157,9 +160,19 @@ pub const AInstruction = struct {
     /// Returns assembly string like "@5" or "@R0" (if symbol found in table)
     /// Performs reverse lookup (address -> symbol name) by iterating the map
     ///
+    /// Parameters:
+    ///   emit_symbols - If true, emit symbolic names (e.g., "@sum", "@LOOP")
+    ///                  If false, emit numeric addresses (e.g., "@16", "@4")
+    ///
     /// To disassemble from binary, use: decode(binary)?.toAssembly(buffer, symbol_table)
-    pub fn toAssembly(self: Self, buffer: []u8, symbol_table: *const SymbolTable) ![]const u8 {
+    pub fn toAssembly(self: Self, buffer: []u8, symbol_table: *const SymbolTable, emit_symbols: bool) ![]const u8 {
         const value = self.value;
+
+        // If not emitting symbols, always use numeric value
+        if (!emit_symbols) {
+            const formatted = try std.fmt.bufPrint(buffer, "@{d}", .{value});
+            return formatted;
+        }
 
         // Reverse lookup: find symbol name for this address
         // Note: This requires iterating since hash maps only support key->value lookup
@@ -318,7 +331,7 @@ test "A-instruction: assembly parsing and generation" {
 
         // Invalid assembly (expected_value = null means should error)
         .{ .assembly = "5", .exp_bin = null, .exp_asm = &.{} },
-        .{ .assembly = "@UNKNOWN", .exp_bin = null, .exp_asm = &.{} },
+        .{ .assembly = "-1", .exp_bin = null, .exp_asm = &.{} },
         .{ .assembly = "@32768", .exp_bin = null, .exp_asm = &.{} },
     };
 
@@ -376,7 +389,7 @@ test "A-instruction: assembly parsing and generation" {
         std.debug.print("  ✓ getValue() = {d}\n", .{inst.value});
 
         // Test toAssembly
-        const result = try inst.toAssembly(&buffer, &symbol_table);
+        const result = try inst.toAssembly(&buffer, &symbol_table, true);
 
         // Verify toAssembly() result parses to the same instruction
         const result_parsed = AInstruction.fromAssembly(result, &symbol_table) catch |err| {
@@ -405,7 +418,7 @@ test "A-instruction: assembly parsing and generation" {
         }
 
         // Test round-trip: assembly -> instruction -> assembly
-        const round_trip = try inst.toAssembly(&buffer, &symbol_table);
+        const round_trip = try inst.toAssembly(&buffer, &symbol_table, true);
         const round_trip_inst = AInstruction.fromAssembly(round_trip, &symbol_table) catch |err| {
             std.debug.print("  ✗ FAILED: Round-trip fromAssembly error: {}\n", .{err});
             failed += 1;

@@ -84,9 +84,13 @@ pub const Instruction = union(enum) {
 
     /// Convert instruction to assembly string
     /// Uses the provided buffer and symbol table for reverse lookup
-    pub fn toAssembly(self: Self, buffer: []u8, symbol_table: *const SymbolTable) ![]const u8 {
+    ///
+    /// Parameters:
+    ///   emit_symbols - If true, emit symbolic names (e.g., "@sum", "@LOOP")
+    ///                  If false, emit numeric addresses (e.g., "@16", "@4")
+    pub fn toAssembly(self: Self, buffer: []u8, symbol_table: *const SymbolTable, emit_symbols: bool) ![]const u8 {
         return switch (self) {
-            .a => self.a.toAssembly(buffer, symbol_table),
+            .a => self.a.toAssembly(buffer, symbol_table, emit_symbols),
             .c => self.c.toAssembly(buffer),
         };
     }
@@ -113,7 +117,7 @@ pub const Instruction = union(enum) {
     ///
     /// Parameters:
     ///   - assembly: Assembly string (e.g., "@5", "D=A", "M=D+1", "D;JGT")
-    ///   - symbol_table: Symbol table for resolving symbols in A-instructions
+    ///   - symbol_table: Symbol table for resolving symbols in A-instructions (mutable to allow auto-adding variables)
     ///
     /// Returns:
     ///   - Instruction (either A or C)
@@ -122,7 +126,8 @@ pub const Instruction = union(enum) {
     ///   - A-instructions start with '@'
     ///   - C-instructions are everything else
     ///   - Trims whitespace and handles comments
-    pub fn decodeAssembly(assembly: []const u8, symbol_table: *const SymbolTable) !Self {
+    ///   - Automatically adds variables to symbol table when first encountered
+    pub fn decodeAssembly(assembly: []const u8, symbol_table: *SymbolTable) !Self {
         // Trim leading/trailing whitespace
         var trimmed = assembly;
         while (trimmed.len > 0 and (trimmed[0] == ' ' or trimmed[0] == '\t')) {
@@ -178,31 +183,82 @@ pub const Instruction = union(enum) {
 /// A program is a collection of instructions
 pub const Program = struct {
     instructions: std.ArrayList(Instruction),
+    symbol_table: SymbolTable,
 
     const Self = @This();
 
-    /// Initialize an empty program
-    pub fn init() Self {
+    /// Initialize an empty program with a symbol table
+    pub fn init(allocator: std.mem.Allocator) !Self {
         return Self{
             .instructions = std.ArrayList(Instruction).empty,
+            .symbol_table = try SymbolTable.init(allocator),
         };
     }
 
     /// Deinitialize the program and free all memory
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.instructions.deinit(allocator);
+        self.symbol_table.deinit();
     }
 
     /// Create a program from an array of assembly strings
+    /// First pass: collect labels
+    /// Second pass: assemble instructions
     pub fn fromAssemblyArray(
         self: *Self,
         allocator: std.mem.Allocator,
         assembly_lines: []const []const u8,
-        symbol_table: *const SymbolTable,
     ) !void {
         // Clear existing instructions
         self.instructions.clearRetainingCapacity();
 
+        // First pass: collect labels and their addresses
+        var instruction_count: u16 = 0;
+        for (assembly_lines) |line| {
+            var trimmed = line;
+            while (trimmed.len > 0 and (trimmed[0] == ' ' or trimmed[0] == '\t')) {
+                trimmed = trimmed[1..];
+            }
+            var end = trimmed.len;
+            while (end > 0 and (trimmed[end - 1] == ' ' or trimmed[end - 1] == '\t' or trimmed[end - 1] == '\n' or trimmed[end - 1] == '\r')) {
+                end -= 1;
+            }
+            trimmed = trimmed[0..end];
+
+            // Remove comments
+            if (std.mem.indexOf(u8, trimmed, "//")) |comment_start| {
+                trimmed = trimmed[0..comment_start];
+                end = trimmed.len;
+                while (end > 0 and (trimmed[end - 1] == ' ' or trimmed[end - 1] == '\t')) {
+                    end -= 1;
+                }
+                trimmed = trimmed[0..end];
+            }
+
+            // Skip empty lines
+            if (trimmed.len == 0) {
+                continue;
+            }
+
+            // Check if it's a label definition (starts with '(' and ends with ')')
+            if (trimmed[0] == '(') {
+                if (trimmed.len > 2 and trimmed[trimmed.len - 1] == ')') {
+                    const label_name = trimmed[1 .. trimmed.len - 1];
+                    // Add label to symbol table with current instruction count as address
+                    self.symbol_table.addLabel(label_name, instruction_count) catch |err| {
+                        // Ignore if label already exists (might be duplicate)
+                        if (err != ERR.SymbolAlreadyExists) {
+                            return err;
+                        }
+                    };
+                }
+            } else {
+                // It's an instruction, increment counter
+                instruction_count += 1;
+            }
+        }
+
+        // Second pass: assemble instructions
         // Pre-allocate capacity with upper bound (assembly_lines.len)
         // Some lines may be skipped (empty, labels, comments), but this avoids
         // reallocations in the common case where most lines are valid instructions
@@ -211,7 +267,8 @@ pub const Program = struct {
         for (assembly_lines) |line| {
             // Use decodeAssembly to parse the line
             // It handles trimming, comments, empty lines, and label definitions
-            const inst = Instruction.decodeAssembly(line, symbol_table) catch |err| {
+            // Pass mutable reference so variables can be automatically added
+            const inst = Instruction.decodeAssembly(line, &self.symbol_table) catch |err| {
                 // Skip invalid assembly (empty lines, labels, etc.)
                 if (err == ERR.InvalidAssembly) {
                     continue;
@@ -223,25 +280,76 @@ pub const Program = struct {
     }
 
     /// Convert the program to an array of assembly strings
+    /// Includes label definitions before instructions at label addresses
+    ///
+    /// Parameters:
+    ///   emit_symbols - If true, emit symbolic names for labels and variables (e.g., "@sum", "(LOOP)")
+    ///                  If false, emit numeric addresses (e.g., "@16", labels are omitted or shown as addresses)
     pub fn toAssemblyArray(
         self: *const Self,
         allocator: std.mem.Allocator,
-        symbol_table: *const SymbolTable,
         buffer: []u8,
+        emit_symbols: bool,
     ) !std.ArrayList([]const u8) {
         var assembly_lines = std.ArrayList([]const u8).empty;
 
-        // Pre-allocate capacity for the pointer array
-        // Note: This only pre-allocates the ArrayList's internal buffer (array of pointers)
-        // The strings themselves are still allocated separately via dupe()
-        // To get truly contiguous strings, we'd need to use ArenaAllocator, but that
-        // requires returning the arena to keep strings alive (lifetime complexity)
-        try assembly_lines.ensureTotalCapacity(allocator, self.instructions.items.len);
+        // Build reverse map: address -> label name
+        // Labels are instruction addresses (ROM addresses 0 to instruction_count-1)
+        // Variables are RAM addresses (>= 16)
+        // Predefined symbols are registers (R0-R15 = 0-15) and I/O addresses
+        var label_map = std.AutoHashMap(u16, []const u8).init(allocator);
+        defer label_map.deinit();
 
-        for (self.instructions.items) |inst| {
-            const asm_str = try inst.toAssembly(buffer, symbol_table);
-            // Copy the assembly string to a newly allocated slice
-            // Each string is allocated separately, so they're not contiguous
+        const instruction_count = @as(u16, @intCast(self.instructions.items.len));
+        // Iterate over label_names to find labels (they're tracked separately)
+        var label_name_iterator = self.symbol_table.label_names.iterator();
+        while (label_name_iterator.next()) |entry| {
+            const name = entry.key_ptr.*;
+            // Get the address for this label
+            if (self.symbol_table.map.get(name)) |addr| {
+                // A label is an instruction address (ROM) that's:
+                // 1. Less than the number of instructions (valid instruction address)
+                // 2. Not a predefined symbol
+                if (addr < instruction_count) {
+                    // Check if it's a predefined register (R0-R15 = 0-15)
+                    const is_register = (name.len == 2 or name.len == 3) and
+                        name[0] == 'R' and
+                        (name.len == 2 or (name[1] >= '0' and name[1] <= '9'));
+                    // Check if it's a predefined I/O symbol
+                    const is_io = std.mem.eql(u8, name, "SCREEN") or std.mem.eql(u8, name, "KBD");
+                    // Check if it's a virtual register
+                    const is_virtual = std.mem.eql(u8, name, "SP") or
+                        std.mem.eql(u8, name, "LCL") or
+                        std.mem.eql(u8, name, "ARG") or
+                        std.mem.eql(u8, name, "THIS") or
+                        std.mem.eql(u8, name, "THAT");
+
+                    if (!is_register and !is_io and !is_virtual) {
+                        // It's a label (tracked in label_names, not a predefined symbol)
+                        try label_map.put(addr, name);
+                    }
+                }
+            }
+        }
+
+        // Pre-allocate capacity (might need extra for labels)
+        try assembly_lines.ensureTotalCapacity(allocator, self.instructions.items.len + label_map.count());
+
+        // Output instructions with labels
+        for (self.instructions.items, 0..) |inst, addr| {
+            // Check if there's a label at this address
+            if (label_map.get(@as(u16, @intCast(addr)))) |label_name| {
+                if (emit_symbols) {
+                    // Output label definition with symbolic name
+                    const label_str = try std.fmt.bufPrint(buffer, "({s})", .{label_name});
+                    const label_copy = try allocator.dupe(u8, label_str);
+                    try assembly_lines.append(allocator, label_copy);
+                }
+                // If emit_symbols is false, we skip label definitions (they're just metadata)
+            }
+
+            // Output instruction
+            const asm_str = try inst.toAssembly(buffer, &self.symbol_table, emit_symbols);
             const asm_copy = try allocator.dupe(u8, asm_str);
             try assembly_lines.append(allocator, asm_copy);
         }
@@ -372,22 +480,11 @@ fn run_test_program(index: usize) !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var symbol_table = try SymbolTable.init(allocator);
-    defer symbol_table.deinit();
-
-    // Setup labels and variables
-    // LOOP label at address 4 (after @sum, M=0, @i, M=1)
-    try symbol_table.addLabel("LOOP", 4);
-    // END label at address 18 (after all loop instructions)
-    try symbol_table.addLabel("END", 18);
-    // Variables: sum at 16, i at 17
-    _ = try symbol_table.addVariable("sum");
-    _ = try symbol_table.addVariable("i");
-
     // Parse assembly and build instructions using Program
-    var program = Program.init();
+    // Labels and variables are automatically collected/added during assembly
+    var program = try Program.init(allocator);
     defer program.deinit(allocator);
-    try program.fromAssemblyArray(allocator, assembly_lines, &symbol_table);
+    try program.fromAssemblyArray(allocator, assembly_lines);
 
     // Verify binary output
     std.debug.print("Generated binary:\n", .{});
@@ -408,12 +505,10 @@ fn run_test_program(index: usize) !void {
         return ERR.TestFailed;
     }
 
-    std.debug.print("\n✓ All binary instructions match expected output!\n", .{});
+    std.debug.print("✓ All binary instructions match expected output!\n", .{});
 
-    // Test round-trip: convert instructions back to assembly
-    std.debug.print("\n=== Testing round-trip conversion ===\n", .{});
     var buffer: [256]u8 = undefined;
-    var asm_lines = try program.toAssemblyArray(allocator, &symbol_table, &buffer);
+    var asm_lines = try program.toAssemblyArray(allocator, &buffer, true);
     defer {
         // Free individual strings before deinitializing ArrayList
         for (asm_lines.items) |line| {
@@ -422,15 +517,31 @@ fn run_test_program(index: usize) !void {
         asm_lines.deinit(allocator);
     }
 
-    std.debug.print("Converted back to assembly:\n", .{});
+    std.debug.print("Converted back to assembly (with symbols):\n", .{});
     for (asm_lines.items) |line| {
         std.debug.print("{s}\n", .{line});
     }
 
+    // Also print with numeric addresses
+    var buffer2: [256]u8 = undefined;
+    var asm_lines_numeric = try program.toAssemblyArray(allocator, &buffer2, false);
+    defer {
+        // Free individual strings before deinitializing ArrayList
+        for (asm_lines_numeric.items) |line| {
+            allocator.free(line);
+        }
+        asm_lines_numeric.deinit(allocator);
+    }
+
+    std.debug.print("\nConverted back to assembly (numeric addresses):\n", .{});
+    for (asm_lines_numeric.items) |line| {
+        std.debug.print("{s}\n", .{line});
+    }
+
     // Verify round-trip: convert back to instructions and check binary matches
-    var program2 = Program.init();
+    var program2 = try Program.init(allocator);
     defer program2.deinit(allocator);
-    try program2.fromAssemblyArray(allocator, asm_lines.items, &symbol_table);
+    try program2.fromAssemblyArray(allocator, asm_lines.items);
 
     var round_trip_match = true;
     for (program.instructions.items, program2.instructions.items, 0..) |inst1, inst2, i| {
@@ -468,7 +579,7 @@ fn run_test_program(index: usize) !void {
     std.debug.print("✓ Binary array conversion successful!\n", .{});
 
     // Test round-trip: binary -> instructions -> binary
-    var program3 = Program.init();
+    var program3 = try Program.init(allocator);
     defer program3.deinit(allocator);
     try program3.fromBinaryArray(allocator, binaryInstructions.items);
 
@@ -488,27 +599,22 @@ fn run_test_program(index: usize) !void {
     }
     std.debug.print("✓ Binary round-trip conversion successful!\n", .{});
 
-    // Test full round-trip: assembly -> instructions -> binary -> instructions -> assembly
+    // Test full round-trip: assembly -> instructions -> binary -> instructions
+    // Compare binary code (not assembly) since symbol names are lost in binary conversion
     var binary_array2 = try program.toBinaryArray(allocator);
     defer binary_array2.deinit(allocator);
-    var program4 = Program.init();
+    var program4 = try Program.init(allocator);
     defer program4.deinit(allocator);
     try program4.fromBinaryArray(allocator, binary_array2.items);
-    var buffer2: [256]u8 = undefined;
-    var asm_lines2 = try program4.toAssemblyArray(allocator, &symbol_table, &buffer2);
-    defer {
-        // Free individual strings before deinitializing ArrayList
-        for (asm_lines2.items) |line| {
-            allocator.free(line);
-        }
-        asm_lines2.deinit(allocator);
-    }
 
+    // Compare binary instructions (the actual program code)
     var full_round_trip_match = true;
-    for (asm_lines.items, asm_lines2.items, 0..) |asm1, asm2, i| {
-        if (!std.mem.eql(u8, asm1, asm2)) {
+    for (program.instructions.items, program4.instructions.items, 0..) |inst1, inst4, i| {
+        const binary1 = inst1.toBinary();
+        const binary4 = inst4.toBinary();
+        if (binary1 != binary4) {
             full_round_trip_match = false;
-            std.debug.print("  ✗ Full round-trip mismatch at index {d}: \"{s}\" != \"{s}\"\n", .{ i, asm1, asm2 });
+            std.debug.print("  ✗ Full round-trip mismatch at index {d}: {b:0>16} != {b:0>16}\n", .{ i, binary1, binary4 });
         }
     }
 
