@@ -695,7 +695,7 @@ test "CPU: comprehensive test vectors" {
         const inM_bits = b16(tc.inM);
         const instruction_bits = b16(tc.instruction);
 
-        const ins = try machine_language.Instruction.decode(tc.instruction);
+        const ins = try machine_language.Instruction.decodeBinary(tc.instruction);
         var asm_str: []const u8 = undefined;
         if (ins.isA()) {
             asm_str = try ins.a.toAssembly(&buffer, &symbol_table);

@@ -90,6 +90,7 @@ pub const Instruction = @import("instruction.zig").Instruction;
 pub const AInstruction = @import("a_instruction.zig").AInstruction;
 pub const CInstruction = @import("c_instruction.zig").CInstruction;
 pub const SymbolTable = @import("memory_map.zig").SymbolTable;
+pub const Program = @import("instruction.zig").Program;
 
 test "machine_language module: include all machine language tests" {
     // _ = @import("memory_map.zig");

@@ -1,6 +1,6 @@
 1/12 mod.test.machine_language module: include all machine language tests...OK
 2/12 instruction.test.multiplication program...
-=== Multiplication Program Test ===
+=== multiplication Program Test ===
 
 Generated binary:
 0000000000010000
@@ -27,6 +27,35 @@ Generated binary:
 1110001100001000
 
 ✓ All binary instructions match expected output!
+
+=== Testing round-trip conversion ===
+Converted back to assembly:
+@sum
+M=0
+@i
+M=1
+@i
+D=M
+@R0
+D=D-M
+@END
+D;JGT
+@R1
+D=M
+@sum
+M=D+M
+@i
+M=M+1
+@LOOP
+0;JMP
+@sum
+D=M
+@R2
+M=D
+✓ Round-trip conversion successful!
+✓ Binary array conversion successful!
+✓ Binary round-trip conversion successful!
+✓ Full round-trip conversion successful!
 OK
 3/12 memory_map.test.Memory map: RAM addresses...OK
 4/12 memory_map.test.Memory map: Screen addresses...OK
