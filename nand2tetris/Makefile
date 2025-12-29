@@ -1,4 +1,4 @@
-.PHONY: test test-logic test-memory test-mach test-machine
+.PHONY: test test-logic test-memory test-mach test-machine wasm
 test:
 	mkdir -p test && \
 	zig build install && \
@@ -27,3 +27,8 @@ test-machine:
 	mkdir -p test && \
 	zig build install && \
 	./zig-out/bin/test-machine > test/test_machine.txt 2>&1
+
+wasm:
+	zig build wasm -Doptimize=ReleaseSmall
+	mkdir -p web/public && \
+	cp zig-out/bin/nand2tetris.wasm web/public/

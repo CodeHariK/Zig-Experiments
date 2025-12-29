@@ -103,4 +103,42 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(memory_tests);
     b.installArtifact(machine_language_tests);
     b.installArtifact(machine_tests);
+
+    // ---- WASM build ----
+    // 10MB = 10 * 1024 * 1024 / 65536 = 160 pages
+    const number_of_pages = 160;
+
+    const wasm_target = b.resolveTargetQuery(.{
+        .cpu_arch = .wasm32,
+        .os_tag = .freestanding,
+    });
+
+    const wasm_mod = b.createModule(.{
+        .root_source_file = b.path("src/wasm_main.zig"),
+        .target = wasm_target,
+        .optimize = optimize,
+    });
+    wasm_mod.addImport("types", types_mod);
+    wasm_mod.addImport("logic", logic_mod);
+    wasm_mod.addImport("memory", memory_mod);
+    wasm_mod.addImport("machine_language", machine_language_mod);
+    wasm_mod.addImport("machine", machine_mod);
+
+    const wasm_exe = b.addExecutable(.{
+        .name = "nand2tetris",
+        .root_module = wasm_mod,
+    });
+
+    // WASM-specific configuration
+    wasm_exe.global_base = 6560;
+    wasm_exe.entry = .disabled;
+    wasm_exe.rdynamic = true;
+    wasm_exe.import_memory = true;
+    wasm_exe.stack_size = std.wasm.page_size;
+    wasm_exe.initial_memory = std.wasm.page_size * number_of_pages;
+    wasm_exe.max_memory = std.wasm.page_size * number_of_pages;
+
+    const install_wasm = b.addInstallArtifact(wasm_exe, .{});
+    const wasm_step = b.step("wasm", "Build WebAssembly binary");
+    wasm_step.dependOn(&install_wasm.step);
 }

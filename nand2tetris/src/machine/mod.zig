@@ -100,20 +100,12 @@
 //
 // -----------------------------------------------------------------------------
 
-// TODO: Uncomment and implement when ready
-// pub const CPU = @import("cpu.zig").CPU;
-// pub const ROM = @import("rom.zig").ROM;
-// pub const Screen = @import("screen.zig").Screen;
-// pub const Keyboard = @import("keyboard.zig").Keyboard;
-// pub const Computer = @import("computer.zig").Computer;
+pub const CPU = @import("cpu.zig").CPU;
+pub const ROM = @import("rom.zig").ROM32K;
+pub const Screen = @import("screen.zig").Screen;
+pub const Keyboard = @import("keyboard.zig").Keyboard;
+pub const Computer = @import("computer.zig").Computer;
 pub const alu = @import("alu.zig");
-
-// Placeholder exports (remove when implementing)
-pub const cpu = struct {};
-pub const rom = struct {};
-pub const screen = struct {};
-pub const keyboard = struct {};
-pub const computer = struct {};
 
 // ============================================================================
 // Tests
@@ -123,11 +115,11 @@ const std = @import("std");
 const testing = std.testing;
 
 test "gates module: include all gate tests" {
-    // _ = @import("alu.zig");
-    // _ = @import("keyboard.zig");
-    // _ = @import("screen.zig");
-    // _ = @import("rom.zig");
-    // _ = @import("memory.zig");
-    // _ = @import("cpu.zig");
+    _ = @import("alu.zig");
+    _ = @import("keyboard.zig");
+    _ = @import("screen.zig");
+    _ = @import("rom.zig");
+    _ = @import("memory.zig");
+    _ = @import("cpu.zig");
     _ = @import("computer.zig");
 }
