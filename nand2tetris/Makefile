@@ -28,6 +28,11 @@ test-machine:
 	zig build install && \
 	./zig-out/bin/test-machine > test/test_machine.txt 2>&1
 
+test-vm:
+	mkdir -p test && \
+	zig build install && \
+	./zig-out/bin/test-vm-translator > test/test_vm_translator.txt 2>&1
+
 wasm:
 	zig build wasm -Doptimize=ReleaseSmall
 	mkdir -p web/public && \

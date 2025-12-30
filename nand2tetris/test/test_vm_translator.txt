@@ -1,0 +1,8 @@
+1/7 mod.test.vm_translator module: include all vm_translator tests...OK
+2/7 command.test.Segment fromString and toString...OK
+3/7 command.test.ArithmeticOp fromString and toString...OK
+4/7 command.test.ArithmeticOp isBinary...OK
+5/7 command.test.ArithmeticOp isComparison...OK
+6/7 command.test.Command creation and checks...OK
+7/7 command.test.Command toString...OK
+All 7 tests passed.

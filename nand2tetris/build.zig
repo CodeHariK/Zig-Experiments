@@ -47,6 +47,14 @@ pub fn build(b: *std.Build) void {
     machine_mod.addImport("memory", memory_mod);
     machine_mod.addImport("machine_language", machine_language_mod);
 
+    // ---- machine_language module ----
+    const vm_translator_mod = b.createModule(.{
+        .root_source_file = b.path("src/vm_translator/mod.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    vm_translator_mod.addImport("types", types_mod);
+
     // ---- root module (src/) ----
     const root_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
@@ -60,6 +68,7 @@ pub fn build(b: *std.Build) void {
     root_mod.addImport("memory", memory_mod);
     root_mod.addImport("machine_language", machine_language_mod);
     root_mod.addImport("machine", machine_mod);
+    root_mod.addImport("vm_translator", vm_translator_mod);
 
     // ---- executable ----
     const exe = b.addExecutable(.{
@@ -84,12 +93,14 @@ pub fn build(b: *std.Build) void {
     const memory_tests = b.addTest(.{ .root_module = memory_mod, .name = "test-memory" });
     const machine_language_tests = b.addTest(.{ .root_module = machine_language_mod, .name = "test-machine-language" });
     const machine_tests = b.addTest(.{ .root_module = machine_mod, .name = "test-machine" });
+    const vm_translator_tests = b.addTest(.{ .root_module = vm_translator_mod, .name = "test-vm-translator" });
 
     const run_types_tests = b.addRunArtifact(types_tests);
     const run_logic_tests = b.addRunArtifact(logic_tests);
     const run_memory_tests = b.addRunArtifact(memory_tests);
     const run_machine_language_tests = b.addRunArtifact(machine_language_tests);
     const run_machine_tests = b.addRunArtifact(machine_tests);
+    const run_vm_translator_tests = b.addRunArtifact(vm_translator_tests);
 
     const test_step = b.step("test", "Run all tests");
     test_step.dependOn(&run_types_tests.step);
@@ -97,12 +108,14 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_memory_tests.step);
     test_step.dependOn(&run_machine_language_tests.step);
     test_step.dependOn(&run_machine_tests.step);
+    test_step.dependOn(&run_vm_translator_tests.step);
 
     b.installArtifact(types_tests);
     b.installArtifact(logic_tests);
     b.installArtifact(memory_tests);
     b.installArtifact(machine_language_tests);
     b.installArtifact(machine_tests);
+    b.installArtifact(vm_translator_tests);
 
     // ---- WASM build ----
     // 10MB = 10 * 1024 * 1024 / 65536 = 160 pages
@@ -123,6 +136,7 @@ pub fn build(b: *std.Build) void {
     wasm_mod.addImport("memory", memory_mod);
     wasm_mod.addImport("machine_language", machine_language_mod);
     wasm_mod.addImport("machine", machine_mod);
+    wasm_mod.addImport("vm_translator", vm_translator_mod);
 
     const wasm_exe = b.addExecutable(.{
         .name = "nand2tetris",

@@ -74,6 +74,13 @@
 * [Ben Eater: Binary to decimal can’t be that hard, right?](https://www.youtube.com/watch?v=v3-a-zqKfgA)
 
 
+## Software
+
+* [Core Dumped: WHY IS THE STACK SO FAST?](https://www.youtube.com/watch?v=N3o5yHYLviQ)
+* [Core Dumped: WHY IS THE HEAP SO SLOW?](https://www.youtube.com/watch?v=ioJkA7Mw2-U)
+
+* [Core Dumped: Process](https://www.youtube.com/watch?v=LDhoD4IVElk)
+
 ## RISC-V
 
 * [RISC-V Lectures](https://www.youtube.com/playlist?list=PL3by7evD3F53Dz2RiB47Ztp9l_piGVuus)
