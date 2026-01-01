@@ -67,6 +67,27 @@ typedef struct {
   TokenType type;
 } Keyword;
 
+typedef enum {
+  EXPR_BINARY,
+  // EXPR_UNARY,
+  // EXPR_LITERAL,
+  // EXPR_GROUPING,
+} ExprType;
+
+/* Expression struct */
+typedef struct Expr {
+  ExprType type;
+  union {
+    struct {
+      struct Expr *left;
+      Token op;
+      struct Expr *right;
+    } binary;
+
+    // other expression structs go here
+  } as;
+} Expr;
+
 typedef struct {
   const char *source;
   size_t start;
