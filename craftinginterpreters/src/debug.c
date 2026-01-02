@@ -1,14 +1,6 @@
 #include "lox.h"
 #include <stdio.h>
 
-static void printParenthesized(const char *name, Expr *left, Expr *right) {
-  printf("(%s ", name);
-  printExpr(left);
-  printf(" ");
-  printExpr(right);
-  printf(")");
-}
-
 void printExpr(Expr *expr) {
   if (!expr) {
     printf("nil");
@@ -17,18 +9,21 @@ void printExpr(Expr *expr) {
 
   switch (expr->type) {
   case EXPR_BINARY:
-    printParenthesized(expr->as.binary.op.lexeme, expr->as.binary.left,
-                       expr->as.binary.right);
+    printf("(%s ", tokenTypeToString(expr->as.binary.op.type));
+    printExpr(expr->as.binary.left);
+    printf(" ");
+    printExpr(expr->as.binary.right);
+    printf(")");
     break;
 
   case EXPR_UNARY:
-    printf("(%s ", expr->as.unary.op.lexeme);
+    printf("(%s ", tokenTypeToString(expr->as.unary.op.type));
     printExpr(expr->as.unary.right);
     printf(")");
     break;
 
   case EXPR_LITERAL:
-    printValue(expr->as.literal.value);
+    printValue(expr->as.literal.value, "LITERAL: ");
     break;
 
   case EXPR_GROUPING:
@@ -36,32 +31,15 @@ void printExpr(Expr *expr) {
     printExpr(expr->as.grouping.expression);
     printf(")");
     break;
+
+  case EXPR_VARIABLE:
+    printf("%.*s", expr->as.var.name.length, expr->as.var.name.lexeme);
+    break;
   }
 }
 
-void printValue(Value value) {
-  switch (value.type) {
-  case VAL_STRING:
-    printf("%s\n", value.as.string);
-    break;
-  case VAL_NIL:
-    printf("nil\n");
-    break;
-
-  case VAL_BOOL:
-    printf(value.as.boolean ? "true\n" : "false\n");
-    break;
-
-  case VAL_NUMBER: {
-    double num = value.as.number;
-
-    // Print integers without .0
-    if (num == (long)num) {
-      printf("%ld\n", (long)num);
-    } else {
-      printf("%g\n", num);
-    }
-    break;
-  }
-  }
+void printValue(Value value, char *msg) {
+  char buffer[64];
+  valueToString(value, buffer, sizeof(buffer));
+  printf("%s %s", msg, buffer);
 }

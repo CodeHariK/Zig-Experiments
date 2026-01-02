@@ -1,4 +1,6 @@
 #include "lox.h"
+#include "parser.h"
+#include "stmt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +52,66 @@ Expr *newGroupingExpr(Expr *expression) {
   expr->as.grouping.expression = expression;
 
   return expr;
+}
+
+Expr *newVariableExpr(Token token) {
+  Expr *expr = malloc(sizeof(Expr));
+  if (!expr)
+    exit(1);
+
+  expr->type = EXPR_VARIABLE;
+  expr->as.var.name = token;
+
+  return expr;
+}
+
+void freeExpr(Expr *expr) {
+  if (!expr)
+    return;
+  switch (expr->type) {
+  case EXPR_BINARY:
+    freeExpr(expr->as.binary.left);
+    freeExpr(expr->as.binary.right);
+    break;
+  case EXPR_UNARY:
+    freeExpr(expr->as.unary.right);
+    break;
+  case EXPR_GROUPING:
+    freeExpr(expr->as.grouping.expression);
+    break;
+  case EXPR_LITERAL:
+    if (expr->as.literal.value.type == VAL_STRING)
+      free(expr->as.literal.value.as.string);
+    break;
+  case EXPR_VARIABLE:
+    if (expr->as.var.initializer)
+      freeExpr(expr->as.var.initializer);
+    break;
+  }
+  free(expr);
+}
+
+void valueToString(Value value, char *buffer, size_t size) {
+  switch (value.type) {
+  case VAL_NIL:
+    snprintf(buffer, size, "nil");
+    break;
+
+  case VAL_BOOL:
+    snprintf(buffer, size, value.as.boolean ? "true" : "false");
+    break;
+
+  case VAL_NUMBER:
+    if (value.as.number == (long)value.as.number)
+      snprintf(buffer, size, "%ld", (long)value.as.number);
+    else
+      snprintf(buffer, size, "%g", value.as.number);
+    break;
+
+  case VAL_STRING:
+    snprintf(buffer, size, "%s", value.as.string);
+    break;
+  }
 }
 
 void runtimeError(Lox *lox, Token op, const char *message) {
@@ -186,7 +248,15 @@ Value evaluate(Lox *lox, Expr *expr) {
 
   case EXPR_BINARY:
     return evalBinary(lox, expr);
-  }
 
-  return nilValue(); // unreachable
+  case EXPR_VARIABLE: {
+    printEnvironment(lox);
+    Value val;
+    if (!envGet(lox->env, expr->as.var.name.lexeme, &val)) {
+      loxError(lox, expr->as.var.name.line, "Undefined variable.");
+      return nilValue();
+    }
+    return val;
+  }
+  }
 }

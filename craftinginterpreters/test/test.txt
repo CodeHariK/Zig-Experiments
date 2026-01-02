@@ -1,0 +1,141 @@
+SOURCE:
+()
+  LEFT_PAREN      '('
+  RIGHT_PAREN     ')'
+  EOF             ''
+
+SOURCE:
+{}
+  LEFT_BRACE      '{'
+  RIGHT_BRACE     '}'
+  EOF             ''
+
+SOURCE:
+1 + 2 * 3
+  NUMBER          '1'
+  PLUS            '+'
+  NUMBER          '2'
+  STAR            '*'
+  NUMBER          '3'
+  EOF             ''
+
+SOURCE:
+!true == false
+  NOT             '!'
+  TRUE            'true'
+  EQUAL_EQUAL     '=='
+  FALSE           'false'
+  EOF             ''
+
+SOURCE:
+123.45
+  NUMBER          '123.45'
+  EOF             ''
+
+SOURCE:
+nil
+  NIL             'nil'
+  EOF             ''
+
+SOURCE:
+var x = 10;
+  VAR             'var'
+  IDENTIFIER      'x'
+  EQUAL           '='
+  NUMBER          '10'
+  SEMICOLON       ';'
+  EOF             ''
+
+SOURCE:
+print 1 + 2;
+  PRINT           'print'
+  NUMBER          '1'
+  PLUS            '+'
+  NUMBER          '2'
+  SEMICOLON       ';'
+  EOF             ''
+
+SOURCE:
+// comment
+123
+  NUMBER          '123'
+  EOF             ''
+
+SOURCE:
+"hello world"
+  STRING          '"hello world"'
+  EOF             ''
+
+SOURCE: 1 + 2 * 3
+(PLUS LITERAL:  1 (STAR LITERAL:  2 LITERAL:  3))
+
+SOURCE: (1 + 2) * 3
+(STAR (group (PLUS LITERAL:  1 LITERAL:  2)) LITERAL:  3)
+
+SOURCE: !true == false
+(EQUAL_EQUAL (NOT LITERAL:  true) LITERAL:  false)
+
+SOURCE: nil
+LITERAL:  nil
+
+[PASS] 1 + 2 * 3 => 7
+[PASS] (1 + 2) * 3 => 9
+[PASS] 5 > 3 => true
+[PASS] 5 < 3 => false
+[PASS] nil == nil => true
+[PASS] !false => true
+[PASS] (1 + 2) * 3 => 9
+[PASS] 5 > 3 => true
+[PASS] 5 < 3 => false
+[PASS] 5 >= 5 => true
+[PASS] 5 <= 4 => false
+[PASS] true == false => false
+[PASS] true != false => true
+[PASS] nil == nil => true
+[PASS] !false => true
+[PASS] -(1 + 2) => -3
+[PASS] (1 + 2) * (3 - 1) => 6
+[PASS] 2 / 4 => 0.5
+SOURCE: print 1 + 2;
+(print (PLUS LITERAL:  1 LITERAL:  2))
+PRINT:  3
+[PASS] expected: 3
+
+SOURCE: 1 + 2;
+(expr (PLUS LITERAL:  1 LITERAL:  2))
+[INFO] no expected output
+
+SOURCE: print 2 * 3;
+(print (STAR LITERAL:  2 LITERAL:  3))
+PRINT:  6
+[PASS] expected: 6
+
+SOURCE: print !false;
+(print (NOT LITERAL:  false))
+PRINT:  true
+[PASS] expected: true
+
+SOURCE: print "hello";
+(print LITERAL:  hello)
+PRINT:  hello
+[PASS] expected: hello
+
+VAR:  42
+PRINT:  42
+[PASS] var a = 42; print a; => 42
+VAR:  3.14
+PRINT:  3.14
+[PASS] var b = 3.14; print b; => 3.14
+VAR:  hello
+PRINT:  hello
+[PASS] var s = "hello"; print s; => hello
+VAR:  nil
+PRINT:  nil
+[PASS] var x; print x; => nil
+VAR:  true
+PRINT:  true
+[PASS] var y = true; print y; => true
+VAR:  10
+VAR:  5
+PRINT:  10
+[PASS] var c = 10; var d = 5; print c; => 10

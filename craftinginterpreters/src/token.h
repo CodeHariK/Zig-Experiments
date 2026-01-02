@@ -2,6 +2,7 @@
 #define TOKEN_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef enum {
   // Single-character tokens.
@@ -71,6 +72,7 @@ typedef enum {
   EXPR_UNARY,
   EXPR_LITERAL,
   EXPR_GROUPING,
+  EXPR_VARIABLE,
 } ExprType;
 
 typedef enum { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
@@ -84,7 +86,6 @@ typedef struct {
   } as;
 } Value;
 
-/* Expression struct */
 typedef struct Expr {
   ExprType type;
   union {
@@ -106,17 +107,29 @@ typedef struct Expr {
     struct {
       struct Expr *expression;
     } grouping;
+
+    struct {
+      Token name;
+      struct Expr *initializer;
+    } var;
+
   } as;
 } Expr;
+
+const char *tokenTypeToString(TokenType type);
 
 Value numberValue(double n);
 Value boolValue(bool b);
 Value nilValue(void);
 Value stringValue(char *s);
 
+void valueToString(Value value, char *buffer, size_t size);
+
 Expr *newBinaryExpr(Expr *left, Token op, Expr *right);
 Expr *newUnaryExpr(Token op, Expr *right);
 Expr *newLiteralExpr(Value value);
 Expr *newGroupingExpr(Expr *expression);
+Expr *newVariableExpr(Token token);
+void freeExpr(Expr *expr);
 
 #endif

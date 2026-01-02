@@ -24,13 +24,27 @@ typedef struct {
 } Parser;
 
 typedef struct {
+  const char *key;
+  Value value;
+} EnvKV;
+
+typedef struct {
+  EnvKV *entries;
+  int count;
+  int capacity;
+} Environment;
+
+typedef struct {
   bool hadError;
   bool hadRuntimeError;
+  bool debugPrint;
   Scanner scanner;
   Parser parser;
+  Environment *env;
 } Lox;
 
-void loxInit(Lox *lox);
+void loxInit(Lox *lox, bool debugPrint);
+void loxFree(Lox *lox);
 
 void loxReport(Lox *lox, int line, const char *where, const char *message);
 void loxError(Lox *lox, int line, const char *message);
@@ -39,14 +53,10 @@ void loxRun(Lox *lox, const char *source);
 void loxRunPrompt(Lox *lox);
 void loxRunFile(Lox *lox, const char *path);
 
-void initScanner(Scanner *scanner, const char *source);
-void freeScanner(Scanner *scanner);
-Token *scanTokens(Lox *lox, size_t *outCount);
-
 Expr *parseExpression(Lox *lox);
 
 void printExpr(Expr *expr);
-void printValue(Value v);
+void printValue(Value v, char *msg);
 
 Value evaluate(Lox *lox, Expr *expr);
 

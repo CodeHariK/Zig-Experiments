@@ -89,6 +89,10 @@ static Expr *primary(Lox *lox) {
     return newGroupingExpr(expr);
   }
 
+  if (match(parser, 1, TOKEN_IDENTIFIER)) {
+    return newVariableExpr(previous(parser));
+  }
+
   loxError(lox, peek(parser).line, "Expect expression.");
   return NULL;
 }

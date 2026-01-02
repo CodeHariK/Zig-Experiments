@@ -5,7 +5,7 @@
 
 static void multiLineStringScan(Lox *lox);
 static void numberScan(Lox *lox);
-static void identifierScan(Scanner *scanner);
+static void identifierScan(Lox *lox);
 
 static inline bool isDigit(char c) { return c >= '0' && c <= '9'; }
 static inline bool isAlpha(char c) {
@@ -160,27 +160,24 @@ void addTokenToArray(Scanner *scanner, Token token) {
   scanner->tokens[scanner->count++] = token;
 }
 
-static void addToken(Scanner *scanner, TokenType type) {
-  // size_t length = scanner->current - scanner->start;
+static void addToken(Lox *lox, TokenType type, void *literal) {
+  Scanner *scanner = &lox->scanner;
+  size_t len = scanner->current - scanner->start;
+  char *lex = malloc(len + 1);
+  memcpy(lex, &scanner->source[scanner->start], len);
+  lex[len] = '\0'; // null-terminate
+
   Token token = {.type = type,
-                 .lexeme = &scanner->source[scanner->start],
-                 .length = scanner->current - scanner->start,
-                 .literal = NULL,
+                 .lexeme = lex,
+                 .length = len,
+                 .literal = literal,
                  .line = scanner->line};
-  addTokenToArray(scanner, token); // dynamic array helper from before
-}
 
-static void addTokenWithLiteral(Scanner *scanner, TokenType type,
-                                void *literal) {
-  // size_t length = scanner->current - scanner->start;
-
-  // Point lexeme directly into source
-  const char *text = &scanner->source[scanner->start];
-
-  Token token = {
-      .type = type, .lexeme = text, .literal = literal, .line = scanner->line};
-
-  addTokenToArray(scanner, token); // dynamic array helper
+  if (lox->debugPrint) {
+    printf(":> ");
+    printToken(&token);
+  }
+  addTokenToArray(scanner, token);
 }
 
 static inline bool isAtEnd(Scanner *scanner) {
@@ -219,49 +216,49 @@ static void scanToken(Lox *lox) {
 
   switch (c) {
   case '(':
-    addToken(scanner, TOKEN_LEFT_PAREN);
+    addToken(lox, TOKEN_LEFT_PAREN, NULL);
     break;
   case ')':
-    addToken(scanner, TOKEN_RIGHT_PAREN);
+    addToken(lox, TOKEN_RIGHT_PAREN, NULL);
     break;
   case '{':
-    addToken(scanner, TOKEN_LEFT_BRACE);
+    addToken(lox, TOKEN_LEFT_BRACE, NULL);
     break;
   case '}':
-    addToken(scanner, TOKEN_RIGHT_BRACE);
+    addToken(lox, TOKEN_RIGHT_BRACE, NULL);
     break;
   case ',':
-    addToken(scanner, TOKEN_COMMA);
+    addToken(lox, TOKEN_COMMA, NULL);
     break;
   case '.':
-    addToken(scanner, TOKEN_DOT);
+    addToken(lox, TOKEN_DOT, NULL);
     break;
   case '-':
-    addToken(scanner, TOKEN_MINUS);
+    addToken(lox, TOKEN_MINUS, NULL);
     break;
   case '+':
-    addToken(scanner, TOKEN_PLUS);
+    addToken(lox, TOKEN_PLUS, NULL);
     break;
   case ';':
-    addToken(scanner, TOKEN_SEMICOLON);
+    addToken(lox, TOKEN_SEMICOLON, NULL);
     break;
   case '*':
-    addToken(scanner, TOKEN_STAR);
+    addToken(lox, TOKEN_STAR, NULL);
     break;
 
     // Two-character tokens
   case '!':
-    addToken(scanner, match(scanner, '=') ? TOKEN_NOT_EQUAL : TOKEN_NOT);
+    addToken(lox, match(scanner, '=') ? TOKEN_NOT_EQUAL : TOKEN_NOT, NULL);
     break;
   case '=':
-    addToken(scanner, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+    addToken(lox, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL, NULL);
     break;
   case '<':
-    addToken(scanner, match(scanner, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+    addToken(lox, match(scanner, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS, NULL);
     break;
   case '>':
-    addToken(scanner,
-             match(scanner, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+    addToken(lox, match(scanner, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
+             NULL);
     break;
 
   case '/':
@@ -270,7 +267,7 @@ static void scanToken(Lox *lox) {
       while (!isAtEnd(scanner) && peek(scanner) != '\n')
         advance(scanner);
     } else {
-      addToken(scanner, TOKEN_SLASH);
+      addToken(lox, TOKEN_SLASH, NULL);
     }
     break;
 
@@ -288,17 +285,11 @@ static void scanToken(Lox *lox) {
     multiLineStringScan(lox);
     break;
 
-    // case 'o':
-    //   if (match(scanner, 'r')) {
-    //     addToken(scanner, TOKEN_OR);
-    //   }
-    //   break;
-
   default:
     if (isDigit(c)) {
       numberScan(lox);
     } else if (isAlpha(c)) {
-      identifierScan(&lox->scanner);
+      identifierScan(lox);
     } else {
       loxError(lox, scanner->line, "Unexpected character.");
     }
@@ -314,7 +305,12 @@ Token *scanTokens(Lox *lox, size_t *outCount) {
   }
 
   // Add EOF token
-  addToken(scanner, TOKEN_EOF);
+  Token eof = {.type = TOKEN_EOF,
+               .lexeme = "",
+               .length = 0,
+               .literal = NULL,
+               .line = scanner->line};
+  addTokenToArray(scanner, eof);
 
   if (outCount)
     *outCount = scanner->count;
@@ -348,7 +344,7 @@ static void multiLineStringScan(Lox *lox) {
   memcpy(value, &scanner->source[scanner->start + 1], length);
   value[length] = '\0';
 
-  addTokenWithLiteral(scanner, TOKEN_STRING, value);
+  addToken(lox, TOKEN_STRING, value);
 }
 
 static void numberScan(Lox *lox) {
@@ -380,17 +376,17 @@ static void numberScan(Lox *lox) {
   double value = strtod(text, NULL);
   free(text);
 
-  addTokenWithLiteral(scanner, TOKEN_NUMBER,
-                      (void *)(double *)malloc(sizeof(double)));
+  addToken(lox, TOKEN_NUMBER, (void *)(double *)malloc(sizeof(double)));
   *((double *)scanner->tokens[scanner->count - 1].literal) = value;
 }
 
-static void identifierScan(Scanner *scanner) {
+static void identifierScan(Lox *lox) {
+  Scanner *scanner = &lox->scanner;
   while (isAlphaNumeric(peek(scanner)))
     advance(scanner);
 
   const char *text = &scanner->source[scanner->start];
   TokenType type = checkKeyword(text, scanner->current - scanner->start);
 
-  addToken(scanner, type);
+  addToken(lox, type, NULL);
 }

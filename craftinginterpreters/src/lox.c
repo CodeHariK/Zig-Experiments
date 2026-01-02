@@ -1,11 +1,31 @@
 // lox.c
 #include "lox.h"
+#include "scanner.h"
+#include "stmt.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-void loxInit(Lox *lox) {
+void loxInit(Lox *lox, bool debugPrint) {
   lox->hadError = false;
+  lox->hadRuntimeError = false;
+  lox->debugPrint = debugPrint;
   lox->scanner.source = NULL;
+
+  lox->env = malloc(sizeof(Environment));
+  if (!lox->env)
+    exit(1);
+
+  lox->env->entries = malloc(sizeof(EnvKV) * 8);
+  lox->env->count = 0;
+  lox->env->capacity = 8;
+}
+
+void loxFree(Lox *lox) {
+  for (int i = 0; i < lox->env->count; i++) {
+    free((void *)lox->env->entries[i].key);
+  }
+  free(lox->env->entries);
+  free(lox->env);
 }
 
 void loxReport(Lox *lox, int line, const char *where, const char *message) {
@@ -17,39 +37,19 @@ void loxError(Lox *lox, int line, const char *message) {
   loxReport(lox, line, "", message);
 }
 
-void interpret(Lox *lox, Expr *expression) {
-  Value value = evaluate(lox, expression);
-
-  if (lox->hadError)
-    return;
-
-  printValue(value);
-}
-
 void loxRun(Lox *lox, const char *source) {
   initScanner(&lox->scanner, source);
+  size_t count;
+  Token *tokens = scanTokens(lox, &count);
 
-  size_t tokenCount;
-  Token *tokens = scanTokens(lox, &tokenCount);
-  if (!tokens)
-    return;
-
-  // Initialize parser
   lox->parser.tokens = tokens;
-  lox->parser.count = tokenCount;
+  lox->parser.count = count;
   lox->parser.current = 0;
 
-  // Parse
-  Expr *expr = parseExpression(lox);
-
-  // Stop if there was a syntax error
-  if (lox->hadError)
-    return;
-
-  // Temporary: print AST
-  printExpr(expr); // or AstPrinter equivalent
-
-  interpret(lox, expr);
+  Program *prog = parseProgram(lox);
+  for (size_t i = 0; i < prog->count; i++) {
+    executeStmt(lox, prog->statements[i], NULL, 0);
+  }
 }
 
 /* Reads entire file into memory and runs it */
