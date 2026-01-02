@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void multiLineStringParse(Lox *lox);
-static void numberParse(Lox *lox);
-static void identifierParse(Scanner *scanner);
+static void multiLineStringScan(Lox *lox);
+static void numberScan(Lox *lox);
+static void identifierScan(Scanner *scanner);
 
 static inline bool isDigit(char c) { return c >= '0' && c <= '9'; }
 static inline bool isAlpha(char c) {
@@ -128,9 +128,19 @@ void initScanner(Scanner *scanner, const char *source) {
   scanner->tokens = NULL;
   scanner->count = 0;
   scanner->capacity = 0;
+  scanner->start = 0;
+  scanner->current = 0;
+  scanner->line = 1;
 }
 
-void freeScanner(Scanner *scanner) { free(scanner->tokens); }
+void freeScanner(Scanner *scanner) {
+  free(scanner->tokens);
+
+  for (size_t i = 0; i < scanner->count; i++) {
+    // free((void *)scanner->tokens[i].lexeme);
+    free(scanner->tokens[i].literal);
+  }
+}
 
 void addTokenToArray(Scanner *scanner, Token token) {
   // Resize array if needed
@@ -154,6 +164,7 @@ static void addToken(Scanner *scanner, TokenType type) {
   // size_t length = scanner->current - scanner->start;
   Token token = {.type = type,
                  .lexeme = &scanner->source[scanner->start],
+                 .length = scanner->current - scanner->start,
                  .literal = NULL,
                  .line = scanner->line};
   addTokenToArray(scanner, token); // dynamic array helper from before
@@ -274,20 +285,20 @@ static void scanToken(Lox *lox) {
     break;
 
   case '"':
-    multiLineStringParse(lox);
+    multiLineStringScan(lox);
     break;
 
-  case 'o':
-    if (match(scanner, 'r')) {
-      addToken(scanner, TOKEN_OR);
-    }
-    break;
+    // case 'o':
+    //   if (match(scanner, 'r')) {
+    //     addToken(scanner, TOKEN_OR);
+    //   }
+    //   break;
 
   default:
     if (isDigit(c)) {
-      numberParse(lox);
+      numberScan(lox);
     } else if (isAlpha(c)) {
-      identifierParse(&lox->scanner);
+      identifierScan(&lox->scanner);
     } else {
       loxError(lox, scanner->line, "Unexpected character.");
     }
@@ -310,24 +321,7 @@ Token *scanTokens(Lox *lox, size_t *outCount) {
   return scanner->tokens;
 }
 
-void loxRun(Lox *lox, const char *source) {
-  initScanner(&lox->scanner, source);
-
-  size_t tokenCount;
-  Token *tokens = scanTokens(lox, &tokenCount);
-  if (!tokens) {
-    fprintf(stderr, "Failed to scan tokens\n");
-    return;
-  }
-
-  for (size_t i = 0; i < tokenCount; i++) {
-    printf("Token: %s (type %d)\n", tokens[i].lexeme, tokens[i].type);
-  }
-
-  free(tokens);
-}
-
-static void multiLineStringParse(Lox *lox) {
+static void multiLineStringScan(Lox *lox) {
   Scanner *scanner = &lox->scanner;
   while (peek(scanner) != '"' && !isAtEnd(scanner)) {
     if (peek(scanner) == '\n')
@@ -357,7 +351,7 @@ static void multiLineStringParse(Lox *lox) {
   addTokenWithLiteral(scanner, TOKEN_STRING, value);
 }
 
-static void numberParse(Lox *lox) {
+static void numberScan(Lox *lox) {
   Scanner *scanner = &lox->scanner;
 
   // Consume integer part
@@ -391,14 +385,12 @@ static void numberParse(Lox *lox) {
   *((double *)scanner->tokens[scanner->count - 1].literal) = value;
 }
 
-static void identifierParse(Scanner *scanner) {
+static void identifierScan(Scanner *scanner) {
   while (isAlphaNumeric(peek(scanner)))
     advance(scanner);
 
   const char *text = &scanner->source[scanner->start];
   TokenType type = checkKeyword(text, scanner->current - scanner->start);
-  if (type == TOKEN_IDENTIFIER)
-    type = TOKEN_IDENTIFIER;
 
   addToken(scanner, type);
 }

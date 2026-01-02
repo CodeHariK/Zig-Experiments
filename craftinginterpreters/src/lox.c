@@ -17,6 +17,41 @@ void loxError(Lox *lox, int line, const char *message) {
   loxReport(lox, line, "", message);
 }
 
+void interpret(Lox *lox, Expr *expression) {
+  Value value = evaluate(lox, expression);
+
+  if (lox->hadError)
+    return;
+
+  printValue(value);
+}
+
+void loxRun(Lox *lox, const char *source) {
+  initScanner(&lox->scanner, source);
+
+  size_t tokenCount;
+  Token *tokens = scanTokens(lox, &tokenCount);
+  if (!tokens)
+    return;
+
+  // Initialize parser
+  lox->parser.tokens = tokens;
+  lox->parser.count = tokenCount;
+  lox->parser.current = 0;
+
+  // Parse
+  Expr *expr = parseExpression(lox);
+
+  // Stop if there was a syntax error
+  if (lox->hadError)
+    return;
+
+  // Temporary: print AST
+  printExpr(expr); // or AstPrinter equivalent
+
+  interpret(lox, expr);
+}
+
 /* Reads entire file into memory and runs it */
 void loxRunFile(Lox *lox, const char *path) {
   FILE *file = fopen(path, "rb");

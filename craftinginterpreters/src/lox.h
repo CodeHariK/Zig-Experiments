@@ -2,91 +2,9 @@
 #ifndef LOX_H
 #define LOX_H
 
+#include "token.h"
 #include <stdbool.h>
 #include <stddef.h>
-
-typedef enum {
-  // Single-character tokens.
-  TOKEN_LEFT_PAREN,
-  TOKEN_RIGHT_PAREN,
-  TOKEN_LEFT_BRACE,
-  TOKEN_RIGHT_BRACE,
-  TOKEN_COMMA,
-  TOKEN_DOT,
-  TOKEN_MINUS,
-  TOKEN_PLUS,
-  TOKEN_SEMICOLON,
-  TOKEN_SLASH,
-  TOKEN_STAR,
-
-  // One or two character tokens.
-  TOKEN_NOT,
-  TOKEN_NOT_EQUAL,
-  TOKEN_EQUAL,
-  TOKEN_EQUAL_EQUAL,
-  TOKEN_GREATER,
-  TOKEN_GREATER_EQUAL,
-  TOKEN_LESS,
-  TOKEN_LESS_EQUAL,
-
-  // Literals.
-  TOKEN_IDENTIFIER,
-  TOKEN_STRING,
-  TOKEN_NUMBER,
-
-  // Keywords.
-  TOKEN_AND,
-  TOKEN_CLASS,
-  TOKEN_ELSE,
-  TOKEN_FALSE,
-  TOKEN_FUN,
-  TOKEN_FOR,
-  TOKEN_IF,
-  TOKEN_NIL,
-  TOKEN_OR,
-  TOKEN_PRINT,
-  TOKEN_RETURN,
-  TOKEN_SUPER,
-  TOKEN_THIS,
-  TOKEN_TRUE,
-  TOKEN_VAR,
-  TOKEN_WHILE,
-
-  TOKEN_EOF
-} TokenType;
-
-typedef struct {
-  TokenType type;
-  const char *lexeme;
-  void *literal;
-  int line;
-} Token;
-
-typedef struct {
-  const char *name;
-  TokenType type;
-} Keyword;
-
-typedef enum {
-  EXPR_BINARY,
-  // EXPR_UNARY,
-  // EXPR_LITERAL,
-  // EXPR_GROUPING,
-} ExprType;
-
-/* Expression struct */
-typedef struct Expr {
-  ExprType type;
-  union {
-    struct {
-      struct Expr *left;
-      Token op;
-      struct Expr *right;
-    } binary;
-
-    // other expression structs go here
-  } as;
-} Expr;
 
 typedef struct {
   const char *source;
@@ -99,12 +17,17 @@ typedef struct {
   size_t capacity;
 } Scanner;
 
-void initScanner(Scanner *scanner, const char *source);
-void freeScanner(Scanner *scanner);
+typedef struct {
+  Token *tokens;
+  size_t count;
+  size_t current;
+} Parser;
 
 typedef struct {
   bool hadError;
+  bool hadRuntimeError;
   Scanner scanner;
+  Parser parser;
 } Lox;
 
 void loxInit(Lox *lox);
@@ -115,5 +38,16 @@ void loxError(Lox *lox, int line, const char *message);
 void loxRun(Lox *lox, const char *source);
 void loxRunPrompt(Lox *lox);
 void loxRunFile(Lox *lox, const char *path);
+
+void initScanner(Scanner *scanner, const char *source);
+void freeScanner(Scanner *scanner);
+Token *scanTokens(Lox *lox, size_t *outCount);
+
+Expr *parseExpression(Lox *lox);
+
+void printExpr(Expr *expr);
+void printValue(Value v);
+
+Value evaluate(Lox *lox, Expr *expr);
 
 #endif

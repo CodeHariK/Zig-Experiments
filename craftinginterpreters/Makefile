@@ -1,7 +1,7 @@
 CC      = clang
 CFLAGS  = -std=c11 -Wall -Wextra -Wpedantic -O2
 TARGET  = build/lox
-SRC     = src/main.c src/lox.c src/scanner.c
+SRC     = src/main.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c
 
 .PHONY: all run clean
 
