@@ -2,9 +2,9 @@ CC      = zig cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -O2 -g \
          -fsanitize=address,undefined
 TARGET  = build/lox
-SRC     = src/main.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c src/stmt.c
+SRC     = src/main.c src/arena.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c src/stmt.c
 TEST_TARGET = build/test
-TEST_SRC     = src/test.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c src/stmt.c
+TEST_SRC     = src/test.c src/arena.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c src/stmt.c
 
 .PHONY: all run clean test
 

@@ -1,8 +1,4 @@
 #include "lox.h"
-#include "scanner.h"
-#include "stmt.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 bool DEBUG_PRINT = false;
@@ -23,9 +19,7 @@ Value runExpression(Lox *lox, const char *source) {
   if (!tokens)
     printf("Failed to scan tokens for %s\n", source);
 
-  lox->parser.tokens = tokens;
-  lox->parser.count = count;
-  lox->parser.current = 0;
+  initParser(lox, tokens, count);
 
   Expr *expr = parseExpression(lox);
   if (!expr)
@@ -114,9 +108,7 @@ void testParser(void) {
     size_t count;
     Token *tokens = scanTokens(&lox, &count);
 
-    lox.parser.tokens = tokens;
-    lox.parser.count = count;
-    lox.parser.current = 0;
+    initParser(&lox, tokens, count);
 
     Expr *expr = parseExpression(&lox);
     printExpr(expr);
@@ -144,9 +136,7 @@ void runStmtTests(void) {
     size_t count;
     Token *tokens = scanTokens(&lox, &count);
 
-    lox.parser.tokens = tokens;
-    lox.parser.count = count;
-    lox.parser.current = 0;
+    initParser(&lox, tokens, count);
 
     Stmt *stmt = parseStmt(&lox);
     printf("SOURCE: %s\n", test.source);
@@ -189,9 +179,7 @@ void runVarTests(void) {
     size_t count;
     Token *tokens = scanTokens(&lox, &count);
 
-    lox.parser.tokens = tokens;
-    lox.parser.count = count;
-    lox.parser.current = 0;
+    initParser(&lox, tokens, count);
 
     Program *prog = parseProgram(&lox);
 
@@ -210,11 +198,7 @@ void runVarTests(void) {
       }
     }
 
-    for (size_t i = 0; i < prog->count; i++)
-      freeStmt(prog->statements[i]);
-    free(prog->statements);
-    free(prog);
-    loxFree(&lox);
+    freeLox(&lox);
   }
 }
 

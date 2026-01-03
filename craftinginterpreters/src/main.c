@@ -6,7 +6,7 @@
 int main(int argc, char *argv[]) {
 
   Lox lox;
-  loxInit(&lox);
+  loxInit(&lox, false);
 
   if (argc > 2) {
     printf("Usage: lox [script]\n");

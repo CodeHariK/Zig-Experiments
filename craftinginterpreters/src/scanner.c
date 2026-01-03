@@ -1,5 +1,4 @@
 #include "lox.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -118,35 +117,20 @@ const char *tokenTypeToString(TokenType type) {
   }
 }
 
-void printToken(const Token *token) {
-  printf("%s %s %p\n", tokenTypeToString(token->type), token->lexeme,
-         token->literal);
-}
-
 void initScanner(Scanner *scanner, const char *source) {
   scanner->source = source;
-  scanner->tokens = NULL;
+  scanner->capacity = 8;
+  scanner->tokens = malloc(sizeof(Token) * scanner->capacity);
   scanner->count = 0;
-  scanner->capacity = 0;
   scanner->start = 0;
   scanner->current = 0;
   scanner->line = 1;
 }
 
-void freeScanner(Scanner *scanner) {
-  free(scanner->tokens);
-
-  for (size_t i = 0; i < scanner->count; i++) {
-    // free((void *)scanner->tokens[i].lexeme);
-    free(scanner->tokens[i].literal);
-  }
-}
-
 void addTokenToArray(Scanner *scanner, Token token) {
   // Resize array if needed
   if (scanner->count + 1 > scanner->capacity) {
-    size_t oldCapacity = scanner->capacity;
-    scanner->capacity = oldCapacity < 8 ? 8 : oldCapacity * 2;
+    scanner->capacity *= 2;
     scanner->tokens =
         realloc(scanner->tokens, sizeof(Token) * scanner->capacity);
     if (!scanner->tokens) {
@@ -173,46 +157,38 @@ static void addToken(Lox *lox, TokenType type, void *literal) {
                  .literal = literal,
                  .line = scanner->line};
 
-  if (lox->debugPrint) {
-    printf(":> ");
-    printToken(&token);
-  }
+  printToken(lox, &token);
+
   addTokenToArray(scanner, token);
 }
 
-static inline bool isAtEnd(Scanner *scanner) {
+static inline bool isEOFchar(Scanner *scanner) {
   return scanner->source[scanner->current] == '\0';
 }
 
-static char advance(Scanner *scanner) {
-  return scanner->source[scanner->current++];
-}
+static inline void advanceChar(Scanner *scanner) { scanner->current++; }
+static inline void advanceLine(Scanner *scanner) { scanner->line++; }
 
-static inline bool match(Scanner *scanner, char expected) {
-  if (isAtEnd(scanner))
-    return false;
-  if (scanner->source[scanner->current] != expected)
+static inline bool matchCharAdvance(Scanner *scanner, char expected) {
+  if (isEOFchar(scanner) || scanner->source[scanner->current] != expected)
     return false;
 
   scanner->current++;
   return true;
 }
 
-static inline char peek(Scanner *scanner) {
-  if (isAtEnd(scanner))
-    return '\0';
+static inline char peekChar(Scanner *scanner) {
   return scanner->source[scanner->current];
 }
 
-static char peekNext(Scanner *scanner) {
-  if (scanner->source[scanner->current + 1] == '\0')
-    return '\0';
+static inline char peekNextChar(Scanner *scanner) {
   return scanner->source[scanner->current + 1];
 }
 
 static void scanToken(Lox *lox) {
   Scanner *scanner = &lox->scanner;
-  char c = advance(scanner);
+  char c = peekChar(scanner);
+  advanceChar(scanner);
 
   switch (c) {
   case '(':
@@ -248,24 +224,31 @@ static void scanToken(Lox *lox) {
 
     // Two-character tokens
   case '!':
-    addToken(lox, match(scanner, '=') ? TOKEN_NOT_EQUAL : TOKEN_NOT, NULL);
+    addToken(lox, matchCharAdvance(scanner, '=') ? TOKEN_NOT_EQUAL : TOKEN_NOT,
+             NULL);
     break;
   case '=':
-    addToken(lox, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL, NULL);
+    addToken(lox,
+             matchCharAdvance(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL,
+             NULL);
     break;
   case '<':
-    addToken(lox, match(scanner, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS, NULL);
+    addToken(lox,
+             matchCharAdvance(scanner, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS,
+             NULL);
     break;
   case '>':
-    addToken(lox, match(scanner, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
+    addToken(lox,
+             matchCharAdvance(scanner, '=') ? TOKEN_GREATER_EQUAL
+                                            : TOKEN_GREATER,
              NULL);
     break;
 
   case '/':
-    if (match(scanner, '/')) {
+    if (matchCharAdvance(scanner, '/')) {
       // A comment goes until the end of the line.
-      while (!isAtEnd(scanner) && peek(scanner) != '\n')
-        advance(scanner);
+      while (!isEOFchar(scanner) && peekChar(scanner) != '\n')
+        advanceChar(scanner);
     } else {
       addToken(lox, TOKEN_SLASH, NULL);
     }
@@ -278,7 +261,7 @@ static void scanToken(Lox *lox) {
     break;
 
   case '\n':
-    scanner->line++;
+    advanceLine(scanner);
     break;
 
   case '"':
@@ -299,7 +282,7 @@ static void scanToken(Lox *lox) {
 
 Token *scanTokens(Lox *lox, size_t *outCount) {
   Scanner *scanner = &lox->scanner;
-  while (!isAtEnd(scanner)) {
+  while (!isEOFchar(scanner)) {
     scanner->start = scanner->current;
     scanToken(lox); // implement this next
   }
@@ -319,19 +302,19 @@ Token *scanTokens(Lox *lox, size_t *outCount) {
 
 static void multiLineStringScan(Lox *lox) {
   Scanner *scanner = &lox->scanner;
-  while (peek(scanner) != '"' && !isAtEnd(scanner)) {
-    if (peek(scanner) == '\n')
-      scanner->line++;
-    advance(scanner);
+  while (peekChar(scanner) != '"' && !isEOFchar(scanner)) {
+    if (peekChar(scanner) == '\n')
+      advanceLine(scanner);
+    advanceChar(scanner);
   }
 
-  if (isAtEnd(scanner)) {
+  if (isEOFchar(scanner)) {
     loxError(lox, scanner->line, "Unterminated string.");
     return;
   }
 
   // Consume the closing quote
-  advance(scanner);
+  advanceChar(scanner);
 
   // Trim the surrounding quotes
   size_t length = scanner->current - scanner->start - 2; // exclude quotes
@@ -351,15 +334,15 @@ static void numberScan(Lox *lox) {
   Scanner *scanner = &lox->scanner;
 
   // Consume integer part
-  while (isDigit(peek(scanner)))
-    advance(scanner);
+  while (isDigit(peekChar(scanner)))
+    advanceChar(scanner);
 
   // Look for fractional part
-  if (peek(scanner) == '.' && isDigit(peekNext(scanner))) {
-    advance(scanner); // consume '.'
+  if (peekChar(scanner) == '.' && isDigit(peekNextChar(scanner))) {
+    advanceChar(scanner); // consume '.'
 
-    while (isDigit(peek(scanner)))
-      advance(scanner);
+    while (isDigit(peekChar(scanner)))
+      advanceChar(scanner);
   }
 
   // Convert substring to double
@@ -382,8 +365,8 @@ static void numberScan(Lox *lox) {
 
 static void identifierScan(Lox *lox) {
   Scanner *scanner = &lox->scanner;
-  while (isAlphaNumeric(peek(scanner)))
-    advance(scanner);
+  while (isAlphaNumeric(peekChar(scanner)))
+    advanceChar(scanner);
 
   const char *text = &scanner->source[scanner->start];
   TokenType type = checkKeyword(text, scanner->current - scanner->start);

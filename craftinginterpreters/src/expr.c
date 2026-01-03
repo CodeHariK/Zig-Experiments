@@ -1,20 +1,9 @@
 #include "lox.h"
-#include "parser.h"
-#include "stmt.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-Value numberValue(double n) { return (Value){VAL_NUMBER, {.number = n}}; }
-
-Value boolValue(bool b) { return (Value){VAL_BOOL, {.boolean = b}}; }
-
-Value nilValue(void) { return (Value){VAL_NIL, {.boolean = false}}; }
-
-Expr *newBinaryExpr(Expr *left, Token operator, Expr * right) {
-  Expr *expr = malloc(sizeof(Expr));
-  if (!expr)
-    return NULL;
+Expr *newBinaryExpr(Lox *lox, Expr *left, Token operator, Expr * right) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
 
   expr->type = EXPR_BINARY;
   expr->as.binary.left = left;
@@ -24,10 +13,8 @@ Expr *newBinaryExpr(Expr *left, Token operator, Expr * right) {
   return expr;
 }
 
-Expr *newUnaryExpr(Token operator, Expr * right) {
-  Expr *expr = malloc(sizeof(Expr));
-  if (!expr)
-    return NULL;
+Expr *newUnaryExpr(Lox *lox, Token operator, Expr * right) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
 
   expr->type = EXPR_UNARY;
   expr->as.unary.op = operator;
@@ -36,17 +23,16 @@ Expr *newUnaryExpr(Token operator, Expr * right) {
   return expr;
 }
 
-Expr *newLiteralExpr(Value value) {
-  Expr *expr = malloc(sizeof(Expr));
+Expr *newLiteralExpr(Lox *lox, Value value) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
+
   expr->type = EXPR_LITERAL;
   expr->as.literal.value = value;
   return expr;
 }
 
-Expr *newGroupingExpr(Expr *expression) {
-  Expr *expr = malloc(sizeof(Expr));
-  if (!expr)
-    return NULL;
+Expr *newGroupingExpr(Lox *lox, Expr *expression) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
 
   expr->type = EXPR_GROUPING;
   expr->as.grouping.expression = expression;
@@ -54,41 +40,13 @@ Expr *newGroupingExpr(Expr *expression) {
   return expr;
 }
 
-Expr *newVariableExpr(Token token) {
-  Expr *expr = malloc(sizeof(Expr));
-  if (!expr)
-    exit(1);
+Expr *newVariableExpr(Lox *lox, Token token) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
 
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
 
   return expr;
-}
-
-void freeExpr(Expr *expr) {
-  if (!expr)
-    return;
-  switch (expr->type) {
-  case EXPR_BINARY:
-    freeExpr(expr->as.binary.left);
-    freeExpr(expr->as.binary.right);
-    break;
-  case EXPR_UNARY:
-    freeExpr(expr->as.unary.right);
-    break;
-  case EXPR_GROUPING:
-    freeExpr(expr->as.grouping.expression);
-    break;
-  case EXPR_LITERAL:
-    if (expr->as.literal.value.type == VAL_STRING)
-      free(expr->as.literal.value.as.string);
-    break;
-  case EXPR_VARIABLE:
-    if (expr->as.var.initializer)
-      freeExpr(expr->as.var.initializer);
-    break;
-  }
-  free(expr);
 }
 
 void valueToString(Value value, char *buffer, size_t size) {
@@ -113,15 +71,6 @@ void valueToString(Value value, char *buffer, size_t size) {
     break;
   }
 }
-
-void runtimeError(Lox *lox, Token op, const char *message) {
-  fprintf(stderr, "[line %d] RuntimeError at '%.*s': %s\n", op.line,
-          (int)(op.length), op.lexeme, message);
-  lox->hadRuntimeError = true;
-  exit(70);
-}
-
-Value literalValue(Expr *expr) { return expr->as.literal.value; }
 
 void checkNumberOperands(Lox *lox, Token op, Value left, Value right) {
   if (left.type == VAL_NUMBER && right.type == VAL_NUMBER)
@@ -158,6 +107,14 @@ bool isEqual(Value a, Value b) {
 
   return false;
 }
+
+inline Value numberValue(double n) {
+  return (Value){VAL_NUMBER, {.number = n}};
+}
+inline Value boolValue(bool b) { return (Value){VAL_BOOL, {.boolean = b}}; }
+inline Value nilValue(void) { return (Value){VAL_NIL, {.boolean = false}}; }
+inline Value stringValue(char *s) { return (Value){VAL_STRING, {.string = s}}; }
+inline Value literalValue(Expr *expr) { return expr->as.literal.value; }
 
 Value evaluate(Lox *lox, Expr *expr);
 

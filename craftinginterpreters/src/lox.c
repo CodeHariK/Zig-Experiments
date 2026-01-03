@@ -1,7 +1,5 @@
 // lox.c
 #include "lox.h"
-#include "scanner.h"
-#include "stmt.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,23 +16,8 @@ void loxInit(Lox *lox, bool debugPrint) {
   lox->env->entries = malloc(sizeof(EnvKV) * 8);
   lox->env->count = 0;
   lox->env->capacity = 8;
-}
 
-void loxFree(Lox *lox) {
-  for (int i = 0; i < lox->env->count; i++) {
-    free((void *)lox->env->entries[i].key);
-  }
-  free(lox->env->entries);
-  free(lox->env);
-}
-
-void loxReport(Lox *lox, int line, const char *where, const char *message) {
-  fprintf(stderr, "[line %d] Error%s: %s\n", line, where, message);
-  lox->hadError = true;
-}
-
-void loxError(Lox *lox, int line, const char *message) {
-  loxReport(lox, line, "", message);
+  arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
 }
 
 void loxRun(Lox *lox, const char *source) {
@@ -42,9 +25,7 @@ void loxRun(Lox *lox, const char *source) {
   size_t count;
   Token *tokens = scanTokens(lox, &count);
 
-  lox->parser.tokens = tokens;
-  lox->parser.count = count;
-  lox->parser.current = 0;
+  initParser(lox, tokens, count);
 
   Program *prog = parseProgram(lox);
   for (size_t i = 0; i < prog->count; i++) {
