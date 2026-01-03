@@ -76,6 +76,7 @@ typedef enum {
   EXPR_LITERAL,
   EXPR_GROUPING,
   EXPR_VARIABLE,
+  EXPR_ASSIGN,
 } ExprType;
 
 typedef enum { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
@@ -113,6 +114,11 @@ typedef struct Expr {
 
     struct {
       Token name;
+      struct Expr *value;
+    } assign;
+
+    struct {
+      Token name;
       struct Expr *initializer;
     } var;
 
@@ -124,8 +130,8 @@ typedef enum { STMT_EXPR, STMT_PRINT, STMT_VAR } StmtType;
 typedef struct Stmt {
   StmtType type;
   union {
-    Expr *expr;      // expression statement
-    Expr *printExpr; // print statement
+    Expr *expr;         // expression statement
+    Expr *printExprAST; // print statement
     struct {
       Token name;
       Expr *initializer; // optional initializer
@@ -189,6 +195,9 @@ typedef struct {
 typedef struct {
   bool hadError;
   bool hadRuntimeError;
+  char errorMsg[512];
+  char runtimeErrorMsg[512];
+
   bool debugPrint;
 
   Arena astArena;
@@ -200,8 +209,7 @@ typedef struct {
 void loxInit(Lox *lox, bool debugPrint);
 void freeLox(Lox *lox);
 
-void loxReport(Lox *lox, int line, const char *where, const char *message);
-void loxError(Lox *lox, int line, const char *message);
+void loxError(Lox *lox, int line, const char *where, const char *message);
 
 void loxRun(Lox *lox, const char *source);
 void loxRunPrompt(Lox *lox);
@@ -209,9 +217,9 @@ void loxRunFile(Lox *lox, const char *path);
 
 void initScanner(Scanner *scanner, const char *source);
 void freeScanner(Scanner *scanner);
-Token *scanTokens(Lox *lox, size_t *outCount);
+Token *scanTokens(Lox *lox);
 
-void initParser(Lox *lox, Token *tokens, size_t count);
+void initParser(Lox *lox);
 bool isTokenEOF(Parser *parser);
 bool matchAnyTokenAdvance(Parser *parser, int count, ...);
 Token consumeToken(Lox *lox, TokenType type, const char *message);
@@ -226,24 +234,32 @@ Expr *newUnaryExpr(Lox *lox, Token op, Expr *right);
 Expr *newLiteralExpr(Lox *lox, Value value);
 Expr *newGroupingExpr(Lox *lox, Expr *expression);
 Expr *newVariableExpr(Lox *lox, Token token);
-// void freeExpr(Expr *expr);
+Expr *newAssignExpr(Lox *lox, Token name, Expr *value);
 
 Value evaluate(Lox *lox, Expr *expr);
 
 Stmt *parseStmt(Lox *lox);
 Program *parseProgram(Lox *lox);
 void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize);
-bool envGet(Environment *env, const char *name, Value *out);
-// void freeStmt(Stmt *stmt);
+void executeProgram(Lox *lox, Program *prog, char *outBuffer, size_t bufSize);
 
+bool envGet(Environment *env, const char *name, Value *out);
+bool envAssign(Environment *env, const char *name, Value value);
+
+void printTokens(Lox *lox);
 void printExpr(Expr *expr);
+void printExprAST(Expr *expr, int indent);
 void printValue(Value v, char *msg);
 void printToken(Lox *lox, const Token *token);
+void printStmtAST(Stmt *stmt, int indent);
 void printStmt(Stmt *stmt);
 void printEnvironment(Lox *lox);
+void printProgram(Lox *lox, Program *prog);
+void printProgramAST(Lox *lox, Program *prog);
 
 void runtimeError(Lox *lox, Token op, const char *message);
 void parserError(Lox *lox, const char *message);
+void printError(Lox *lox);
 void synchronize(Lox *lox);
 
 #endif

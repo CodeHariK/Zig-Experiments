@@ -18,7 +18,7 @@ static Stmt *parsePrintStmt(Lox *lox) {
 
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_PRINT;
-  stmt->as.printExpr = value;
+  stmt->as.printExprAST = value;
   return stmt;
 }
 
@@ -66,6 +66,16 @@ Stmt *parseStmt(Lox *lox) {
   return stmt;
 }
 
+bool envGet(Environment *env, const char *name, Value *out) {
+  for (int i = env->count - 1; i >= 0; i--) {
+    if (strcmp(env->entries[i].key, name) == 0) {
+      *out = env->entries[i].value;
+      return true;
+    }
+  }
+  return false;
+}
+
 void envDefine(Environment *env, const char *name, Value value) {
   if (env->count >= env->capacity) {
     env->capacity = env->capacity < 8 ? 8 : env->capacity * 2;
@@ -75,6 +85,16 @@ void envDefine(Environment *env, const char *name, Value value) {
   env->entries[env->count].key = strdup(name);
   env->entries[env->count].value = value;
   env->count++;
+}
+
+bool envAssign(Environment *env, const char *name, Value value) {
+  for (int i = env->count - 1; i >= 0; i--) {
+    if (strcmp(env->entries[i].key, name) == 0) {
+      env->entries[i].value = value;
+      return true;
+    }
+  }
+  return false;
 }
 
 Program *parseProgram(Lox *lox) {
@@ -111,44 +131,56 @@ void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize) {
 
   switch (stmt->type) {
   case STMT_PRINT: {
-    if (!stmt->as.printExpr) {
-      loxError(lox, 0, "Null expression in print statement.");
+    if (!stmt->as.printExprAST) {
+      loxError(lox, 0, "Null expression in print statement.", "");
       return;
     }
-    Value val = evaluate(lox, stmt->as.printExpr);
+    Value val = evaluate(lox, stmt->as.printExprAST);
     if (outBuffer && bufSize > 0)
       valueToString(val, outBuffer, bufSize);
-    printValue(val, "PRINT: ");
+    printValue(val, "[STMT_PRINT_EVAL] ");
     printf("\n");
     break;
   }
 
   case STMT_EXPR:
-    if (stmt->as.expr)
-      evaluate(lox, stmt->as.expr);
+    if (stmt->as.expr) {
+      printf("--> ");
+      printExpr(stmt->as.expr);
+      printf("\n");
+      Value val = evaluate(lox, stmt->as.expr);
+      printValue(val, "[STMT_EXPR_EVAL] ");
+      printf("@@@\n");
+    }
     break;
 
   case STMT_VAR: {
     Value val = nilValue();
-    if (stmt->as.var.initializer)
+    if (stmt->as.var.initializer) {
+      printf("--> ");
+      printExpr(stmt->as.var.initializer);
+      printf("\n");
       val = evaluate(lox, stmt->as.var.initializer);
+    }
     envDefine(lox->env, stmt->as.var.name.lexeme, val);
 
     envGet(lox->env, stmt->as.var.name.lexeme, &val);
-    printValue(val, "VAR: ");
-    printf("\n");
+    printValue(val, "[STMT_VAR_EVAL] ");
+    printf(">>>\n");
 
     break;
   }
   }
 }
 
-bool envGet(Environment *env, const char *name, Value *out) {
-  for (int i = env->count - 1; i >= 0; i--) {
-    if (strcmp(env->entries[i].key, name) == 0) {
-      *out = env->entries[i].value;
-      return true;
-    }
+void executeProgram(Lox *lox, Program *prog, char *outBuffer, size_t bufSize) {
+  if (!prog)
+    return;
+
+  for (size_t i = 0; i < prog->count; i++) {
+    executeStmt(lox, prog->statements[i], outBuffer, bufSize);
+
+    if (lox->hadRuntimeError || lox->hadError)
+      return; // stop on first error
   }
-  return false;
 }

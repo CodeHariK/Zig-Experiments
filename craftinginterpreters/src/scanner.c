@@ -127,8 +127,9 @@ void initScanner(Scanner *scanner, const char *source) {
   scanner->line = 1;
 }
 
-void addTokenToArray(Scanner *scanner, Token token) {
+void addTokenToArray(Lox *lox, Token token) {
   // Resize array if needed
+  Scanner *scanner = &lox->scanner;
   if (scanner->count + 1 > scanner->capacity) {
     scanner->capacity *= 2;
     scanner->tokens =
@@ -142,6 +143,8 @@ void addTokenToArray(Scanner *scanner, Token token) {
 
   // Add the token
   scanner->tokens[scanner->count++] = token;
+
+  printToken(lox, &token);
 }
 
 static void addToken(Lox *lox, TokenType type, void *literal) {
@@ -157,9 +160,7 @@ static void addToken(Lox *lox, TokenType type, void *literal) {
                  .literal = literal,
                  .line = scanner->line};
 
-  printToken(lox, &token);
-
-  addTokenToArray(scanner, token);
+  addTokenToArray(lox, token);
 }
 
 static inline bool isEOFchar(Scanner *scanner) {
@@ -274,13 +275,13 @@ static void scanToken(Lox *lox) {
     } else if (isAlpha(c)) {
       identifierScan(lox);
     } else {
-      loxError(lox, scanner->line, "Unexpected character.");
+      loxError(lox, scanner->line, " @ ", "Unexpected character.");
     }
     break;
   }
 }
 
-Token *scanTokens(Lox *lox, size_t *outCount) {
+Token *scanTokens(Lox *lox) {
   Scanner *scanner = &lox->scanner;
   while (!isEOFchar(scanner)) {
     scanner->start = scanner->current;
@@ -293,10 +294,8 @@ Token *scanTokens(Lox *lox, size_t *outCount) {
                .length = 0,
                .literal = NULL,
                .line = scanner->line};
-  addTokenToArray(scanner, eof);
+  addTokenToArray(lox, eof);
 
-  if (outCount)
-    *outCount = scanner->count;
   return scanner->tokens;
 }
 
@@ -309,7 +308,7 @@ static void multiLineStringScan(Lox *lox) {
   }
 
   if (isEOFchar(scanner)) {
-    loxError(lox, scanner->line, "Unterminated string.");
+    loxError(lox, scanner->line, " @ ", "Unterminated string.");
     return;
   }
 

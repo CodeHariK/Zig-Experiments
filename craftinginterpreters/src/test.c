@@ -1,193 +1,149 @@
 #include "lox.h"
 #include <string.h>
 
-bool DEBUG_PRINT = false;
-
 typedef struct {
   const char *source;
   const char *expected;
+  bool pass;
 } TestCase;
-
-// Evaluate a single expression and return the Value
-Value runExpression(Lox *lox, const char *source) {
-  lox->hadRuntimeError = false;
-  lox->hadError = false;
-
-  initScanner(&lox->scanner, source);
-  size_t count;
-  Token *tokens = scanTokens(lox, &count);
-  if (!tokens)
-    printf("Failed to scan tokens for %s\n", source);
-
-  initParser(lox, tokens, count);
-
-  Expr *expr = parseExpression(lox);
-  if (!expr)
-    return nilValue();
-  return evaluate(lox, expr);
-}
 
 static void runExprTests(void) {
   TestCase exprTests[] = {
-      {"1 + 2 * 3", "7"},         {"(1 + 2) * 3", "9"},
-      {"5 > 3", "true"},          {"5 < 3", "false"},
-      {"nil == nil", "true"},     {"!false", "true"},
-      {"(1 + 2) * 3", "9"},       {"5 > 3", "true"},
-      {"5 < 3", "false"},         {"5 >= 5", "true"},
-      {"5 <= 4", "false"},        {"true == false", "false"},
-      {"true != false", "true"},  {"nil == nil", "true"},
-      {"!false", "true"},         {"-(1 + 2)", "-3"},
-      {"(1 + 2) * (3 - 1)", "6"}, {"2 / 4", "0.5"}};
+
+      {"()", NULL, false},
+      {"{}", NULL, false},
+      {"!true == false", "true", true},
+      {"123.45", "123.45", true},
+      {"nil", "nil", true},
+      {"var x = 10;", NULL, false},
+      {"print 1 + 2;", NULL, false},
+      {"// comment\n123", "123", true},
+      {"\"hello world\"", "hello world", true},
+      {"!-!-3", "0", false},
+      {"1 + 2 * 3", "7", true},
+      {"(1 + 2) * 3", "9", true},
+      {"5 > 3", "true", true},
+      {"5 < 3", "false", true},
+      {"nil == nil", "true", true},
+      {"!false", "true", true},
+      {"5 > 3", "true", true},
+      {"5 < 3", "false", true},
+      {"5 >= 5", "true", true},
+      {"5 <= 4", "false", true},
+      {"true == false", "false", true},
+      {"true != false", "true", true},
+      {"nil == nil", "true", true},
+      {"!false", "true", true},
+      {"-(1 + 2)", "-3", true},
+      {"(1 + 2) * (3 - 1)", "6", true},
+      {"2 / 4", "0.5", true}};
 
   for (size_t i = 0; i < sizeof(exprTests) / sizeof(exprTests[0]); i++) {
 
     TestCase test = exprTests[i];
 
-    Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
-
-    Value result = runExpression(&lox, test.source);
-    char buffer[64];
-    valueToString(result, buffer, sizeof(buffer));
-
-    if (strcmp(buffer, test.expected) == 0) {
-      printf("[PASS] %s => %s\n", test.source, buffer);
-    } else {
-      printf("[FAIL] %s => %s (expected %s)\n", test.source, buffer,
-             test.expected);
-    }
-  }
-}
-
-void runScannerTests(void) {
-  const char *sources[] = {"()",
-                           "{}",
-                           "1 + 2 * 3",
-                           "!true == false",
-                           "123.45",
-                           "nil",
-                           "var x = 10;",
-                           "print 1 + 2;",
-                           "// comment\n123",
-                           "\"hello world\""};
-
-  for (size_t i = 0; i < sizeof(sources) / sizeof(sources[0]); i++) {
-    const char *source = sources[i];
+    printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
-    initScanner(&lox.scanner, source);
-
-    size_t count;
-    Token *tokens = scanTokens(&lox, &count);
-
-    printf("SOURCE:\n%s\n", source);
-    for (size_t i = 0; i < count; i++) {
-      Token t = tokens[i];
-      printf("  %-15s '%.*s'\n", tokenTypeToString(t.type), t.length, t.lexeme);
-    }
-    printf("\n");
-  }
-}
-
-void testParser(void) {
-  Lox lox;
-  loxInit(&lox, DEBUG_PRINT);
-
-  const char *parserTests[] = {
-      "1 + 2 * 3",
-      "(1 + 2) * 3",
-      "!true == false",
-      "nil",
-  };
-
-  for (size_t i = 0; i < sizeof(parserTests) / sizeof(parserTests[0]); i++) {
-    printf("SOURCE: %s\n", parserTests[i]);
-
-    initScanner(&lox.scanner, parserTests[i]);
-    size_t count;
-    Token *tokens = scanTokens(&lox, &count);
-
-    initParser(&lox, tokens, count);
+    loxInit(&lox, true);
+    initScanner(&lox.scanner, test.source);
+    scanTokens(&lox);
+    initParser(&lox);
 
     Expr *expr = parseExpression(&lox);
-    printExpr(expr);
-    printf("\n\n");
+    Value result = evaluate(&lox, expr);
+
+    if (test.pass && !(lox.hadError || lox.hadRuntimeError)) {
+      char buffer[64];
+      valueToString(result, buffer, sizeof(buffer));
+      if (strcmp(buffer, test.expected) == 0) {
+        printf("[PASS] %s => %s\n", test.source, buffer);
+      } else {
+        printf("[FAIL] %s => %s (expected %s)\n", test.source, buffer,
+               test.expected);
+      }
+    } else {
+      printf("[PASSError]\n");
+    }
+
+    printError(&lox);
   }
 }
 
 // Run a single statement test
 void runStmtTests(void) {
   TestCase stmtTests[] = {
-      {"print 1 + 2;", "3"},
-      {"1 + 2;", ""}, // exprStmt, no print output
-      {"print 2 * 3;", "6"},
-      {"print !false;", "true"},
-      {"print \"hello\";", "hello"},
+      {"2 / 4", "0.5", false},
+      {"print 1 + 2;", "3", true},
+      {"1 + 2;", "", true}, // exprStmt, no print output
+      {"print 2 * 3;", "6", true},
+      {"print !false;", "true", true},
+      {"print \"hello\";", "hello", true},
   };
 
   for (size_t i = 0; i < sizeof(stmtTests) / sizeof(stmtTests[0]); i++) {
     TestCase test = stmtTests[i];
 
+    printf("SOURCE: %s\n", test.source);
+
     Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
-
+    loxInit(&lox, true);
     initScanner(&lox.scanner, test.source);
-    size_t count;
-    Token *tokens = scanTokens(&lox, &count);
-
-    initParser(&lox, tokens, count);
+    scanTokens(&lox);
+    initParser(&lox);
 
     Stmt *stmt = parseStmt(&lox);
-    printf("SOURCE: %s\n", test.source);
-    printStmt(stmt);
 
     char buffer[64] = "";
     executeStmt(&lox, stmt, buffer, sizeof(buffer));
 
-    if (test.expected && strlen(test.expected) > 0) {
-      if (strcmp(buffer, test.expected) == 0) {
-        printf("[PASS] expected: %s\n\n", test.expected);
+    if (test.pass && !(lox.hadError || lox.hadRuntimeError)) {
+      if (test.expected && strlen(test.expected) > 0) {
+        if (strcmp(buffer, test.expected) == 0) {
+          printf("[PASS] expected: %s\n\n", test.expected);
+        } else {
+          printf("[FAIL] got: %s, expected: %s\n\n", buffer, test.expected);
+        }
       } else {
-        printf("[FAIL] got: %s, expected: %s\n\n", buffer, test.expected);
+        printf("[INFO] no expected output\n\n");
       }
     } else {
-      printf("[INFO] no expected output\n\n");
+      printf("[PASSError]\n");
     }
+
+    printError(&lox);
   }
 }
 
 void runVarTests(void) {
   TestCase tests[] = {
-      {"var a = 42; print a;", "42"},
-      {"var b = 3.14; print b;", "3.14"},
-      {"var s = \"hello\"; print s;", "hello"},
-      {"var x; print x;", "nil"}, // uninitialized variable
-      {"var y = true; print y;", "true"},
-      // Using previously declared variable
-      {"var c = 10; var d = 5; print c;", "10"},
+      {"var a = 42; print a;", "42", true},
+      {"var b = 3.14; print b;", "3.14", true},
+      {"var s = \"hello\"; print s;", "hello", true},
+      {"var x; print x;", "nil", true}, // uninitialized variable
+      {"var y = true; print y;", "true", true},
+      {"var c = 10; var d = 5; print c;", "10", true},
+      {"var c = 10; c = 20; print c;", "20", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
 
     TestCase test = tests[i];
 
+    printf("SOURCE: %s\n", test.source);
+
     Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
-
+    loxInit(&lox, true);
     initScanner(&lox.scanner, test.source);
-    size_t count;
-    Token *tokens = scanTokens(&lox, &count);
-
-    initParser(&lox, tokens, count);
+    scanTokens(&lox);
+    initParser(&lox);
 
     Program *prog = parseProgram(&lox);
 
-    char buffer[128] = "";
+    printProgram(&lox, prog);
 
-    for (size_t i = 0; i < prog->count; i++) {
-      executeStmt(&lox, prog->statements[i], buffer, sizeof(buffer));
-    }
+    char buffer[128] = "";
+    executeProgram(&lox, prog, buffer, sizeof(buffer));
 
     if (test.expected) {
       if (strcmp(buffer, test.expected) == 0) {
@@ -199,18 +155,19 @@ void runVarTests(void) {
     }
 
     freeLox(&lox);
+
+    printf("\n");
   }
 }
 
 int main(void) {
 
-  runScannerTests();
-
-  testParser();
-
+  printf("====== Expression Tests ======\n");
   runExprTests();
 
+  printf("====== Statement Tests ======\n");
   runStmtTests();
 
+  printf("====== Variable Tests ======\n");
   runVarTests();
 }

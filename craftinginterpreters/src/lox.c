@@ -22,10 +22,9 @@ void loxInit(Lox *lox, bool debugPrint) {
 
 void loxRun(Lox *lox, const char *source) {
   initScanner(&lox->scanner, source);
-  size_t count;
-  Token *tokens = scanTokens(lox, &count);
+  scanTokens(lox);
 
-  initParser(lox, tokens, count);
+  initParser(lox);
 
   Program *prog = parseProgram(lox);
   for (size_t i = 0; i < prog->count; i++) {

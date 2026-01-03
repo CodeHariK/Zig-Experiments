@@ -1,141 +1,692 @@
-SOURCE:
-()
-  LEFT_PAREN      '('
-  RIGHT_PAREN     ')'
-  EOF             ''
+====== Expression Tests ======
+SOURCE: ()
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] EOF             ''
+[AST] GroupingExpr    (group nil)
+[EVAL] (group nil)
+[PASSError]
+[line 1] Error @ : Expect expression.
 
-SOURCE:
-{}
-  LEFT_BRACE      '{'
-  RIGHT_BRACE     '}'
-  EOF             ''
-
-SOURCE:
-1 + 2 * 3
-  NUMBER          '1'
-  PLUS            '+'
-  NUMBER          '2'
-  STAR            '*'
-  NUMBER          '3'
-  EOF             ''
-
-SOURCE:
-!true == false
-  NOT             '!'
-  TRUE            'true'
-  EQUAL_EQUAL     '=='
-  FALSE           'false'
-  EOF             ''
-
-SOURCE:
-123.45
-  NUMBER          '123.45'
-  EOF             ''
-
-SOURCE:
-nil
-  NIL             'nil'
-  EOF             ''
-
-SOURCE:
-var x = 10;
-  VAR             'var'
-  IDENTIFIER      'x'
-  EQUAL           '='
-  NUMBER          '10'
-  SEMICOLON       ';'
-  EOF             ''
-
-SOURCE:
-print 1 + 2;
-  PRINT           'print'
-  NUMBER          '1'
-  PLUS            '+'
-  NUMBER          '2'
-  SEMICOLON       ';'
-  EOF             ''
-
-SOURCE:
-// comment
-123
-  NUMBER          '123'
-  EOF             ''
-
-SOURCE:
-"hello world"
-  STRING          '"hello world"'
-  EOF             ''
-
-SOURCE: 1 + 2 * 3
-(PLUS LITERAL:  1 (STAR LITERAL:  2 LITERAL:  3))
-
-SOURCE: (1 + 2) * 3
-(STAR (group (PLUS LITERAL:  1 LITERAL:  2)) LITERAL:  3)
+SOURCE: {}
+[TOK] LEFT_BRACE      '{'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+[PASSError]
+[line 1] Error @ : Expect expression.
 
 SOURCE: !true == false
-(EQUAL_EQUAL (NOT LITERAL:  true) LITERAL:  false)
+[TOK] NOT             '!'
+[TOK] TRUE            'true'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] FALSE           'false'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:true
+[AST] UnaryExpr       (NOT LITERAL:true)
+[AST] LiteralExpr     LITERAL:false
+[AST] BinaryExpr      (EQUAL_EQUAL (NOT LITERAL:true) LITERAL:false)
+[EVAL] (EQUAL_EQUAL (NOT LITERAL:true) LITERAL:false)
+[EVAL] (NOT LITERAL:true)
+[EVAL] LITERAL:true
+[EVAL] LITERAL:false
+[RESULT] :true
+[PASS] !true == false => true
+
+SOURCE: 123.45
+[TOK] NUMBER          '123.45'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:123.45
+[EVAL] LITERAL:123.45
+[PASS] 123.45 => 123.45
 
 SOURCE: nil
-LITERAL:  nil
+[TOK] NIL             'nil'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:nil
+[EVAL] LITERAL:nil
+[PASS] nil => nil
 
-[PASS] 1 + 2 * 3 => 7
-[PASS] (1 + 2) * 3 => 9
-[PASS] 5 > 3 => true
-[PASS] 5 < 3 => false
-[PASS] nil == nil => true
-[PASS] !false => true
-[PASS] (1 + 2) * 3 => 9
-[PASS] 5 > 3 => true
-[PASS] 5 < 3 => false
-[PASS] 5 >= 5 => true
-[PASS] 5 <= 4 => false
-[PASS] true == false => false
-[PASS] true != false => true
-[PASS] nil == nil => true
-[PASS] !false => true
-[PASS] -(1 + 2) => -3
-[PASS] (1 + 2) * (3 - 1) => 6
-[PASS] 2 / 4 => 0.5
+SOURCE: var x = 10;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'x'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '10'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[PASSError]
+[line 1] Error @ : Expect expression.
+
 SOURCE: print 1 + 2;
-(print (PLUS LITERAL:  1 LITERAL:  2))
-PRINT:  3
+[TOK] PRINT           'print'
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[PASSError]
+[line 1] Error @ : Expect expression.
+
+SOURCE: // comment
+123
+[TOK] NUMBER          '123'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:123
+[EVAL] LITERAL:123
+[PASS] // comment
+123 => 123
+
+SOURCE: "hello world"
+[TOK] STRING          '"hello world"'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:hello world
+[EVAL] LITERAL:hello world
+[PASS] "hello world" => hello world
+
+SOURCE: !-!-3
+[TOK] NOT             '!'
+[TOK] MINUS           '-'
+[TOK] NOT             '!'
+[TOK] MINUS           '-'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:3
+[AST] UnaryExpr       (MINUS LITERAL:3)
+[AST] UnaryExpr       (NOT (MINUS LITERAL:3))
+[AST] UnaryExpr       (MINUS (NOT (MINUS LITERAL:3)))
+[AST] UnaryExpr       (NOT (MINUS (NOT (MINUS LITERAL:3))))
+[EVAL] (NOT (MINUS (NOT (MINUS LITERAL:3))))
+[EVAL] (MINUS (NOT (MINUS LITERAL:3)))
+[EVAL] (NOT (MINUS LITERAL:3))
+[EVAL] (MINUS LITERAL:3)
+[EVAL] LITERAL:3
+[PASSError]
+[line 1] RuntimeError at '!': Operand must be a boolean.
+
+SOURCE: 1 + 2 * 3
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] STAR            '*'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (STAR LITERAL:2 LITERAL:3)
+[AST] BinaryExpr      (PLUS LITERAL:1 (STAR LITERAL:2 LITERAL:3))
+[EVAL] (PLUS LITERAL:1 (STAR LITERAL:2 LITERAL:3))
+[EVAL] LITERAL:1
+[EVAL] (STAR LITERAL:2 LITERAL:3)
+[EVAL] LITERAL:2
+[EVAL] LITERAL:3
+[RESULT] :6
+[RESULT] :7
+[PASS] 1 + 2 * 3 => 7
+
+SOURCE: (1 + 2) * 3
+[TOK] LEFT_PAREN      '('
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] RIGHT_PAREN     ')'
+[TOK] STAR            '*'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
+[AST] GroupingExpr    (group (PLUS LITERAL:1 LITERAL:2))
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (STAR (group (PLUS LITERAL:1 LITERAL:2)) LITERAL:3)
+[EVAL] (STAR (group (PLUS LITERAL:1 LITERAL:2)) LITERAL:3)
+[EVAL] (group (PLUS LITERAL:1 LITERAL:2))
+[EVAL] (PLUS LITERAL:1 LITERAL:2)
+[EVAL] LITERAL:1
+[EVAL] LITERAL:2
+[RESULT] :3
+[EVAL] LITERAL:3
+[RESULT] :9
+[PASS] (1 + 2) * 3 => 9
+
+SOURCE: 5 > 3
+[TOK] NUMBER          '5'
+[TOK] GREATER         '>'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (GREATER LITERAL:5 LITERAL:3)
+[EVAL] (GREATER LITERAL:5 LITERAL:3)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:3
+[RESULT] :true
+[PASS] 5 > 3 => true
+
+SOURCE: 5 < 3
+[TOK] NUMBER          '5'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (LESS LITERAL:5 LITERAL:3)
+[EVAL] (LESS LITERAL:5 LITERAL:3)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:3
+[RESULT] :false
+[PASS] 5 < 3 => false
+
+SOURCE: nil == nil
+[TOK] NIL             'nil'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] NIL             'nil'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:nil
+[AST] LiteralExpr     LITERAL:nil
+[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
+[EVAL] (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
+[EVAL] LITERAL:nil
+[EVAL] LITERAL:nil
+[RESULT] :true
+[PASS] nil == nil => true
+
+SOURCE: !false
+[TOK] NOT             '!'
+[TOK] FALSE           'false'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:false
+[AST] UnaryExpr       (NOT LITERAL:false)
+[EVAL] (NOT LITERAL:false)
+[EVAL] LITERAL:false
+[PASS] !false => true
+
+SOURCE: 5 > 3
+[TOK] NUMBER          '5'
+[TOK] GREATER         '>'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (GREATER LITERAL:5 LITERAL:3)
+[EVAL] (GREATER LITERAL:5 LITERAL:3)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:3
+[RESULT] :true
+[PASS] 5 > 3 => true
+
+SOURCE: 5 < 3
+[TOK] NUMBER          '5'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (LESS LITERAL:5 LITERAL:3)
+[EVAL] (LESS LITERAL:5 LITERAL:3)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:3
+[RESULT] :false
+[PASS] 5 < 3 => false
+
+SOURCE: 5 >= 5
+[TOK] NUMBER          '5'
+[TOK] GREATER_EQUAL   '>='
+[TOK] NUMBER          '5'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:5
+[AST] BinaryExpr      (GREATER_EQUAL LITERAL:5 LITERAL:5)
+[EVAL] (GREATER_EQUAL LITERAL:5 LITERAL:5)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:5
+[RESULT] :true
+[PASS] 5 >= 5 => true
+
+SOURCE: 5 <= 4
+[TOK] NUMBER          '5'
+[TOK] LESS_EQUAL      '<='
+[TOK] NUMBER          '4'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:5
+[AST] LiteralExpr     LITERAL:4
+[AST] BinaryExpr      (LESS_EQUAL LITERAL:5 LITERAL:4)
+[EVAL] (LESS_EQUAL LITERAL:5 LITERAL:4)
+[EVAL] LITERAL:5
+[EVAL] LITERAL:4
+[RESULT] :false
+[PASS] 5 <= 4 => false
+
+SOURCE: true == false
+[TOK] TRUE            'true'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] FALSE           'false'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:true
+[AST] LiteralExpr     LITERAL:false
+[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:true LITERAL:false)
+[EVAL] (EQUAL_EQUAL LITERAL:true LITERAL:false)
+[EVAL] LITERAL:true
+[EVAL] LITERAL:false
+[RESULT] :false
+[PASS] true == false => false
+
+SOURCE: true != false
+[TOK] TRUE            'true'
+[TOK] NOT_EQUAL       '!='
+[TOK] FALSE           'false'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:true
+[AST] LiteralExpr     LITERAL:false
+[AST] BinaryExpr      (NOT_EQUAL LITERAL:true LITERAL:false)
+[EVAL] (NOT_EQUAL LITERAL:true LITERAL:false)
+[EVAL] LITERAL:true
+[EVAL] LITERAL:false
+[RESULT] :true
+[PASS] true != false => true
+
+SOURCE: nil == nil
+[TOK] NIL             'nil'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] NIL             'nil'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:nil
+[AST] LiteralExpr     LITERAL:nil
+[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
+[EVAL] (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
+[EVAL] LITERAL:nil
+[EVAL] LITERAL:nil
+[RESULT] :true
+[PASS] nil == nil => true
+
+SOURCE: !false
+[TOK] NOT             '!'
+[TOK] FALSE           'false'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:false
+[AST] UnaryExpr       (NOT LITERAL:false)
+[EVAL] (NOT LITERAL:false)
+[EVAL] LITERAL:false
+[PASS] !false => true
+
+SOURCE: -(1 + 2)
+[TOK] MINUS           '-'
+[TOK] LEFT_PAREN      '('
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] RIGHT_PAREN     ')'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
+[AST] GroupingExpr    (group (PLUS LITERAL:1 LITERAL:2))
+[AST] UnaryExpr       (MINUS (group (PLUS LITERAL:1 LITERAL:2)))
+[EVAL] (MINUS (group (PLUS LITERAL:1 LITERAL:2)))
+[EVAL] (group (PLUS LITERAL:1 LITERAL:2))
+[EVAL] (PLUS LITERAL:1 LITERAL:2)
+[EVAL] LITERAL:1
+[EVAL] LITERAL:2
+[RESULT] :3
+[PASS] -(1 + 2) => -3
+
+SOURCE: (1 + 2) * (3 - 1)
+[TOK] LEFT_PAREN      '('
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] RIGHT_PAREN     ')'
+[TOK] STAR            '*'
+[TOK] LEFT_PAREN      '('
+[TOK] NUMBER          '3'
+[TOK] MINUS           '-'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
+[AST] GroupingExpr    (group (PLUS LITERAL:1 LITERAL:2))
+[AST] LiteralExpr     LITERAL:3
+[AST] LiteralExpr     LITERAL:1
+[AST] BinaryExpr      (MINUS LITERAL:3 LITERAL:1)
+[AST] GroupingExpr    (group (MINUS LITERAL:3 LITERAL:1))
+[AST] BinaryExpr      (STAR (group (PLUS LITERAL:1 LITERAL:2)) (group (MINUS LITERAL:3 LITERAL:1)))
+[EVAL] (STAR (group (PLUS LITERAL:1 LITERAL:2)) (group (MINUS LITERAL:3 LITERAL:1)))
+[EVAL] (group (PLUS LITERAL:1 LITERAL:2))
+[EVAL] (PLUS LITERAL:1 LITERAL:2)
+[EVAL] LITERAL:1
+[EVAL] LITERAL:2
+[RESULT] :3
+[EVAL] (group (MINUS LITERAL:3 LITERAL:1))
+[EVAL] (MINUS LITERAL:3 LITERAL:1)
+[EVAL] LITERAL:3
+[EVAL] LITERAL:1
+[RESULT] :2
+[RESULT] :6
+[PASS] (1 + 2) * (3 - 1) => 6
+
+SOURCE: 2 / 4
+[TOK] NUMBER          '2'
+[TOK] SLASH           '/'
+[TOK] NUMBER          '4'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:2
+[AST] LiteralExpr     LITERAL:4
+[AST] BinaryExpr      (SLASH LITERAL:2 LITERAL:4)
+[EVAL] (SLASH LITERAL:2 LITERAL:4)
+[EVAL] LITERAL:2
+[EVAL] LITERAL:4
+[RESULT] :0.5
+[PASS] 2 / 4 => 0.5
+
+====== Statement Tests ======
+SOURCE: 2 / 4
+[TOK] NUMBER          '2'
+[TOK] SLASH           '/'
+[TOK] NUMBER          '4'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:2
+[AST] LiteralExpr     LITERAL:4
+[AST] BinaryExpr      (SLASH LITERAL:2 LITERAL:4)
+[PASSError]
+[line 1] Error at end: Expect ';' after expression.
+
+SOURCE: print 1 + 2;
+[TOK] PRINT           'print'
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
+[EVAL] (PLUS LITERAL:1 LITERAL:2)
+[EVAL] LITERAL:1
+[EVAL] LITERAL:2
+[RESULT] :3
+[STMT_PRINT_EVAL] :3
 [PASS] expected: 3
 
+
 SOURCE: 1 + 2;
-(expr (PLUS LITERAL:  1 LITERAL:  2))
+[TOK] NUMBER          '1'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:1
+[AST] LiteralExpr     LITERAL:2
+[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
+--> (PLUS LITERAL:1 LITERAL:2)
+[EVAL] (PLUS LITERAL:1 LITERAL:2)
+[EVAL] LITERAL:1
+[EVAL] LITERAL:2
+[RESULT] :3
+[STMT_EXPR_EVAL] :3@@@
 [INFO] no expected output
 
+
 SOURCE: print 2 * 3;
-(print (STAR LITERAL:  2 LITERAL:  3))
-PRINT:  6
+[TOK] PRINT           'print'
+[TOK] NUMBER          '2'
+[TOK] STAR            '*'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:2
+[AST] LiteralExpr     LITERAL:3
+[AST] BinaryExpr      (STAR LITERAL:2 LITERAL:3)
+[EVAL] (STAR LITERAL:2 LITERAL:3)
+[EVAL] LITERAL:2
+[EVAL] LITERAL:3
+[RESULT] :6
+[STMT_PRINT_EVAL] :6
 [PASS] expected: 6
 
+
 SOURCE: print !false;
-(print (NOT LITERAL:  false))
-PRINT:  true
+[TOK] PRINT           'print'
+[TOK] NOT             '!'
+[TOK] FALSE           'false'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:false
+[AST] UnaryExpr       (NOT LITERAL:false)
+[EVAL] (NOT LITERAL:false)
+[EVAL] LITERAL:false
+[STMT_PRINT_EVAL] :true
 [PASS] expected: true
 
+
 SOURCE: print "hello";
-(print LITERAL:  hello)
-PRINT:  hello
+[TOK] PRINT           'print'
+[TOK] STRING          '"hello"'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:hello
+[EVAL] LITERAL:hello
+[STMT_PRINT_EVAL] :hello
 [PASS] expected: hello
 
-VAR:  42
-PRINT:  42
+
+====== Variable Tests ======
+SOURCE: var a = 42; print a;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '42'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:42
+[AST] VariableExpr    name='a'
+==== Program ====
+(2 statements)
+[STMT_VAR] a 
+[STMT_PRINT] a
+==== Program ====
+--> LITERAL:42
+[EVAL] LITERAL:42
+[STMT_VAR_EVAL] :42>>>
+[EVAL] a
+===== Environment =====
+(count=1, capacity=8):
+a = 42
+===== Environment =====
+[STMT_PRINT_EVAL] :42
 [PASS] var a = 42; print a; => 42
-VAR:  3.14
-PRINT:  3.14
+
+SOURCE: var b = 3.14; print b;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'b'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '3.14'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'b'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:3.14
+[AST] VariableExpr    name='b'
+==== Program ====
+(2 statements)
+[STMT_VAR] b 
+[STMT_PRINT] b
+==== Program ====
+--> LITERAL:3.14
+[EVAL] LITERAL:3.14
+[STMT_VAR_EVAL] :3.14>>>
+[EVAL] b
+===== Environment =====
+(count=1, capacity=8):
+b = 3.14
+===== Environment =====
+[STMT_PRINT_EVAL] :3.14
 [PASS] var b = 3.14; print b; => 3.14
-VAR:  hello
-PRINT:  hello
+
+SOURCE: var s = "hello"; print s;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      's'
+[TOK] EQUAL           '='
+[TOK] STRING          '"hello"'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      's'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:hello
+[AST] VariableExpr    name='s'
+==== Program ====
+(2 statements)
+[STMT_VAR] s 
+[STMT_PRINT] s
+==== Program ====
+--> LITERAL:hello
+[EVAL] LITERAL:hello
+[STMT_VAR_EVAL] :hello>>>
+[EVAL] s
+===== Environment =====
+(count=1, capacity=8):
+s = hello
+===== Environment =====
+[STMT_PRINT_EVAL] :hello
 [PASS] var s = "hello"; print s; => hello
-VAR:  nil
-PRINT:  nil
+
+SOURCE: var x; print x;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'x'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'x'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] VariableExpr    name='x'
+==== Program ====
+(2 statements)
+[STMT_VAR] x 
+[STMT_PRINT] x
+==== Program ====
+[STMT_VAR_EVAL] :nil>>>
+[EVAL] x
+===== Environment =====
+(count=1, capacity=8):
+x = nil
+===== Environment =====
+[STMT_PRINT_EVAL] :nil
 [PASS] var x; print x; => nil
-VAR:  true
-PRINT:  true
+
+SOURCE: var y = true; print y;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'y'
+[TOK] EQUAL           '='
+[TOK] TRUE            'true'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'y'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:true
+[AST] VariableExpr    name='y'
+==== Program ====
+(2 statements)
+[STMT_VAR] y 
+[STMT_PRINT] y
+==== Program ====
+--> LITERAL:true
+[EVAL] LITERAL:true
+[STMT_VAR_EVAL] :true>>>
+[EVAL] y
+===== Environment =====
+(count=1, capacity=8):
+y = true
+===== Environment =====
+[STMT_PRINT_EVAL] :true
 [PASS] var y = true; print y; => true
-VAR:  10
-VAR:  5
-PRINT:  10
+
+SOURCE: var c = 10; var d = 5; print c;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'c'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '10'
+[TOK] SEMICOLON       ';'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'd'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '5'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'c'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:10
+[AST] LiteralExpr     LITERAL:5
+[AST] VariableExpr    name='c'
+==== Program ====
+(3 statements)
+[STMT_VAR] c 
+[STMT_VAR] d 
+[STMT_PRINT] c
+==== Program ====
+--> LITERAL:10
+[EVAL] LITERAL:10
+[STMT_VAR_EVAL] :10>>>
+--> LITERAL:5
+[EVAL] LITERAL:5
+[STMT_VAR_EVAL] :5>>>
+[EVAL] c
+===== Environment =====
+(count=2, capacity=8):
+c = 10
+d = 5
+===== Environment =====
+[STMT_PRINT_EVAL] :10
 [PASS] var c = 10; var d = 5; print c; => 10
+
+SOURCE: var c = 10; c = 20; print c;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'c'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '10'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'c'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '20'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'c'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[AST] LiteralExpr     LITERAL:10
+[AST] VariableExpr    name='c'
+[AST] LiteralExpr     LITERAL:20
+[AST] AssignExpr      name='c' 
+(= c LITERAL:20)
+[AST] VariableExpr    name='c'
+==== Program ====
+(3 statements)
+[STMT_VAR] c 
+[STMT_EXPR] (= c LITERAL:20)
+[STMT_PRINT] c
+==== Program ====
+--> LITERAL:10
+[EVAL] LITERAL:10
+[STMT_VAR_EVAL] :10>>>
+--> (= c LITERAL:20)
+[EVAL] (= c LITERAL:20)
+[EVAL] LITERAL:20
+===== Environment =====
+(count=1, capacity=8):
+c = 20
+===== Environment =====
+[STMT_EXPR_EVAL] :20@@@
+[EVAL] c
+===== Environment =====
+(count=1, capacity=8):
+c = 20
+===== Environment =====
+[STMT_PRINT_EVAL] :20
+[PASS] var c = 10; c = 20; print c; => 20
+

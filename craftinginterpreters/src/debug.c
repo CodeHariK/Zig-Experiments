@@ -21,82 +21,130 @@ void freeScanner(Scanner *scanner) {
   }
 }
 
-// void freeExpr(Expr *expr) {
-//   if (!expr)
-//     return;
-//   switch (expr->type) {
-//   case EXPR_BINARY:
-//     freeExpr(expr->as.binary.left);
-//     freeExpr(expr->as.binary.right);
-//     break;
-//   case EXPR_UNARY:
-//     freeExpr(expr->as.unary.right);
-//     break;
-//   case EXPR_GROUPING:
-//     freeExpr(expr->as.grouping.expression);
-//     break;
-//   case EXPR_LITERAL:
-//     if (expr->as.literal.value.type == VAL_STRING)
-//       free(expr->as.literal.value.as.string);
-//     break;
-//   case EXPR_VARIABLE:
-//     if (expr->as.var.initializer)
-//       freeExpr(expr->as.var.initializer);
-//     break;
-//   }
-//   free(expr);
-// }
-
-// void freeStmt(Stmt *stmt) {
-//   if (!stmt)
-//     return;
-//   switch (stmt->type) {
-//   case STMT_PRINT:
-//     freeExpr(stmt->as.printExpr);
-//     break;
-//   case STMT_EXPR:
-//     freeExpr(stmt->as.expr);
-//     break;
-//   case STMT_VAR:
-//     freeExpr(stmt->as.var.initializer);
-//     break;
-//   }
-//   free(stmt);
-// }
-
-// void freeProgram(Program *prog) {
-//   for (size_t i = 0; i < prog->count; i++) {
-//     freeStmt(prog->statements[i]);
-//   }
-//   free(prog->statements);
-//   free(prog);
-// }
-
-void loxReport(Lox *lox, int line, const char *where, const char *message) {
-  fprintf(stderr, "[line %d] Error%s: %s\n", line, where, message);
+void loxError(Lox *lox, int line, const char *where, const char *message) {
+  snprintf(lox->errorMsg, sizeof(lox->errorMsg), "[line %d] Error%s: %s\n",
+           line, where, message);
   lox->hadError = true;
-}
-
-void loxError(Lox *lox, int line, const char *message) {
-  loxReport(lox, line, "", message);
 }
 
 void parserError(Lox *lox, const char *message) {
   Token token = peekToken(&lox->parser);
   if (token.type == TOKEN_EOF) {
-    loxReport(lox, token.line, " at end", message);
+    loxError(lox, token.line, " at end", message);
   } else {
     char where[64];
     snprintf(where, sizeof(where), " at '%s'", token.lexeme);
-    loxReport(lox, token.line, where, message);
+    loxError(lox, token.line, where, message);
   }
 }
 
 void runtimeError(Lox *lox, Token op, const char *message) {
-  fprintf(stderr, "[line %d] RuntimeError at '%.*s': %s\n", op.line,
-          (int)(op.length), op.lexeme, message);
+  snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
+           "[line %d] RuntimeError at '%.*s': %s\n", op.line, (int)(op.length),
+           op.lexeme, message);
   lox->hadRuntimeError = true;
-  exit(70);
+  // exit(70);
+}
+
+void printError(Lox *lox) {
+  if (lox->hadError) {
+    printf("%s", lox->errorMsg);
+  }
+  if (lox->hadRuntimeError) {
+    printf("%s", lox->runtimeErrorMsg);
+  }
+  printf("\n");
+}
+
+void printValue(Value value, char *msg) {
+  char buffer[64];
+  valueToString(value, buffer, sizeof(buffer));
+  printf("%s:%s", msg, buffer);
+}
+
+void printEnvironment(Lox *lox) {
+  if (!lox->debugPrint)
+    return;
+  Environment *env = lox->env;
+  if (!env) {
+    printf("<null environment>\n");
+    return;
+  }
+
+  printf("===== Environment =====\n(count=%d, capacity=%d):\n", env->count,
+         env->capacity);
+  for (int i = 0; i < env->count; i++) {
+    char buffer[128];
+    valueToString(env->entries[i].value, buffer, sizeof(buffer));
+    printf("%s = %s\n", env->entries[i].key, buffer);
+  }
+  printf("===== Environment =====\n");
+}
+
+void printToken(Lox *lox, const Token *token) {
+  if (lox->debugPrint) {
+    printf("[TOK] %-15s '%.*s'\n", tokenTypeToString(token->type),
+           token->length, token->lexeme);
+  }
+}
+
+void printTokens(Lox *lox) {
+  printf("SOURCE:\n%s\n", lox->scanner.source);
+  for (size_t i = 0; i < lox->scanner.count; i++) {
+    Token token = lox->scanner.tokens[i];
+    printf("[TOK] %-15s '%.*s'\n", tokenTypeToString(token.type), token.length,
+           token.lexeme);
+  }
+  printf("\n");
+}
+
+static void indentPrint(int indent) {
+  for (int i = 0; i < indent; i++)
+    printf("  ");
+}
+
+void printExprAST(Expr *expr, int indent) {
+  if (!expr)
+    return;
+
+  indentPrint(indent);
+
+  switch (expr->type) {
+  case EXPR_LITERAL:
+    printf("Literal ");
+    printValue(expr->as.literal.value, "");
+    printf("\n");
+    break;
+
+  case EXPR_VARIABLE:
+    printf("Variable %.*s\n", (int)expr->as.var.name.length,
+           expr->as.var.name.lexeme);
+    break;
+
+  case EXPR_ASSIGN:
+    printf("Assign %.*s\n", (int)expr->as.assign.name.length,
+           expr->as.assign.name.lexeme);
+    printExprAST(expr->as.assign.value, indent + 1);
+    break;
+
+  case EXPR_BINARY:
+    printf("Binary %.*s\n", (int)expr->as.binary.op.length,
+           expr->as.binary.op.lexeme);
+    printExprAST(expr->as.binary.left, indent + 1);
+    printExprAST(expr->as.binary.right, indent + 1);
+    break;
+
+  case EXPR_GROUPING:
+    printf("Grouping\n");
+    printExprAST(expr->as.grouping.expression, indent + 1);
+    break;
+
+  case EXPR_UNARY:
+    printf("Unary %.*s\n", (int)expr->as.unary.op.length,
+           expr->as.unary.op.lexeme);
+    printExprAST(expr->as.unary.right, indent + 1);
+    break;
+  }
 }
 
 void printExpr(Expr *expr) {
@@ -121,7 +169,8 @@ void printExpr(Expr *expr) {
     break;
 
   case EXPR_LITERAL:
-    printValue(expr->as.literal.value, "LITERAL: ");
+    printValue(expr->as.literal.value, "LITERAL");
+
     break;
 
   case EXPR_GROUPING:
@@ -132,57 +181,85 @@ void printExpr(Expr *expr) {
 
   case EXPR_VARIABLE:
     printf("%.*s", expr->as.var.name.length, expr->as.var.name.lexeme);
+
+    break;
+
+  case EXPR_ASSIGN:
+    printf("(= %.*s ", (int)expr->as.assign.name.length,
+           expr->as.assign.name.lexeme);
+    printExpr(expr->as.assign.value);
+    printf(")");
     break;
   }
 }
 
-void printValue(Value value, char *msg) {
-  char buffer[64];
-  valueToString(value, buffer, sizeof(buffer));
-  printf("%s %s", msg, buffer);
-}
-
-void printToken(Lox *lox, const Token *token) {
-  if (lox->debugPrint) {
-    printf(">: %s %s %p\n", tokenTypeToString(token->type), token->lexeme,
-           token->literal);
-  }
-}
-
-void printEnvironment(Lox *lox) {
-  if (!lox->debugPrint)
+void printStmtAST(Stmt *stmt, int indent) {
+  if (!stmt)
     return;
-  Environment *env = lox->env;
-  if (!env) {
-    printf("<null environment>\n");
-    return;
-  }
 
-  printf("> Environment (count=%d, capacity=%d):\n", env->count, env->capacity);
-  for (int i = 0; i < env->count; i++) {
-    char buffer[128];
-    valueToString(env->entries[i].value, buffer, sizeof(buffer));
-    printf("%s = %s\n", env->entries[i].key, buffer);
+  indentPrint(indent);
+
+  switch (stmt->type) {
+  case STMT_PRINT:
+    printf("printStmtAST\n");
+    printExprAST(stmt->as.printExprAST, indent + 1);
+    break;
+
+  case STMT_EXPR:
+    printf("ExprStmt\n");
+    printExprAST(stmt->as.expr, indent + 1);
+    break;
+
+  case STMT_VAR:
+    printf("VarStmt %.*s\n", (int)stmt->as.var.name.length,
+           stmt->as.var.name.lexeme);
+    if (stmt->as.var.initializer)
+      printExprAST(stmt->as.var.initializer, indent + 1);
+    break;
   }
 }
 
 void printStmt(Stmt *stmt) {
   switch (stmt->type) {
   case STMT_PRINT:
-    printf("(print ");
-    printExpr(stmt->as.printExpr);
-    printf(")\n");
+    printf("[STMT_PRINT] ");
+    printExpr(stmt->as.printExprAST);
+    printf("\n");
     break;
   case STMT_EXPR:
-    printf("(expr ");
+    printf("[STMT_EXPR] ");
     if (stmt->as.expr)
       printExpr(stmt->as.expr);
-    printf(")\n");
+    printf("\n");
     break;
   case STMT_VAR: {
-    printf("(var %s ...)\n", stmt->as.var.name.lexeme);
+    printf("[STMT_VAR] %s \n", stmt->as.var.name.lexeme);
     break;
   }
+  }
+}
+
+void printProgram(Lox *lox, Program *prog) {
+  if (!prog || !lox->debugPrint)
+    return;
+
+  printf("==== Program ====\n(%zu statements)\n", prog->count);
+
+  for (size_t i = 0; i < prog->count; i++) {
+    printStmt(prog->statements[i]);
+  }
+
+  printf("==== Program ====\n");
+}
+
+void printProgramAST(Lox *lox, Program *prog) {
+  if (!prog || !lox->debugPrint)
+    return;
+
+  printf("Program (%zu statements)\n", prog->count);
+
+  for (size_t i = 0; i < prog->count; i++) {
+    printStmtAST(prog->statements[i], 1);
   }
 }
 

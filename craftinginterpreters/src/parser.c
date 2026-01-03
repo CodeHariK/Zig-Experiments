@@ -1,9 +1,9 @@
 #include "lox.h"
 #include <stdarg.h>
 
-void initParser(Lox *lox, Token *tokens, size_t count) {
-  lox->parser.tokens = tokens;
-  lox->parser.count = count;
+void initParser(Lox *lox) {
+  lox->parser.tokens = lox->scanner.tokens;
+  lox->parser.count = lox->scanner.count;
   lox->parser.current = 0;
 }
 
@@ -92,7 +92,7 @@ static Expr *primary(Lox *lox) {
     return newVariableExpr(lox, prevToken(parser));
   }
 
-  loxError(lox, peekToken(parser).line, "Expect expression.");
+  loxError(lox, peekToken(parser).line, " @ ", "Expect expression.");
   return NULL;
 }
 
@@ -101,9 +101,9 @@ static Expr *primary(Lox *lox) {
 static Expr *unary(Lox *lox) {
   Parser *parser = &lox->parser;
   if (matchAnyTokenAdvance(parser, 2, TOKEN_NOT, TOKEN_MINUS)) {
-    Token operator= prevToken(parser);
+    Token op = prevToken(parser);
     Expr *right = unary(lox);
-    return newUnaryExpr(lox, operator, right);
+    return newUnaryExpr(lox, op, right);
   }
 
   return primary(lox);
@@ -114,9 +114,9 @@ static Expr *factor(Lox *lox) {
   Expr *expr = unary(lox);
 
   while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_STAR, TOKEN_SLASH)) {
-    Token operator= prevToken(&lox->parser);
+    Token op = prevToken(&lox->parser);
     Expr *right = unary(lox);
-    expr = newBinaryExpr(lox, expr, operator, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -127,9 +127,9 @@ static Expr *term(Lox *lox) {
   Expr *expr = factor(lox);
 
   while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_PLUS, TOKEN_MINUS)) {
-    Token operator= prevToken(&lox->parser);
+    Token op = prevToken(&lox->parser);
     Expr *right = factor(lox);
-    expr = newBinaryExpr(lox, expr, operator, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -142,9 +142,9 @@ static Expr *comparison(Lox *lox) {
   while (matchAnyTokenAdvance(&lox->parser, 4, TOKEN_GREATER,
                               TOKEN_GREATER_EQUAL, TOKEN_LESS,
                               TOKEN_LESS_EQUAL)) {
-    Token operator= prevToken(&lox->parser);
+    Token op = prevToken(&lox->parser);
     Expr *right = term(lox);
-    expr = newBinaryExpr(lox, expr, operator, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -156,13 +156,36 @@ static Expr *equality(Lox *lox) {
 
   while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_EQUAL_EQUAL,
                               TOKEN_NOT_EQUAL)) {
-    Token operator= prevToken(&lox->parser);
+    Token op = prevToken(&lox->parser);
     Expr *right = comparison(lox);
-    expr = newBinaryExpr(lox, expr, operator, right);
+    expr = newBinaryExpr(lox, expr, op, right);
+  }
+
+  return expr;
+}
+
+// assignment     → IDENTIFIER "=" assignment
+//                | equality ;
+static Expr *parseAssignment(Lox *lox) {
+  Expr *expr = equality(lox);
+  if (!expr)
+    return NULL;
+
+  if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_EQUAL)) {
+    Expr *value = parseAssignment(lox);
+    if (!value)
+      return NULL;
+
+    if (expr->type == EXPR_VARIABLE) {
+      Token name = expr->as.var.name;
+      return newAssignExpr(lox, name, value);
+    }
+
+    parserError(lox, "Invalid assignment target.");
   }
 
   return expr;
 }
 
 // expression     → equality ;
-static Expr *expression(Lox *lox) { return equality(lox); }
+static Expr *expression(Lox *lox) { return parseAssignment(lox); }
