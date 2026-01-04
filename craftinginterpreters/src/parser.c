@@ -19,9 +19,9 @@ inline bool isTokenEOF(Parser *parser) {
   return peekToken(parser).type == TOKEN_EOF;
 }
 
-inline void advanceToken(Parser *parser) {
-  if (!isTokenEOF(parser))
-    parser->current++;
+inline void advanceToken(Lox *lox) {
+  if (!isTokenEOF(&lox->parser))
+    lox->parser.current++;
 }
 
 bool checkToken(Parser *parser, TokenType type) {
@@ -30,14 +30,17 @@ bool checkToken(Parser *parser, TokenType type) {
   return peekToken(parser).type == type;
 }
 
-inline bool matchAnyTokenAdvance(Parser *parser, int count, ...) {
+inline bool matchAnyTokenAdvance(Lox *lox, int count, ...) {
   va_list args;
   va_start(args, count);
 
   for (int i = 0; i < count; i++) {
     TokenType type = va_arg(args, TokenType);
-    if (checkToken(parser, type)) {
-      advanceToken(parser);
+    if (checkToken(&lox->parser, type)) {
+
+      printf("MatchAdv %-12s %s\n", "", tokenTypeToString(type));
+
+      advanceToken(lox);
       va_end(args);
       return true;
     }
@@ -51,71 +54,78 @@ Token consumeToken(Lox *lox, TokenType type, const char *message) {
   Parser *parser = &lox->parser;
   Token tok = peekToken(parser);
   if (checkToken(parser, type)) {
-    advanceToken(parser);
+    printf("CONSUME ");
+    printToken(lox, &tok);
+
+    advanceToken(lox);
   } else {
     parserError(lox, message);
   }
+
   return tok; // error recovery will improve later
 }
 
-static Expr *expression(Lox *lox);
+static Expr *_parseExpression(Lox *lox);
 
-Expr *parseExpression(Lox *lox) { return expression(lox); }
+Expr *parseExpression(Lox *lox) {
+  printf("================\n");
+  return _parseExpression(lox);
+}
 
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;
-static Expr *primary(Lox *lox) {
+static Expr *parsePrimary(Lox *lox) {
   Parser *parser = &lox->parser;
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_FALSE))
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_FALSE))
     return newLiteralExpr(lox, boolValue(false));
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_TRUE))
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_TRUE))
     return newLiteralExpr(lox, boolValue(true));
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_NIL))
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_NIL))
     return newLiteralExpr(lox, nilValue());
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_NUMBER))
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_NUMBER))
     return newLiteralExpr(lox,
                           numberValue(*(double *)prevToken(parser).literal));
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_STRING))
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_STRING))
     return newLiteralExpr(lox, stringValue((char *)prevToken(parser).literal));
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_LEFT_PAREN)) {
-    Expr *expr = expression(lox);
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_PAREN)) {
+    Expr *expr = _parseExpression(lox);
     consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
     return newGroupingExpr(lox, expr);
   }
 
-  if (matchAnyTokenAdvance(parser, 1, TOKEN_IDENTIFIER)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_IDENTIFIER)) {
     return newVariableExpr(lox, prevToken(parser));
   }
 
-  loxError(lox, peekToken(parser).line, " @ ", "Expect expression.");
+  loxError(lox, peekToken(parser).line, ": Expect expression. Got",
+           peekToken(parser).lexeme);
   return NULL;
 }
 
 // unary          → ( "!" | "-" ) unary
 //                | primary ;
-static Expr *unary(Lox *lox) {
-  Parser *parser = &lox->parser;
-  if (matchAnyTokenAdvance(parser, 2, TOKEN_NOT, TOKEN_MINUS)) {
-    Token op = prevToken(parser);
-    Expr *right = unary(lox);
+static Expr *parseUnary(Lox *lox) {
+  if (matchAnyTokenAdvance(lox, 2, TOKEN_NOT, TOKEN_MINUS)) {
+    Token op = prevToken(&lox->parser);
+    Expr *right = parseUnary(lox);
     return newUnaryExpr(lox, op, right);
   }
 
-  return primary(lox);
+  return parsePrimary(lox);
 }
 
 // factor         → unary ( ( "/" | "*" ) unary )* ;
-static Expr *factor(Lox *lox) {
-  Expr *expr = unary(lox);
+static Expr *parseFactor(Lox *lox) {
+  Expr *expr = parseUnary(lox);
 
-  while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_STAR, TOKEN_SLASH)) {
+  while (matchAnyTokenAdvance(lox, 2, TOKEN_STAR, TOKEN_SLASH)) {
     Token op = prevToken(&lox->parser);
-    Expr *right = unary(lox);
+    Expr *right = parseUnary(lox);
     expr = newBinaryExpr(lox, expr, op, right);
   }
 
@@ -123,12 +133,12 @@ static Expr *factor(Lox *lox) {
 }
 
 // term           → factor ( ( "-" | "+" ) factor )* ;
-static Expr *term(Lox *lox) {
-  Expr *expr = factor(lox);
+static Expr *parseTerm(Lox *lox) {
+  Expr *expr = parseFactor(lox);
 
-  while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_PLUS, TOKEN_MINUS)) {
+  while (matchAnyTokenAdvance(lox, 2, TOKEN_PLUS, TOKEN_MINUS)) {
     Token op = prevToken(&lox->parser);
-    Expr *right = factor(lox);
+    Expr *right = parseFactor(lox);
     expr = newBinaryExpr(lox, expr, op, right);
   }
 
@@ -136,14 +146,13 @@ static Expr *term(Lox *lox) {
 }
 
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-static Expr *comparison(Lox *lox) {
-  Expr *expr = term(lox);
+static Expr *parseComparison(Lox *lox) {
+  Expr *expr = parseTerm(lox);
 
-  while (matchAnyTokenAdvance(&lox->parser, 4, TOKEN_GREATER,
-                              TOKEN_GREATER_EQUAL, TOKEN_LESS,
-                              TOKEN_LESS_EQUAL)) {
+  while (matchAnyTokenAdvance(lox, 4, TOKEN_GREATER, TOKEN_GREATER_EQUAL,
+                              TOKEN_LESS, TOKEN_LESS_EQUAL)) {
     Token op = prevToken(&lox->parser);
-    Expr *right = term(lox);
+    Expr *right = parseTerm(lox);
     expr = newBinaryExpr(lox, expr, op, right);
   }
 
@@ -151,13 +160,12 @@ static Expr *comparison(Lox *lox) {
 }
 
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-static Expr *equality(Lox *lox) {
-  Expr *expr = comparison(lox);
+static Expr *parseEquality(Lox *lox) {
+  Expr *expr = parseComparison(lox);
 
-  while (matchAnyTokenAdvance(&lox->parser, 2, TOKEN_EQUAL_EQUAL,
-                              TOKEN_NOT_EQUAL)) {
+  while (matchAnyTokenAdvance(lox, 2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
     Token op = prevToken(&lox->parser);
-    Expr *right = comparison(lox);
+    Expr *right = parseComparison(lox);
     expr = newBinaryExpr(lox, expr, op, right);
   }
 
@@ -167,11 +175,11 @@ static Expr *equality(Lox *lox) {
 // assignment     → IDENTIFIER "=" assignment
 //                | equality ;
 static Expr *parseAssignment(Lox *lox) {
-  Expr *expr = equality(lox);
+  Expr *expr = parseEquality(lox);
   if (!expr)
     return NULL;
 
-  if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_EQUAL)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_EQUAL)) {
     Expr *value = parseAssignment(lox);
     if (!value)
       return NULL;
@@ -187,5 +195,7 @@ static Expr *parseAssignment(Lox *lox) {
   return expr;
 }
 
-// expression     → equality ;
-static Expr *expression(Lox *lox) { return parseAssignment(lox); }
+static Expr *_parseExpression(Lox *lox) {
+  printf("====>\n");
+  return parseAssignment(lox);
+}

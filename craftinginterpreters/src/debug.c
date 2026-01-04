@@ -24,6 +24,7 @@ void freeScanner(Scanner *scanner) {
 void loxError(Lox *lox, int line, const char *where, const char *message) {
   snprintf(lox->errorMsg, sizeof(lox->errorMsg), "[line %d] Error%s: %s\n",
            line, where, message);
+  printf("%s", lox->errorMsg);
   lox->hadError = true;
 }
 
@@ -42,6 +43,7 @@ void runtimeError(Lox *lox, Token op, const char *message) {
   snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
            "[line %d] RuntimeError at '%.*s': %s\n", op.line, (int)(op.length),
            op.lexeme, message);
+  printf("%s", lox->runtimeErrorMsg);
   lox->hadRuntimeError = true;
   // exit(70);
 }
@@ -78,7 +80,7 @@ void printEnvironment(Lox *lox) {
     valueToString(env->entries[i].value, buffer, sizeof(buffer));
     printf("%s = %s\n", env->entries[i].key, buffer);
   }
-  printf("===== Environment =====\n");
+  printf("=======================\n");
 }
 
 void printToken(Lox *lox, const Token *token) {
@@ -174,18 +176,18 @@ void printExpr(Expr *expr) {
     break;
 
   case EXPR_GROUPING:
-    printf("(group ");
+    printf("(GROUP ");
     printExpr(expr->as.grouping.expression);
     printf(")");
     break;
 
   case EXPR_VARIABLE:
-    printf("%.*s", expr->as.var.name.length, expr->as.var.name.lexeme);
+    printf("VARIABLE %.*s", expr->as.var.name.length, expr->as.var.name.lexeme);
 
     break;
 
   case EXPR_ASSIGN:
-    printf("(= %.*s ", (int)expr->as.assign.name.length,
+    printf("ASSIGN (= %.*s ", (int)expr->as.assign.name.length,
            expr->as.assign.name.lexeme);
     printExpr(expr->as.assign.value);
     printf(")");
@@ -220,6 +222,11 @@ void printStmtAST(Stmt *stmt, int indent) {
 }
 
 void printStmt(Stmt *stmt) {
+  if (!stmt) {
+    printf("[NULL_STMT]");
+    return;
+  }
+
   switch (stmt->type) {
   case STMT_PRINT:
     printf("[STMT_PRINT] ");
@@ -233,7 +240,9 @@ void printStmt(Stmt *stmt) {
     printf("\n");
     break;
   case STMT_VAR: {
-    printf("[STMT_VAR] %s \n", stmt->as.var.name.lexeme);
+    printf("[STMT_VAR] %s = ", stmt->as.var.name.lexeme);
+    printExpr(stmt->as.var.initializer);
+    printf("\n");
     break;
   }
   }
@@ -243,13 +252,14 @@ void printProgram(Lox *lox, Program *prog) {
   if (!prog || !lox->debugPrint)
     return;
 
-  printf("==== Program ====\n(%zu statements)\n", prog->count);
+  printf("==== Program [%zu statements] ====\n", prog->count);
 
   for (size_t i = 0; i < prog->count; i++) {
+    printf("%-3d ", (int)i);
     printStmt(prog->statements[i]);
   }
 
-  printf("==== Program ====\n");
+  printf("=================\n");
 }
 
 void printProgramAST(Lox *lox, Program *prog) {
@@ -266,7 +276,9 @@ void printProgramAST(Lox *lox, Program *prog) {
 void synchronize(Lox *lox) {
   Parser *parser = &lox->parser;
 
-  advanceToken(parser);
+  printf("### SYNCHRONIZE ###\n");
+
+  advanceToken(lox);
 
   while (!isTokenEOF(parser)) {
     if (prevToken(parser).type == TOKEN_SEMICOLON)
@@ -286,6 +298,6 @@ void synchronize(Lox *lox) {
       break;
     }
 
-    advanceToken(parser);
+    advanceToken(lox);
   }
 }

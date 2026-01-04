@@ -27,7 +27,7 @@ static Stmt *parseVarStmt(Lox *lox) {
   Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect variable name.");
 
   Expr *initializer = NULL;
-  if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_EQUAL)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_EQUAL)) {
     initializer = parseExpression(lox);
   }
 
@@ -41,7 +41,7 @@ static Stmt *parseVarStmt(Lox *lox) {
 }
 
 static Stmt *parseDeclaration(Lox *lox) {
-  if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_VAR)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
     return parseVarStmt(lox);
   }
   return parseStmt(lox);
@@ -50,9 +50,9 @@ static Stmt *parseDeclaration(Lox *lox) {
 Stmt *parseStmt(Lox *lox) {
   Stmt *stmt = NULL;
 
-  if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_PRINT)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
     stmt = parsePrintStmt(lox);
-  } else if (matchAnyTokenAdvance(&lox->parser, 1, TOKEN_VAR)) {
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
     stmt = parseVarStmt(lox);
   } else {
     stmt = parseExprStatement(lox);
@@ -126,6 +126,8 @@ Program *parseProgram(Lox *lox) {
 }
 
 void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize) {
+  printStmt(stmt);
+
   if (!stmt)
     return;
 
@@ -138,35 +140,29 @@ void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize) {
     Value val = evaluate(lox, stmt->as.printExprAST);
     if (outBuffer && bufSize > 0)
       valueToString(val, outBuffer, bufSize);
-    printValue(val, "[STMT_PRINT_EVAL] ");
+    printValue(val, "[STMT_PRINT_EVAL]");
     printf("\n");
     break;
   }
 
   case STMT_EXPR:
     if (stmt->as.expr) {
-      printf("--> ");
-      printExpr(stmt->as.expr);
-      printf("\n");
       Value val = evaluate(lox, stmt->as.expr);
       printValue(val, "[STMT_EXPR_EVAL] ");
-      printf("@@@\n");
+      printf("\n");
     }
     break;
 
   case STMT_VAR: {
     Value val = nilValue();
     if (stmt->as.var.initializer) {
-      printf("--> ");
-      printExpr(stmt->as.var.initializer);
-      printf("\n");
       val = evaluate(lox, stmt->as.var.initializer);
     }
     envDefine(lox->env, stmt->as.var.name.lexeme, val);
 
-    envGet(lox->env, stmt->as.var.name.lexeme, &val);
-    printValue(val, "[STMT_VAR_EVAL] ");
-    printf(">>>\n");
+    printf("[STMT_VAR_DEFINE] %s", stmt->as.var.name.lexeme);
+    printValue(val, "");
+    printf("\n");
 
     break;
   }
@@ -178,6 +174,7 @@ void executeProgram(Lox *lox, Program *prog, char *outBuffer, size_t bufSize) {
     return;
 
   for (size_t i = 0; i < prog->count; i++) {
+    printf("$:%-3d ", (int)i);
     executeStmt(lox, prog->statements[i], outBuffer, bufSize);
 
     if (lox->hadRuntimeError || lox->hadError)

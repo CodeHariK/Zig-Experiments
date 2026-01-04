@@ -79,7 +79,7 @@ typedef enum {
   EXPR_ASSIGN,
 } ExprType;
 
-typedef enum { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
+typedef enum { VAL_ERROR, VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
 
 typedef struct {
   ValueType type;
@@ -150,6 +150,7 @@ const char *tokenTypeToString(TokenType type);
 Value numberValue(double n);
 Value boolValue(bool b);
 Value nilValue(void);
+Value errorValue(void);
 Value stringValue(char *s);
 
 void valueToString(Value value, char *buffer, size_t size);
@@ -221,9 +222,9 @@ Token *scanTokens(Lox *lox);
 
 void initParser(Lox *lox);
 bool isTokenEOF(Parser *parser);
-bool matchAnyTokenAdvance(Parser *parser, int count, ...);
+bool matchAnyTokenAdvance(Lox *lox, int count, ...);
 Token consumeToken(Lox *lox, TokenType type, const char *message);
-void advanceToken(Parser *parser);
+void advanceToken(Lox *lox);
 Token prevToken(Parser *parser);
 Token peekToken(Parser *parser);
 

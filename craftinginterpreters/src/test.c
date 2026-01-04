@@ -36,7 +36,8 @@ static void runExprTests(void) {
       {"!false", "true", true},
       {"-(1 + 2)", "-3", true},
       {"(1 + 2) * (3 - 1)", "6", true},
-      {"2 / 4", "0.5", true}};
+      {"2 / 4", "0.5", true},
+  };
 
   for (size_t i = 0; i < sizeof(exprTests) / sizeof(exprTests[0]); i++) {
 
@@ -52,6 +53,8 @@ static void runExprTests(void) {
 
     Expr *expr = parseExpression(&lox);
     Value result = evaluate(&lox, expr);
+    printValue(result, "[ANSWER]");
+    printf("\n");
 
     if (test.pass && !(lox.hadError || lox.hadRuntimeError)) {
       char buffer[64];
@@ -62,11 +65,9 @@ static void runExprTests(void) {
         printf("[FAIL] %s => %s (expected %s)\n", test.source, buffer,
                test.expected);
       }
-    } else {
-      printf("[PASSError]\n");
     }
 
-    printError(&lox);
+    printf("\n");
   }
 }
 
@@ -107,11 +108,8 @@ void runStmtTests(void) {
       } else {
         printf("[INFO] no expected output\n\n");
       }
-    } else {
-      printf("[PASSError]\n");
     }
-
-    printError(&lox);
+    printf("\n");
   }
 }
 
@@ -124,6 +122,7 @@ void runVarTests(void) {
       {"var y = true; print y;", "true", true},
       {"var c = 10; var d = 5; print c;", "10", true},
       {"var c = 10; c = 20; print c;", "20", true},
+      {"var a = 1; print a = 2;", "2", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
