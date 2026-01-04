@@ -1,4 +1,6 @@
 {
+    "lldb.verboseLogging": true,
+    "lldb.library": "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB",
     "typescript.tsdk": "zig-docs-mcp/node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "files.associations": {

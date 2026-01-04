@@ -7,6 +7,51 @@ typedef struct {
   bool pass;
 } TestCase;
 
+void replaceNewlinesWithSemicolons(char *output) {
+  if (!output)
+    return;
+
+  for (char *p = output; *p; p++) {
+    if (*p == '\n') {
+      *p = ';';
+    }
+  }
+}
+
+static void assertOutputTest(Lox *lox, const TestCase *test, char *output) {
+  if (test->pass && !(lox->hadError || lox->hadRuntimeError)) {
+
+    if (test->expected && strlen(test->expected) > 0) {
+
+      char actualBuf[1024];
+      char expectedBuf[1024];
+
+      strncpy(actualBuf, output, sizeof(actualBuf));
+      actualBuf[sizeof(actualBuf) - 1] = '\0';
+
+      strncpy(expectedBuf, test->expected, sizeof(expectedBuf));
+      expectedBuf[sizeof(expectedBuf) - 1] = '\0';
+
+      replaceNewlinesWithSemicolons(actualBuf);
+      replaceNewlinesWithSemicolons(expectedBuf);
+
+      if (strcmp(actualBuf, expectedBuf) == 0) {
+        printf("[PASS] expected: %s\n", expectedBuf);
+      } else {
+        printf("[FAIL] got: %s, expected: %s\n", actualBuf, expectedBuf);
+      }
+
+    } else {
+      printf("[INFO] no expected output\n");
+    }
+
+  } else {
+    printf("[PassError]\n");
+  }
+
+  printf("\n");
+}
+
 static void runExprTests(void) {
   TestCase exprTests[] = {
 
@@ -53,21 +98,13 @@ static void runExprTests(void) {
 
     Expr *expr = parseExpression(&lox);
     Value result = evaluate(&lox, expr);
-    printValue(result, "[ANSWER]");
-    printf("\n");
 
-    if (test.pass && !(lox.hadError || lox.hadRuntimeError)) {
-      char buffer[64];
-      valueToString(result, buffer, sizeof(buffer));
-      if (strcmp(buffer, test.expected) == 0) {
-        printf("[PASS] %s => %s\n", test.source, buffer);
-      } else {
-        printf("[FAIL] %s => %s (expected %s)\n", test.source, buffer,
-               test.expected);
-      }
-    }
+    char buffer[64];
+    valueToString(result, buffer, sizeof(buffer));
 
-    printf("\n");
+    assertOutputTest(&lox, &test, buffer);
+
+    freeLox(&lox);
   }
 }
 
@@ -75,11 +112,11 @@ static void runExprTests(void) {
 void runStmtTests(void) {
   TestCase stmtTests[] = {
       {"2 / 4", "0.5", false},
-      {"print 1 + 2;", "3", true},
+      {"print 1 + 2;", "3\n", true},
       {"1 + 2;", "", true}, // exprStmt, no print output
-      {"print 2 * 3;", "6", true},
-      {"print !false;", "true", true},
-      {"print \"hello\";", "hello", true},
+      {"print 2 * 3;", "6\n", true},
+      {"print !false;", "true\n", true},
+      {"print \"hello\";", "hello\n", true},
   };
 
   for (size_t i = 0; i < sizeof(stmtTests) / sizeof(stmtTests[0]); i++) {
@@ -95,34 +132,53 @@ void runStmtTests(void) {
 
     Stmt *stmt = parseStmt(&lox);
 
-    char buffer[64] = "";
-    executeStmt(&lox, stmt, buffer, sizeof(buffer));
+    executeStmt(&lox, stmt);
 
-    if (test.pass && !(lox.hadError || lox.hadRuntimeError)) {
-      if (test.expected && strlen(test.expected) > 0) {
-        if (strcmp(buffer, test.expected) == 0) {
-          printf("[PASS] expected: %s\n\n", test.expected);
-        } else {
-          printf("[FAIL] got: %s, expected: %s\n\n", buffer, test.expected);
-        }
-      } else {
-        printf("[INFO] no expected output\n\n");
-      }
-    }
-    printf("\n");
+    assertOutputTest(&lox, &test, lox.output);
+
+    freeLox(&lox);
   }
 }
 
 void runVarTests(void) {
   TestCase tests[] = {
-      {"var a = 42; print a;", "42", true},
-      {"var b = 3.14; print b;", "3.14", true},
-      {"var s = \"hello\"; print s;", "hello", true},
-      {"var x; print x;", "nil", true}, // uninitialized variable
-      {"var y = true; print y;", "true", true},
-      {"var c = 10; var d = 5; print c;", "10", true},
-      {"var c = 10; c = 20; print c;", "20", true},
-      {"var a = 1; print a = 2;", "2", true},
+      {"var a = 42; print a;", "42\n", true},
+      {"var b = 3.14; print b;", "3.14\n", true},
+      {"var s = \"hello\"; print s;", "hello\n", true},
+      {"var x; print x;", "nil\n", true}, // uninitialized variable
+      {"var y = true; print y;", "true\n", true},
+      {"var c = 10; var d = 5; print c;", "10\n", true},
+      {"var c = 10; c = 20; print c;", "20\n", true},
+      {"var a = 1; print a = 2;", "2\n", true},
+
+      {"print 1 = 2;", "", false}, // Invalid assignment
+
+      // Empty block
+      {"{}", "", true},
+
+      // Chained assignment (right-associative)
+      {"var a = 0; var b = 0; print a = b = 3;", "3\n", true},
+
+      // Assignment inside expression
+      {"var a = 1; print (a = 2) + 3;", "5\n", true},
+
+      // Assignment precedence vs equality
+      {"var a = 1; print a = 2 == 2;", "true\n", true},
+
+      // Block creates a new scope
+      {"{ var a = 1; print a; }", "1\n", true},
+
+      // Outer variable still accessible inside block
+      {"var a = 1; { print a; }", "1\n", true},
+
+      // Block shadows outer variable
+      {"var a = 1; { var a = 2; print a; } print a;", "2\n1\n", true},
+
+      // Assignment affects nearest scope
+      {"var a = 1; { a = 2; } print a;", "2\n", true},
+
+      // Inner assignment does not affect outer shadowed variable
+      {"var a = 1; { var a = 2; a = 3; } print a;", "1\n", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -138,24 +194,12 @@ void runVarTests(void) {
     initParser(&lox);
 
     Program *prog = parseProgram(&lox);
-
     printProgram(&lox, prog);
+    executeProgram(&lox, prog);
 
-    char buffer[128] = "";
-    executeProgram(&lox, prog, buffer, sizeof(buffer));
-
-    if (test.expected) {
-      if (strcmp(buffer, test.expected) == 0) {
-        printf("[PASS] %s => %s\n", test.source, buffer);
-      } else {
-        printf("[FAIL] %s => %s (expected %s)\n", test.source, buffer,
-               test.expected);
-      }
-    }
+    assertOutputTest(&lox, &test, lox.output);
 
     freeLox(&lox);
-
-    printf("\n");
   }
 }
 

@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Lox",
+      "type": "lldb",
+      "request": "launch",
+      "program": "/Users/Shared/Code/Zig-Experiments/craftinginterpreters/build/test",
+      "args": [],
+      "cwd": "/Users/Shared/Code/Zig-Experiments/craftinginterpreters",
+      "stopOnEntry": false
+    }
+  ]
+}

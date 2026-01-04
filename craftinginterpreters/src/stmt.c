@@ -18,7 +18,7 @@ static Stmt *parsePrintStmt(Lox *lox) {
 
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_PRINT;
-  stmt->as.printExprAST = value;
+  stmt->as.expr_print = value;
   return stmt;
 }
 
@@ -47,54 +47,112 @@ static Stmt *parseDeclaration(Lox *lox) {
   return parseStmt(lox);
 }
 
+static Stmt *parseBlockStmt(Lox *lox) {
+  Stmt **stmts = arenaAlloc(&lox->astArena, sizeof(Stmt *) * 8);
+  int count = 0;
+  int capacity = 8;
+
+  while (!checkToken(&lox->parser, TOKEN_RIGHT_BRACE) &&
+         !isTokenEOF(&lox->parser)) {
+
+    Stmt *stmt = parseDeclaration(lox);
+    if (stmt) {
+      if (count >= capacity) {
+        capacity *= 2;
+        Stmt **new = arenaAlloc(&lox->astArena, sizeof(Stmt *) * capacity);
+        memcpy(new, stmts, sizeof(Stmt *) * count);
+        stmts = new;
+      }
+      stmts[count++] = stmt;
+    }
+  }
+
+  consumeToken(lox, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+
+  Stmt *block = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  block->type = STMT_BLOCK;
+  block->as.block.statements = stmts;
+  block->as.block.count = count;
+  return block;
+}
+
 Stmt *parseStmt(Lox *lox) {
   Stmt *stmt = NULL;
 
-  if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
+    stmt = parseBlockStmt(lox);
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
     stmt = parsePrintStmt(lox);
-  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
-    stmt = parseVarStmt(lox);
   } else {
     stmt = parseExprStatement(lox);
   }
 
   if (!stmt || lox->hadError) {
-    synchronize(lox); // skip to next statement
+    synchronize(lox);
     return NULL;
   }
 
   return stmt;
 }
+void executeBlock(Lox *lox, Stmt **stmts, int count) {
+  Environment *previous = lox->env;
+  lox->env = envNew(previous);
 
-bool envGet(Environment *env, const char *name, Value *out) {
-  for (int i = env->count - 1; i >= 0; i--) {
-    if (strcmp(env->entries[i].key, name) == 0) {
-      *out = env->entries[i].value;
-      return true;
-    }
+  for (int i = 0; i < count; i++) {
+    executeStmt(lox, stmts[i]);
   }
-  return false;
+
+  lox->env = previous;
 }
 
-void envDefine(Environment *env, const char *name, Value value) {
-  if (env->count >= env->capacity) {
-    env->capacity = env->capacity < 8 ? 8 : env->capacity * 2;
-    env->entries = realloc(env->entries, sizeof(EnvKV) * env->capacity);
-  }
+void executeStmt(Lox *lox, Stmt *stmt) {
+  printStmt(lox, stmt);
 
-  env->entries[env->count].key = strdup(name);
-  env->entries[env->count].value = value;
-  env->count++;
-}
+  if (!stmt)
+    return;
 
-bool envAssign(Environment *env, const char *name, Value value) {
-  for (int i = env->count - 1; i >= 0; i--) {
-    if (strcmp(env->entries[i].key, name) == 0) {
-      env->entries[i].value = value;
-      return true;
+  switch (stmt->type) {
+  case STMT_PRINT: {
+    if (!stmt->as.expr_print) {
+      loxError(lox, 0, "Null expression in print statement.", "");
+      return;
     }
+    Value val = evaluate(lox, stmt->as.expr_print);
+
+    char buf[64];
+    valueToString(val, buf, sizeof(buf));
+
+    loxAppendOutput(lox, buf);
+    loxAppendOutput(lox, "\n");
+
+    printValue(lox, val, true, 1, "[STMT_PRINT_EVAL]");
+    break;
   }
-  return false;
+
+  case STMT_EXPR:
+    if (stmt->as.expr) {
+      Value val = evaluate(lox, stmt->as.expr);
+      printValue(lox, val, true, 1, "[STMT_EXPR_EVAL]");
+    }
+    break;
+
+  case STMT_VAR: {
+    Value val = nilValue();
+    if (stmt->as.var.initializer) {
+      val = evaluate(lox, stmt->as.var.initializer);
+    }
+    envDefine(lox->env, stmt->as.var.name.lexeme, val);
+
+    printValue(lox, val, true, 3, "[STMT_VAR_DEFINE] ",
+               stmt->as.var.name.lexeme, " = ");
+
+    break;
+
+  case STMT_BLOCK:
+    executeBlock(lox, stmt->as.block.statements, stmt->as.block.count);
+    break;
+  }
+  }
 }
 
 Program *parseProgram(Lox *lox) {
@@ -125,57 +183,13 @@ Program *parseProgram(Lox *lox) {
   return prog;
 }
 
-void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize) {
-  printStmt(stmt);
-
-  if (!stmt)
-    return;
-
-  switch (stmt->type) {
-  case STMT_PRINT: {
-    if (!stmt->as.printExprAST) {
-      loxError(lox, 0, "Null expression in print statement.", "");
-      return;
-    }
-    Value val = evaluate(lox, stmt->as.printExprAST);
-    if (outBuffer && bufSize > 0)
-      valueToString(val, outBuffer, bufSize);
-    printValue(val, "[STMT_PRINT_EVAL]");
-    printf("\n");
-    break;
-  }
-
-  case STMT_EXPR:
-    if (stmt->as.expr) {
-      Value val = evaluate(lox, stmt->as.expr);
-      printValue(val, "[STMT_EXPR_EVAL] ");
-      printf("\n");
-    }
-    break;
-
-  case STMT_VAR: {
-    Value val = nilValue();
-    if (stmt->as.var.initializer) {
-      val = evaluate(lox, stmt->as.var.initializer);
-    }
-    envDefine(lox->env, stmt->as.var.name.lexeme, val);
-
-    printf("[STMT_VAR_DEFINE] %s", stmt->as.var.name.lexeme);
-    printValue(val, "");
-    printf("\n");
-
-    break;
-  }
-  }
-}
-
-void executeProgram(Lox *lox, Program *prog, char *outBuffer, size_t bufSize) {
+void executeProgram(Lox *lox, Program *prog) {
   if (!prog)
     return;
 
   for (size_t i = 0; i < prog->count; i++) {
     printf("$:%-3d ", (int)i);
-    executeStmt(lox, prog->statements[i], outBuffer, bufSize);
+    executeStmt(lox, prog->statements[i]);
 
     if (lox->hadRuntimeError || lox->hadError)
       return; // stop on first error

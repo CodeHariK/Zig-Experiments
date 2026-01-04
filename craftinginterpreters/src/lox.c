@@ -7,15 +7,17 @@ void loxInit(Lox *lox, bool debugPrint) {
   lox->hadError = false;
   lox->hadRuntimeError = false;
   lox->debugPrint = debugPrint;
+  lox->errorMsg[0] = '\0';
+  lox->runtimeErrorMsg[0] = '\0';
+
+  lox->output_len = 0;
+  lox->output[0] = '\0';
+
+  lox->indent = 0;
+
   lox->scanner.source = NULL;
 
-  lox->env = malloc(sizeof(Environment));
-  if (!lox->env)
-    exit(1);
-
-  lox->env->entries = malloc(sizeof(EnvKV) * 8);
-  lox->env->count = 0;
-  lox->env->capacity = 8;
+  lox->env = envNew(NULL);
 
   arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
 }
@@ -28,7 +30,7 @@ void loxRun(Lox *lox, const char *source) {
 
   Program *prog = parseProgram(lox);
   for (size_t i = 0; i < prog->count; i++) {
-    executeStmt(lox, prog->statements[i], NULL, 0);
+    executeStmt(lox, prog->statements[i]);
   }
 }
 

@@ -125,17 +125,24 @@ typedef struct Expr {
   } as;
 } Expr;
 
-typedef enum { STMT_EXPR, STMT_PRINT, STMT_VAR } StmtType;
+typedef enum { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK } StmtType;
 
 typedef struct Stmt {
   StmtType type;
   union {
-    Expr *expr;         // expression statement
-    Expr *printExprAST; // print statement
+
+    Expr *expr;       // expression statement
+    Expr *expr_print; // print statement
+
     struct {
       Token name;
       Expr *initializer; // optional initializer
     } var;               // var statement
+
+    struct {
+      struct Stmt **statements;
+      int count;
+    } block;
   } as;
 } Stmt;
 
@@ -187,10 +194,11 @@ typedef struct {
   Value value;
 } EnvKV;
 
-typedef struct {
+typedef struct Environment {
   EnvKV *entries;
   int count;
   int capacity;
+  struct Environment *enclosing;
 } Environment;
 
 typedef struct {
@@ -198,6 +206,11 @@ typedef struct {
   bool hadRuntimeError;
   char errorMsg[512];
   char runtimeErrorMsg[512];
+
+  char output[1024 * 10];
+  int output_len;
+
+  int indent;
 
   bool debugPrint;
 
@@ -222,6 +235,7 @@ Token *scanTokens(Lox *lox);
 
 void initParser(Lox *lox);
 bool isTokenEOF(Parser *parser);
+bool checkToken(Parser *parser, TokenType type);
 bool matchAnyTokenAdvance(Lox *lox, int count, ...);
 Token consumeToken(Lox *lox, TokenType type, const char *message);
 void advanceToken(Lox *lox);
@@ -241,22 +255,28 @@ Value evaluate(Lox *lox, Expr *expr);
 
 Stmt *parseStmt(Lox *lox);
 Program *parseProgram(Lox *lox);
-void executeStmt(Lox *lox, Stmt *stmt, char *outBuffer, size_t bufSize);
-void executeProgram(Lox *lox, Program *prog, char *outBuffer, size_t bufSize);
+void executeStmt(Lox *lox, Stmt *stmt);
+void executeProgram(Lox *lox, Program *prog);
 
+Environment *envNew(Environment *enclosing);
+void envFree(Environment *env);
 bool envGet(Environment *env, const char *name, Value *out);
 bool envAssign(Environment *env, const char *name, Value value);
+void envDefine(Environment *env, const char *name, Value value);
 
 void printTokens(Lox *lox);
-void printExpr(Expr *expr);
-void printExprAST(Expr *expr, int indent);
-void printValue(Value v, char *msg);
-void printToken(Lox *lox, const Token *token);
-void printStmtAST(Stmt *stmt, int indent);
-void printStmt(Stmt *stmt);
+void printExpr(Lox *lox, Expr *expr, int indent, bool space, bool newLine,
+               char *msg);
+void printExprAST(Lox *lox, Expr *expr, int indent);
+void printValue(Lox *lox, Value value, bool newLine, int count, ...);
+void printToken(Lox *lox, const Token *token, int count, ...);
+void printStmtAST(Lox *lox, Stmt *stmt, int indent);
+void printStmt(Lox *lox, Stmt *stmt);
 void printEnvironment(Lox *lox);
 void printProgram(Lox *lox, Program *prog);
 void printProgramAST(Lox *lox, Program *prog);
+
+void loxAppendOutput(Lox *lox, const char *s);
 
 void runtimeError(Lox *lox, Token op, const char *message);
 void parserError(Lox *lox, const char *message);

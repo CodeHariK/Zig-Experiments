@@ -38,7 +38,7 @@ inline bool matchAnyTokenAdvance(Lox *lox, int count, ...) {
     TokenType type = va_arg(args, TokenType);
     if (checkToken(&lox->parser, type)) {
 
-      printf("MatchAdv %-12s %s\n", "", tokenTypeToString(type));
+      printf("[MatchAdv] %-10s %s\n", "", tokenTypeToString(type));
 
       advanceToken(lox);
       va_end(args);
@@ -54,8 +54,7 @@ Token consumeToken(Lox *lox, TokenType type, const char *message) {
   Parser *parser = &lox->parser;
   Token tok = peekToken(parser);
   if (checkToken(parser, type)) {
-    printf("CONSUME ");
-    printToken(lox, &tok);
+    printToken(lox, &tok, 1, "[CONSUME]");
 
     advanceToken(lox);
   } else {

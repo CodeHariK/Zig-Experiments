@@ -144,7 +144,7 @@ void addTokenToArray(Lox *lox, Token token) {
   // Add the token
   scanner->tokens[scanner->count++] = token;
 
-  printToken(lox, &token);
+  printToken(lox, &token, 0);
 }
 
 static void addToken(Lox *lox, TokenType type, void *literal) {

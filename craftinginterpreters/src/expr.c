@@ -8,13 +8,7 @@ Expr *newBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   expr->as.binary.left = left;
   expr->as.binary.op = op;
   expr->as.binary.right = right;
-
-  if (lox->debugPrint) {
-    printf("[AST] %-16s", "BinaryExpr");
-    printExpr(expr);
-    printf("\n");
-  }
-
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -23,13 +17,7 @@ Expr *newUnaryExpr(Lox *lox, Token op, Expr *right) {
   expr->type = EXPR_UNARY;
   expr->as.unary.op = op;
   expr->as.unary.right = right;
-
-  if (lox->debugPrint) {
-    printf("[AST] %-16s", "UnaryExpr");
-    printExpr(expr);
-    printf("\n");
-  }
-
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -37,13 +25,7 @@ Expr *newLiteralExpr(Lox *lox, Value value) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_LITERAL;
   expr->as.literal.value = value;
-
-  if (lox->debugPrint) {
-    printf("[AST] %-15s ", "LiteralExpr");
-    printExpr(expr);
-    printf("\n");
-  }
-
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -51,13 +33,7 @@ Expr *newGroupingExpr(Lox *lox, Expr *expression) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_GROUPING;
   expr->as.grouping.expression = expression;
-
-  if (lox->debugPrint) {
-    printf("[AST] %-15s ", "GroupingExpr");
-    printExpr(expr);
-    printf("\n");
-  }
-
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -65,11 +41,7 @@ Expr *newVariableExpr(Lox *lox, Token token) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
-
-  if (lox->debugPrint) {
-    printf("[AST] %-15s name='%.*s'\n", "VariableExpr", (int)token.length,
-           token.lexeme);
-  }
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -78,11 +50,7 @@ Expr *newAssignExpr(Lox *lox, Token name, Expr *value) {
   expr->type = EXPR_ASSIGN;
   expr->as.assign.name = name;
   expr->as.assign.value = value;
-  if (lox->debugPrint) {
-    printf("[AST] %-15s ", "AssignExpr");
-    printExpr(expr);
-    printf("\n");
-  }
+  printExpr(lox, expr, 0, true, true, "[EXPR]");
   return expr;
 }
 
@@ -159,14 +127,8 @@ inline Value boolValue(bool b) { return (Value){VAL_BOOL, {.boolean = b}}; }
 inline Value stringValue(char *s) { return (Value){VAL_STRING, {.string = s}}; }
 inline Value literalValue(Expr *expr) { return expr->as.literal.value; }
 
-static Value _evaluate(Lox *lox, Expr *expr);
-Value evaluate(Lox *lox, Expr *expr) {
-  printf("====== EVALUATE ======\n");
-  return _evaluate(lox, expr);
-}
-
 Value evalUnary(Lox *lox, Expr *expr) {
-  Value right = _evaluate(lox, expr->as.unary.right);
+  Value right = evaluate(lox, expr->as.unary.right);
 
   switch (expr->as.unary.op.type) {
   case TOKEN_MINUS:
@@ -189,8 +151,8 @@ Value evalUnary(Lox *lox, Expr *expr) {
 }
 
 Value evalBinary(Lox *lox, Expr *expr) {
-  Value left = _evaluate(lox, expr->as.binary.left);
-  Value right = _evaluate(lox, expr->as.binary.right);
+  Value left = evaluate(lox, expr->as.binary.left);
+  Value right = evaluate(lox, expr->as.binary.right);
 
   switch (expr->as.binary.op.type) {
   // Comparisons
@@ -240,62 +202,62 @@ Value evalBinary(Lox *lox, Expr *expr) {
   }
 }
 
-static Value _evaluate(Lox *lox, Expr *expr) {
-  if (!expr)
-    return errorValue();
-  if (lox->hadRuntimeError || lox->hadError) {
-    return errorValue();
-  }
+Value evaluate(Lox *lox, Expr *expr) {
+  Value result = errorValue();
 
-  if (lox->debugPrint) {
-    printf("[EVAL] ");
-    printExpr(expr);
-    printf("\n");
-  }
+  if (!expr || lox->hadRuntimeError || lox->hadError)
+    return result;
+
+  printExpr(lox, expr, lox->indent, false, true, "[EVAL]");
+  lox->indent++;
 
   switch (expr->type) {
   case EXPR_LITERAL:
-    return literalValue(expr);
+    result = literalValue(expr);
+    break;
 
   case EXPR_GROUPING:
-    return _evaluate(lox, expr->as.grouping.expression);
+    result = evaluate(lox, expr->as.grouping.expression);
+    break;
 
   case EXPR_UNARY:
-    return evalUnary(lox, expr);
+    result = evalUnary(lox, expr);
+    break;
 
   case EXPR_BINARY:
-    Value result = evalBinary(lox, expr);
-
-    if (lox->debugPrint) {
-      printf("[RESULT] ");
-      printValue(result, "");
-      printf("\n");
-    }
-    return result;
+    result = evalBinary(lox, expr);
+    printValue(lox, result, true, 1, "[RESULT]");
+    break;
 
   case EXPR_VARIABLE: {
     Value val;
     if (!envGet(lox->env, expr->as.var.name.lexeme, &val)) {
       loxError(lox, expr->as.var.name.line, " at variable",
                "Undefined variable.");
-      return errorValue();
+      result = errorValue();
+      break;
     }
-    return val;
+    result = val;
+    break;
   }
 
   case EXPR_ASSIGN: {
-    Value value = _evaluate(lox, expr->as.assign.value);
+    Value value = evaluate(lox, expr->as.assign.value);
 
     if (!envAssign(lox->env, expr->as.assign.name.lexeme, value)) {
       runtimeError(lox, expr->as.assign.name, "Undefined variable.");
-      return errorValue();
+      result = errorValue();
+      break;
     }
 
-    printf("[EXPR_ASSIGN] %s", expr->as.assign.name.lexeme);
-    printValue(value, "");
-    printf("\n");
+    printValue(lox, value, true, 3, "[EXPR_ASSIGN] ",
+               expr->as.assign.name.lexeme, " = ");
 
-    return value;
+    result = value;
+    break;
   }
   }
+
+  lox->indent--;
+  return result;
 }

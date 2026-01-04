@@ -5,13 +5,12 @@ SOURCE: ()
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              LEFT_PAREN
+[MatchAdv]            LEFT_PAREN
 ====>
 [line 1] Error: Expect expression. Got: )
-CONSUME [TOK] RIGHT_PAREN     ')'
-[AST] GroupingExpr    (GROUP nil)
-====== EVALUATE ======
-[ANSWER]:ERROR
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP [NIL_EXPR])
+[PassError]
 
 SOURCE: {}
 [TOK] LEFT_BRACE      '{'
@@ -20,8 +19,7 @@ SOURCE: {}
 ================
 ====>
 [line 1] Error: Expect expression. Got: {
-====== EVALUATE ======
-[ANSWER]:ERROR
+[PassError]
 
 SOURCE: !true == false
 [TOK] NOT             '!'
@@ -31,46 +29,40 @@ SOURCE: !true == false
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NOT
-MatchAdv              TRUE
-[AST] LiteralExpr     LITERAL:true
-[AST] UnaryExpr       (NOT LITERAL:true)
-MatchAdv              EQUAL_EQUAL
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] BinaryExpr      (EQUAL_EQUAL (NOT LITERAL:true) LITERAL:false)
-====== EVALUATE ======
-[EVAL] (EQUAL_EQUAL (NOT LITERAL:true) LITERAL:false)
-[EVAL] (NOT LITERAL:true)
-[EVAL] LITERAL:true
-[EVAL] LITERAL:false
-[RESULT] :true
-[ANSWER]:true
-[PASS] !true == false => true
+[MatchAdv]            NOT
+[MatchAdv]            TRUE
+[EXPR]                true
+[EXPR]                (NOT true)
+[MatchAdv]            EQUAL_EQUAL
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (EQUAL_EQUAL (NOT true) false)
+[EVAL](EQUAL_EQUAL (NOT true) false)
+   [EVAL](NOT true)
+      [EVAL]true
+   [EVAL]false
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: 123.45
 [TOK] NUMBER          '123.45'
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:123.45
-====== EVALUATE ======
-[EVAL] LITERAL:123.45
-[ANSWER]:123.45
-[PASS] 123.45 => 123.45
+[MatchAdv]            NUMBER
+[EXPR]                123.45
+[EVAL]123.45
+[PASS] expected: 123.45
 
 SOURCE: nil
 [TOK] NIL             'nil'
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NIL
-[AST] LiteralExpr     LITERAL:nil
-====== EVALUATE ======
-[EVAL] LITERAL:nil
-[ANSWER]:nil
-[PASS] nil => nil
+[MatchAdv]            NIL
+[EXPR]                nil
+[EVAL]nil
+[PASS] expected: nil
 
 SOURCE: var x = 10;
 [TOK] VAR             'var'
@@ -82,8 +74,7 @@ SOURCE: var x = 10;
 ================
 ====>
 [line 1] Error: Expect expression. Got: var
-====== EVALUATE ======
-[ANSWER]:ERROR
+[PassError]
 
 SOURCE: print 1 + 2;
 [TOK] PRINT           'print'
@@ -95,8 +86,7 @@ SOURCE: print 1 + 2;
 ================
 ====>
 [line 1] Error: Expect expression. Got: print
-====== EVALUATE ======
-[ANSWER]:ERROR
+[PassError]
 
 SOURCE: // comment
 123
@@ -104,25 +94,20 @@ SOURCE: // comment
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:123
-====== EVALUATE ======
-[EVAL] LITERAL:123
-[ANSWER]:123
-[PASS] // comment
-123 => 123
+[MatchAdv]            NUMBER
+[EXPR]                123
+[EVAL]123
+[PASS] expected: 123
 
 SOURCE: "hello world"
 [TOK] STRING          '"hello world"'
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              STRING
-[AST] LiteralExpr     LITERAL:hello world
-====== EVALUATE ======
-[EVAL] LITERAL:hello world
-[ANSWER]:hello world
-[PASS] "hello world" => hello world
+[MatchAdv]            STRING
+[EXPR]                hello world
+[EVAL]hello world
+[PASS] expected: hello world
 
 SOURCE: !-!-3
 [TOK] NOT             '!'
@@ -133,26 +118,25 @@ SOURCE: !-!-3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NOT
-MatchAdv              MINUS
-MatchAdv              NOT
-MatchAdv              MINUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] UnaryExpr       (MINUS LITERAL:3)
-[AST] UnaryExpr       (NOT (MINUS LITERAL:3))
-[AST] UnaryExpr       (MINUS (NOT (MINUS LITERAL:3)))
-[AST] UnaryExpr       (NOT (MINUS (NOT (MINUS LITERAL:3))))
-====== EVALUATE ======
-[EVAL] (NOT (MINUS (NOT (MINUS LITERAL:3))))
-[EVAL] (MINUS (NOT (MINUS LITERAL:3)))
-[EVAL] (NOT (MINUS LITERAL:3))
-[EVAL] (MINUS LITERAL:3)
-[EVAL] LITERAL:3
+[MatchAdv]            NOT
+[MatchAdv]            MINUS
+[MatchAdv]            NOT
+[MatchAdv]            MINUS
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (MINUS 3)
+[EXPR]                (NOT (MINUS 3))
+[EXPR]                (MINUS (NOT (MINUS 3)))
+[EXPR]                (NOT (MINUS (NOT (MINUS 3))))
+[EVAL](NOT (MINUS (NOT (MINUS 3))))
+   [EVAL](MINUS (NOT (MINUS 3)))
+      [EVAL](NOT (MINUS 3))
+         [EVAL](MINUS 3)
+            [EVAL]3
 [line 1] RuntimeError at '!': Operand must be a boolean.
 [line 1] RuntimeError at '-': Operand must be a number.
 [line 1] RuntimeError at '!': Operand must be a boolean.
-[ANSWER]:ERROR
+[PassError]
 
 SOURCE: 1 + 2 * 3
 [TOK] NUMBER          '1'
@@ -163,26 +147,24 @@ SOURCE: 1 + 2 * 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-MatchAdv              STAR
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (STAR LITERAL:2 LITERAL:3)
-[AST] BinaryExpr      (PLUS LITERAL:1 (STAR LITERAL:2 LITERAL:3))
-====== EVALUATE ======
-[EVAL] (PLUS LITERAL:1 (STAR LITERAL:2 LITERAL:3))
-[EVAL] LITERAL:1
-[EVAL] (STAR LITERAL:2 LITERAL:3)
-[EVAL] LITERAL:2
-[EVAL] LITERAL:3
-[RESULT] :6
-[RESULT] :7
-[ANSWER]:7
-[PASS] 1 + 2 * 3 => 7
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[MatchAdv]            STAR
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (STAR 2 3)
+[EXPR]                (PLUS 1 (STAR 2 3))
+[EVAL](PLUS 1 (STAR 2 3))
+   [EVAL]1
+   [EVAL](STAR 2 3)
+      [EVAL]2
+      [EVAL]3
+[RESULT]6
+[RESULT]7
+[PASS] expected: 7
 
 SOURCE: (1 + 2) * 3
 [TOK] LEFT_PAREN      '('
@@ -195,31 +177,29 @@ SOURCE: (1 + 2) * 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              LEFT_PAREN
+[MatchAdv]            LEFT_PAREN
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
-CONSUME [TOK] RIGHT_PAREN     ')'
-[AST] GroupingExpr    (GROUP (PLUS LITERAL:1 LITERAL:2))
-MatchAdv              STAR
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (STAR (GROUP (PLUS LITERAL:1 LITERAL:2)) LITERAL:3)
-====== EVALUATE ======
-[EVAL] (STAR (GROUP (PLUS LITERAL:1 LITERAL:2)) LITERAL:3)
-[EVAL] (GROUP (PLUS LITERAL:1 LITERAL:2))
-[EVAL] (PLUS LITERAL:1 LITERAL:2)
-[EVAL] LITERAL:1
-[EVAL] LITERAL:2
-[RESULT] :3
-[EVAL] LITERAL:3
-[RESULT] :9
-[ANSWER]:9
-[PASS] (1 + 2) * 3 => 9
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (PLUS 1 2)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP (PLUS 1 2))
+[MatchAdv]            STAR
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (STAR (GROUP (PLUS 1 2)) 3)
+[EVAL](STAR (GROUP (PLUS 1 2)) 3)
+   [EVAL](GROUP (PLUS 1 2))
+      [EVAL](PLUS 1 2)
+         [EVAL]1
+         [EVAL]2
+[RESULT]3
+   [EVAL]3
+[RESULT]9
+[PASS] expected: 9
 
 SOURCE: 5 > 3
 [TOK] NUMBER          '5'
@@ -228,19 +208,17 @@ SOURCE: 5 > 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              GREATER
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (GREATER LITERAL:5 LITERAL:3)
-====== EVALUATE ======
-[EVAL] (GREATER LITERAL:5 LITERAL:3)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:3
-[RESULT] :true
-[ANSWER]:true
-[PASS] 5 > 3 => true
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            GREATER
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (GREATER 5 3)
+[EVAL](GREATER 5 3)
+   [EVAL]5
+   [EVAL]3
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: 5 < 3
 [TOK] NUMBER          '5'
@@ -249,19 +227,17 @@ SOURCE: 5 < 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              LESS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (LESS LITERAL:5 LITERAL:3)
-====== EVALUATE ======
-[EVAL] (LESS LITERAL:5 LITERAL:3)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:3
-[RESULT] :false
-[ANSWER]:false
-[PASS] 5 < 3 => false
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            LESS
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (LESS 5 3)
+[EVAL](LESS 5 3)
+   [EVAL]5
+   [EVAL]3
+[RESULT]false
+[PASS] expected: false
 
 SOURCE: nil == nil
 [TOK] NIL             'nil'
@@ -270,19 +246,17 @@ SOURCE: nil == nil
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NIL
-[AST] LiteralExpr     LITERAL:nil
-MatchAdv              EQUAL_EQUAL
-MatchAdv              NIL
-[AST] LiteralExpr     LITERAL:nil
-[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
-====== EVALUATE ======
-[EVAL] (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
-[EVAL] LITERAL:nil
-[EVAL] LITERAL:nil
-[RESULT] :true
-[ANSWER]:true
-[PASS] nil == nil => true
+[MatchAdv]            NIL
+[EXPR]                nil
+[MatchAdv]            EQUAL_EQUAL
+[MatchAdv]            NIL
+[EXPR]                nil
+[EXPR]                (EQUAL_EQUAL nil nil)
+[EVAL](EQUAL_EQUAL nil nil)
+   [EVAL]nil
+   [EVAL]nil
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: !false
 [TOK] NOT             '!'
@@ -290,15 +264,13 @@ SOURCE: !false
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NOT
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] UnaryExpr       (NOT LITERAL:false)
-====== EVALUATE ======
-[EVAL] (NOT LITERAL:false)
-[EVAL] LITERAL:false
-[ANSWER]:true
-[PASS] !false => true
+[MatchAdv]            NOT
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (NOT false)
+[EVAL](NOT false)
+   [EVAL]false
+[PASS] expected: true
 
 SOURCE: 5 > 3
 [TOK] NUMBER          '5'
@@ -307,19 +279,17 @@ SOURCE: 5 > 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              GREATER
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (GREATER LITERAL:5 LITERAL:3)
-====== EVALUATE ======
-[EVAL] (GREATER LITERAL:5 LITERAL:3)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:3
-[RESULT] :true
-[ANSWER]:true
-[PASS] 5 > 3 => true
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            GREATER
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (GREATER 5 3)
+[EVAL](GREATER 5 3)
+   [EVAL]5
+   [EVAL]3
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: 5 < 3
 [TOK] NUMBER          '5'
@@ -328,19 +298,17 @@ SOURCE: 5 < 3
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              LESS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (LESS LITERAL:5 LITERAL:3)
-====== EVALUATE ======
-[EVAL] (LESS LITERAL:5 LITERAL:3)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:3
-[RESULT] :false
-[ANSWER]:false
-[PASS] 5 < 3 => false
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            LESS
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (LESS 5 3)
+[EVAL](LESS 5 3)
+   [EVAL]5
+   [EVAL]3
+[RESULT]false
+[PASS] expected: false
 
 SOURCE: 5 >= 5
 [TOK] NUMBER          '5'
@@ -349,19 +317,17 @@ SOURCE: 5 >= 5
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              GREATER_EQUAL
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-[AST] BinaryExpr      (GREATER_EQUAL LITERAL:5 LITERAL:5)
-====== EVALUATE ======
-[EVAL] (GREATER_EQUAL LITERAL:5 LITERAL:5)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:5
-[RESULT] :true
-[ANSWER]:true
-[PASS] 5 >= 5 => true
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            GREATER_EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                5
+[EXPR]                (GREATER_EQUAL 5 5)
+[EVAL](GREATER_EQUAL 5 5)
+   [EVAL]5
+   [EVAL]5
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: 5 <= 4
 [TOK] NUMBER          '5'
@@ -370,19 +336,17 @@ SOURCE: 5 <= 4
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-MatchAdv              LESS_EQUAL
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:4
-[AST] BinaryExpr      (LESS_EQUAL LITERAL:5 LITERAL:4)
-====== EVALUATE ======
-[EVAL] (LESS_EQUAL LITERAL:5 LITERAL:4)
-[EVAL] LITERAL:5
-[EVAL] LITERAL:4
-[RESULT] :false
-[ANSWER]:false
-[PASS] 5 <= 4 => false
+[MatchAdv]            NUMBER
+[EXPR]                5
+[MatchAdv]            LESS_EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                4
+[EXPR]                (LESS_EQUAL 5 4)
+[EVAL](LESS_EQUAL 5 4)
+   [EVAL]5
+   [EVAL]4
+[RESULT]false
+[PASS] expected: false
 
 SOURCE: true == false
 [TOK] TRUE            'true'
@@ -391,19 +355,17 @@ SOURCE: true == false
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              TRUE
-[AST] LiteralExpr     LITERAL:true
-MatchAdv              EQUAL_EQUAL
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:true LITERAL:false)
-====== EVALUATE ======
-[EVAL] (EQUAL_EQUAL LITERAL:true LITERAL:false)
-[EVAL] LITERAL:true
-[EVAL] LITERAL:false
-[RESULT] :false
-[ANSWER]:false
-[PASS] true == false => false
+[MatchAdv]            TRUE
+[EXPR]                true
+[MatchAdv]            EQUAL_EQUAL
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (EQUAL_EQUAL true false)
+[EVAL](EQUAL_EQUAL true false)
+   [EVAL]true
+   [EVAL]false
+[RESULT]false
+[PASS] expected: false
 
 SOURCE: true != false
 [TOK] TRUE            'true'
@@ -412,19 +374,17 @@ SOURCE: true != false
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              TRUE
-[AST] LiteralExpr     LITERAL:true
-MatchAdv              NOT_EQUAL
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] BinaryExpr      (NOT_EQUAL LITERAL:true LITERAL:false)
-====== EVALUATE ======
-[EVAL] (NOT_EQUAL LITERAL:true LITERAL:false)
-[EVAL] LITERAL:true
-[EVAL] LITERAL:false
-[RESULT] :true
-[ANSWER]:true
-[PASS] true != false => true
+[MatchAdv]            TRUE
+[EXPR]                true
+[MatchAdv]            NOT_EQUAL
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (NOT_EQUAL true false)
+[EVAL](NOT_EQUAL true false)
+   [EVAL]true
+   [EVAL]false
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: nil == nil
 [TOK] NIL             'nil'
@@ -433,19 +393,17 @@ SOURCE: nil == nil
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NIL
-[AST] LiteralExpr     LITERAL:nil
-MatchAdv              EQUAL_EQUAL
-MatchAdv              NIL
-[AST] LiteralExpr     LITERAL:nil
-[AST] BinaryExpr      (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
-====== EVALUATE ======
-[EVAL] (EQUAL_EQUAL LITERAL:nil LITERAL:nil)
-[EVAL] LITERAL:nil
-[EVAL] LITERAL:nil
-[RESULT] :true
-[ANSWER]:true
-[PASS] nil == nil => true
+[MatchAdv]            NIL
+[EXPR]                nil
+[MatchAdv]            EQUAL_EQUAL
+[MatchAdv]            NIL
+[EXPR]                nil
+[EXPR]                (EQUAL_EQUAL nil nil)
+[EVAL](EQUAL_EQUAL nil nil)
+   [EVAL]nil
+   [EVAL]nil
+[RESULT]true
+[PASS] expected: true
 
 SOURCE: !false
 [TOK] NOT             '!'
@@ -453,15 +411,13 @@ SOURCE: !false
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NOT
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] UnaryExpr       (NOT LITERAL:false)
-====== EVALUATE ======
-[EVAL] (NOT LITERAL:false)
-[EVAL] LITERAL:false
-[ANSWER]:true
-[PASS] !false => true
+[MatchAdv]            NOT
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (NOT false)
+[EVAL](NOT false)
+   [EVAL]false
+[PASS] expected: true
 
 SOURCE: -(1 + 2)
 [TOK] MINUS           '-'
@@ -473,27 +429,25 @@ SOURCE: -(1 + 2)
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              MINUS
-MatchAdv              LEFT_PAREN
+[MatchAdv]            MINUS
+[MatchAdv]            LEFT_PAREN
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
-CONSUME [TOK] RIGHT_PAREN     ')'
-[AST] GroupingExpr    (GROUP (PLUS LITERAL:1 LITERAL:2))
-[AST] UnaryExpr       (MINUS (GROUP (PLUS LITERAL:1 LITERAL:2)))
-====== EVALUATE ======
-[EVAL] (MINUS (GROUP (PLUS LITERAL:1 LITERAL:2)))
-[EVAL] (GROUP (PLUS LITERAL:1 LITERAL:2))
-[EVAL] (PLUS LITERAL:1 LITERAL:2)
-[EVAL] LITERAL:1
-[EVAL] LITERAL:2
-[RESULT] :3
-[ANSWER]:-3
-[PASS] -(1 + 2) => -3
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (PLUS 1 2)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP (PLUS 1 2))
+[EXPR]                (MINUS (GROUP (PLUS 1 2)))
+[EVAL](MINUS (GROUP (PLUS 1 2)))
+   [EVAL](GROUP (PLUS 1 2))
+      [EVAL](PLUS 1 2)
+         [EVAL]1
+         [EVAL]2
+[RESULT]3
+[PASS] expected: -3
 
 SOURCE: (1 + 2) * (3 - 1)
 [TOK] LEFT_PAREN      '('
@@ -510,43 +464,41 @@ SOURCE: (1 + 2) * (3 - 1)
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              LEFT_PAREN
+[MatchAdv]            LEFT_PAREN
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
-CONSUME [TOK] RIGHT_PAREN     ')'
-[AST] GroupingExpr    (GROUP (PLUS LITERAL:1 LITERAL:2))
-MatchAdv              STAR
-MatchAdv              LEFT_PAREN
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (PLUS 1 2)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP (PLUS 1 2))
+[MatchAdv]            STAR
+[MatchAdv]            LEFT_PAREN
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-MatchAdv              MINUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-[AST] BinaryExpr      (MINUS LITERAL:3 LITERAL:1)
-CONSUME [TOK] RIGHT_PAREN     ')'
-[AST] GroupingExpr    (GROUP (MINUS LITERAL:3 LITERAL:1))
-[AST] BinaryExpr      (STAR (GROUP (PLUS LITERAL:1 LITERAL:2)) (GROUP (MINUS LITERAL:3 LITERAL:1)))
-====== EVALUATE ======
-[EVAL] (STAR (GROUP (PLUS LITERAL:1 LITERAL:2)) (GROUP (MINUS LITERAL:3 LITERAL:1)))
-[EVAL] (GROUP (PLUS LITERAL:1 LITERAL:2))
-[EVAL] (PLUS LITERAL:1 LITERAL:2)
-[EVAL] LITERAL:1
-[EVAL] LITERAL:2
-[RESULT] :3
-[EVAL] (GROUP (MINUS LITERAL:3 LITERAL:1))
-[EVAL] (MINUS LITERAL:3 LITERAL:1)
-[EVAL] LITERAL:3
-[EVAL] LITERAL:1
-[RESULT] :2
-[RESULT] :6
-[ANSWER]:6
-[PASS] (1 + 2) * (3 - 1) => 6
+[MatchAdv]            NUMBER
+[EXPR]                3
+[MatchAdv]            MINUS
+[MatchAdv]            NUMBER
+[EXPR]                1
+[EXPR]                (MINUS 3 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP (MINUS 3 1))
+[EXPR]                (STAR (GROUP (PLUS 1 2)) (GROUP (MINUS 3 1)))
+[EVAL](STAR (GROUP (PLUS 1 2)) (GROUP (MINUS 3 1)))
+   [EVAL](GROUP (PLUS 1 2))
+      [EVAL](PLUS 1 2)
+         [EVAL]1
+         [EVAL]2
+[RESULT]3
+   [EVAL](GROUP (MINUS 3 1))
+      [EVAL](MINUS 3 1)
+         [EVAL]3
+         [EVAL]1
+[RESULT]2
+[RESULT]6
+[PASS] expected: 6
 
 SOURCE: 2 / 4
 [TOK] NUMBER          '2'
@@ -555,19 +507,17 @@ SOURCE: 2 / 4
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-MatchAdv              SLASH
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:4
-[AST] BinaryExpr      (SLASH LITERAL:2 LITERAL:4)
-====== EVALUATE ======
-[EVAL] (SLASH LITERAL:2 LITERAL:4)
-[EVAL] LITERAL:2
-[EVAL] LITERAL:4
-[RESULT] :0.5
-[ANSWER]:0.5
-[PASS] 2 / 4 => 0.5
+[MatchAdv]            NUMBER
+[EXPR]                2
+[MatchAdv]            SLASH
+[MatchAdv]            NUMBER
+[EXPR]                4
+[EXPR]                (SLASH 2 4)
+[EVAL](SLASH 2 4)
+   [EVAL]2
+   [EVAL]4
+[RESULT]0.5
+[PASS] expected: 0.5
 
 ====== Statement Tests ======
 SOURCE: 2 / 4
@@ -577,15 +527,17 @@ SOURCE: 2 / 4
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-MatchAdv              SLASH
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:4
-[AST] BinaryExpr      (SLASH LITERAL:2 LITERAL:4)
+[MatchAdv]            NUMBER
+[EXPR]                2
+[MatchAdv]            SLASH
+[MatchAdv]            NUMBER
+[EXPR]                4
+[EXPR]                (SLASH 2 4)
 [line 1] Error at end: Expect ';' after expression.
 ### SYNCHRONIZE ###
 [NULL_STMT]
+[PassError]
+
 SOURCE: print 1 + 2;
 [TOK] PRINT           'print'
 [TOK] NUMBER          '1'
@@ -593,25 +545,23 @@ SOURCE: print 1 + 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              PRINT
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
-CONSUME [TOK] SEMICOLON       ';'
-[STMT_PRINT] (PLUS LITERAL:1 LITERAL:2)
-====== EVALUATE ======
-[EVAL] (PLUS LITERAL:1 LITERAL:2)
-[EVAL] LITERAL:1
-[EVAL] LITERAL:2
-[RESULT] :3
-[STMT_PRINT_EVAL]:3
-[PASS] expected: 3
-
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (PLUS 1 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[STMT_PRINT] (PLUS 1 2)
+[EVAL](PLUS 1 2)
+   [EVAL]1
+   [EVAL]2
+[RESULT]3
+[STMT_PRINT_EVAL]3
+[PASS] expected: 3;
 
 SOURCE: 1 + 2;
 [TOK] NUMBER          '1'
@@ -621,22 +571,20 @@ SOURCE: 1 + 2;
 [TOK] EOF             ''
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-MatchAdv              PLUS
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] BinaryExpr      (PLUS LITERAL:1 LITERAL:2)
-CONSUME [TOK] SEMICOLON       ';'
-[STMT_EXPR] (PLUS LITERAL:1 LITERAL:2)
-====== EVALUATE ======
-[EVAL] (PLUS LITERAL:1 LITERAL:2)
-[EVAL] LITERAL:1
-[EVAL] LITERAL:2
-[RESULT] :3
-[STMT_EXPR_EVAL] :3
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (PLUS 1 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[STMT_EXPR] (PLUS 1 2)
+[EVAL](PLUS 1 2)
+   [EVAL]1
+   [EVAL]2
+[RESULT]3
+[STMT_EXPR_EVAL]3
 [INFO] no expected output
-
 
 SOURCE: print 2 * 3;
 [TOK] PRINT           'print'
@@ -645,25 +593,23 @@ SOURCE: print 2 * 3;
 [TOK] NUMBER          '3'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              PRINT
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-MatchAdv              STAR
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3
-[AST] BinaryExpr      (STAR LITERAL:2 LITERAL:3)
-CONSUME [TOK] SEMICOLON       ';'
-[STMT_PRINT] (STAR LITERAL:2 LITERAL:3)
-====== EVALUATE ======
-[EVAL] (STAR LITERAL:2 LITERAL:3)
-[EVAL] LITERAL:2
-[EVAL] LITERAL:3
-[RESULT] :6
-[STMT_PRINT_EVAL]:6
-[PASS] expected: 6
-
+[MatchAdv]            NUMBER
+[EXPR]                2
+[MatchAdv]            STAR
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (STAR 2 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[STMT_PRINT] (STAR 2 3)
+[EVAL](STAR 2 3)
+   [EVAL]2
+   [EVAL]3
+[RESULT]6
+[STMT_PRINT_EVAL]6
+[PASS] expected: 6;
 
 SOURCE: print !false;
 [TOK] PRINT           'print'
@@ -671,39 +617,35 @@ SOURCE: print !false;
 [TOK] FALSE           'false'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              PRINT
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              NOT
-MatchAdv              FALSE
-[AST] LiteralExpr     LITERAL:false
-[AST] UnaryExpr       (NOT LITERAL:false)
-CONSUME [TOK] SEMICOLON       ';'
-[STMT_PRINT] (NOT LITERAL:false)
-====== EVALUATE ======
-[EVAL] (NOT LITERAL:false)
-[EVAL] LITERAL:false
-[STMT_PRINT_EVAL]:true
-[PASS] expected: true
-
+[MatchAdv]            NOT
+[MatchAdv]            FALSE
+[EXPR]                false
+[EXPR]                (NOT false)
+[CONSUME][TOK] SEMICOLON       ';'
+[STMT_PRINT] (NOT false)
+[EVAL](NOT false)
+   [EVAL]false
+[STMT_PRINT_EVAL]true
+[PASS] expected: true;
 
 SOURCE: print "hello";
 [TOK] PRINT           'print'
 [TOK] STRING          '"hello"'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              PRINT
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              STRING
-[AST] LiteralExpr     LITERAL:hello
-CONSUME [TOK] SEMICOLON       ';'
-[STMT_PRINT] LITERAL:hello
-====== EVALUATE ======
-[EVAL] LITERAL:hello
-[STMT_PRINT_EVAL]:hello
-[PASS] expected: hello
-
+[MatchAdv]            STRING
+[EXPR]                hello
+[CONSUME][TOK] SEMICOLON       ';'
+[STMT_PRINT] hello
+[EVAL]hello
+[STMT_PRINT_EVAL]hello
+[PASS] expected: hello;
 
 ====== Variable Tests ======
 SOURCE: var a = 42; print a;
@@ -716,33 +658,31 @@ SOURCE: var a = 42; print a;
 [TOK] IDENTIFIER      'a'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'a'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:42
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            NUMBER
+[EXPR]                42
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='a'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = LITERAL:42
+0   [STMT_VAR] a = 42
 1   [STMT_PRINT] VARIABLE a
 =================
-$:0   [STMT_VAR] a = LITERAL:42
-====== EVALUATE ======
-[EVAL] LITERAL:42
-[STMT_VAR_DEFINE] a:42
+$:0   [STMT_VAR] a = 42
+[EVAL]42
+[STMT_VAR_DEFINE] a = 42
 $:1   [STMT_PRINT] VARIABLE a
-====== EVALUATE ======
-[EVAL] VARIABLE a
-[STMT_PRINT_EVAL]:42
-[PASS] var a = 42; print a; => 42
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]42
+[PASS] expected: 42;
 
 SOURCE: var b = 3.14; print b;
 [TOK] VAR             'var'
@@ -754,33 +694,31 @@ SOURCE: var b = 3.14; print b;
 [TOK] IDENTIFIER      'b'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'b'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'b'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:3.14
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            NUMBER
+[EXPR]                3.14
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='b'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE b
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] b = LITERAL:3.14
+0   [STMT_VAR] b = 3.14
 1   [STMT_PRINT] VARIABLE b
 =================
-$:0   [STMT_VAR] b = LITERAL:3.14
-====== EVALUATE ======
-[EVAL] LITERAL:3.14
-[STMT_VAR_DEFINE] b:3.14
+$:0   [STMT_VAR] b = 3.14
+[EVAL]3.14
+[STMT_VAR_DEFINE] b = 3.14
 $:1   [STMT_PRINT] VARIABLE b
-====== EVALUATE ======
-[EVAL] VARIABLE b
-[STMT_PRINT_EVAL]:3.14
-[PASS] var b = 3.14; print b; => 3.14
+[EVAL]VARIABLE b
+[STMT_PRINT_EVAL]3.14
+[PASS] expected: 3.14;
 
 SOURCE: var s = "hello"; print s;
 [TOK] VAR             'var'
@@ -792,33 +730,31 @@ SOURCE: var s = "hello"; print s;
 [TOK] IDENTIFIER      's'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      's'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      's'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              STRING
-[AST] LiteralExpr     LITERAL:hello
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            STRING
+[EXPR]                hello
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='s'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE s
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] s = LITERAL:hello
+0   [STMT_VAR] s = hello
 1   [STMT_PRINT] VARIABLE s
 =================
-$:0   [STMT_VAR] s = LITERAL:hello
-====== EVALUATE ======
-[EVAL] LITERAL:hello
-[STMT_VAR_DEFINE] s:hello
+$:0   [STMT_VAR] s = hello
+[EVAL]hello
+[STMT_VAR_DEFINE] s = hello
 $:1   [STMT_PRINT] VARIABLE s
-====== EVALUATE ======
-[EVAL] VARIABLE s
-[STMT_PRINT_EVAL]:hello
-[PASS] var s = "hello"; print s; => hello
+[EVAL]VARIABLE s
+[STMT_PRINT_EVAL]hello
+[PASS] expected: hello;
 
 SOURCE: var x; print x;
 [TOK] VAR             'var'
@@ -828,26 +764,23 @@ SOURCE: var x; print x;
 [TOK] IDENTIFIER      'x'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'x'
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'x'
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='x'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE x
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] x = nil
-1   [STMT_PRINT] VARIABLE x
+0   [STMT_VAR] x = [NIL_EXPR]1   [STMT_PRINT] VARIABLE x
 =================
-$:0   [STMT_VAR] x = nil
-[STMT_VAR_DEFINE] x:nil
+$:0   [STMT_VAR] x = [NIL_EXPR][STMT_VAR_DEFINE] x = nil
 $:1   [STMT_PRINT] VARIABLE x
-====== EVALUATE ======
-[EVAL] VARIABLE x
-[STMT_PRINT_EVAL]:nil
-[PASS] var x; print x; => nil
+[EVAL]VARIABLE x
+[STMT_PRINT_EVAL]nil
+[PASS] expected: nil;
 
 SOURCE: var y = true; print y;
 [TOK] VAR             'var'
@@ -859,33 +792,31 @@ SOURCE: var y = true; print y;
 [TOK] IDENTIFIER      'y'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'y'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'y'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              TRUE
-[AST] LiteralExpr     LITERAL:true
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            TRUE
+[EXPR]                true
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='y'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE y
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] y = LITERAL:true
+0   [STMT_VAR] y = true
 1   [STMT_PRINT] VARIABLE y
 =================
-$:0   [STMT_VAR] y = LITERAL:true
-====== EVALUATE ======
-[EVAL] LITERAL:true
-[STMT_VAR_DEFINE] y:true
+$:0   [STMT_VAR] y = true
+[EVAL]true
+[STMT_VAR_DEFINE] y = true
 $:1   [STMT_PRINT] VARIABLE y
-====== EVALUATE ======
-[EVAL] VARIABLE y
-[STMT_PRINT_EVAL]:true
-[PASS] var y = true; print y; => true
+[EVAL]VARIABLE y
+[STMT_PRINT_EVAL]true
+[PASS] expected: true;
 
 SOURCE: var c = 10; var d = 5; print c;
 [TOK] VAR             'var'
@@ -902,46 +833,43 @@ SOURCE: var c = 10; var d = 5; print c;
 [TOK] IDENTIFIER      'c'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'c'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'c'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:10
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'd'
-MatchAdv              EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                10
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'd'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:5
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            NUMBER
+[EXPR]                5
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='c'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE c
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] c = LITERAL:10
-1   [STMT_VAR] d = LITERAL:5
+0   [STMT_VAR] c = 10
+1   [STMT_VAR] d = 5
 2   [STMT_PRINT] VARIABLE c
 =================
-$:0   [STMT_VAR] c = LITERAL:10
-====== EVALUATE ======
-[EVAL] LITERAL:10
-[STMT_VAR_DEFINE] c:10
-$:1   [STMT_VAR] d = LITERAL:5
-====== EVALUATE ======
-[EVAL] LITERAL:5
-[STMT_VAR_DEFINE] d:5
+$:0   [STMT_VAR] c = 10
+[EVAL]10
+[STMT_VAR_DEFINE] c = 10
+$:1   [STMT_VAR] d = 5
+[EVAL]5
+[STMT_VAR_DEFINE] d = 5
 $:2   [STMT_PRINT] VARIABLE c
-====== EVALUATE ======
-[EVAL] VARIABLE c
-[STMT_PRINT_EVAL]:10
-[PASS] var c = 10; var d = 5; print c; => 10
+[EVAL]VARIABLE c
+[STMT_PRINT_EVAL]10
+[PASS] expected: 10;
 
 SOURCE: var c = 10; c = 20; print c;
 [TOK] VAR             'var'
@@ -957,49 +885,46 @@ SOURCE: var c = 10; c = 20; print c;
 [TOK] IDENTIFIER      'c'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'c'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'c'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:10
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            NUMBER
+[EXPR]                10
+[CONSUME][TOK] SEMICOLON       ';'
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='c'
-MatchAdv              EQUAL
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:20
-[AST] AssignExpr      ASSIGN (= c LITERAL:20)
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE c
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                20
+[EXPR]                ASSIGN (= c 20)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='c'
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE c
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] c = LITERAL:10
-1   [STMT_EXPR] ASSIGN (= c LITERAL:20)
+0   [STMT_VAR] c = 10
+1   [STMT_EXPR] ASSIGN (= c 20)
 2   [STMT_PRINT] VARIABLE c
 =================
-$:0   [STMT_VAR] c = LITERAL:10
-====== EVALUATE ======
-[EVAL] LITERAL:10
-[STMT_VAR_DEFINE] c:10
-$:1   [STMT_EXPR] ASSIGN (= c LITERAL:20)
-====== EVALUATE ======
-[EVAL] ASSIGN (= c LITERAL:20)
-[EVAL] LITERAL:20
-[EXPR_ASSIGN] c:20
-[STMT_EXPR_EVAL] :20
+$:0   [STMT_VAR] c = 10
+[EVAL]10
+[STMT_VAR_DEFINE] c = 10
+$:1   [STMT_EXPR] ASSIGN (= c 20)
+[EVAL]ASSIGN (= c 20)
+   [EVAL]20
+[EXPR_ASSIGN] c = 20
+[STMT_EXPR_EVAL]20
 $:2   [STMT_PRINT] VARIABLE c
-====== EVALUATE ======
-[EVAL] VARIABLE c
-[STMT_PRINT_EVAL]:20
-[PASS] var c = 10; c = 20; print c; => 20
+[EVAL]VARIABLE c
+[STMT_PRINT_EVAL]20
+[PASS] expected: 20;
 
 SOURCE: var a = 1; print a = 2;
 [TOK] VAR             'var'
@@ -1013,37 +938,540 @@ SOURCE: var a = 1; print a = 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-MatchAdv              VAR
-CONSUME [TOK] IDENTIFIER      'a'
-MatchAdv              EQUAL
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
 ================
 ====>
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:1
-CONSUME [TOK] SEMICOLON       ';'
-MatchAdv              PRINT
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
 ================
 ====>
-MatchAdv              IDENTIFIER
-[AST] VariableExpr    name='a'
-MatchAdv              EQUAL
-MatchAdv              NUMBER
-[AST] LiteralExpr     LITERAL:2
-[AST] AssignExpr      ASSIGN (= a LITERAL:2)
-CONSUME [TOK] SEMICOLON       ';'
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                ASSIGN (= a 2)
+[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = LITERAL:1
-1   [STMT_PRINT] ASSIGN (= a LITERAL:2)
+0   [STMT_VAR] a = 1
+1   [STMT_PRINT] ASSIGN (= a 2)
 =================
-$:0   [STMT_VAR] a = LITERAL:1
-====== EVALUATE ======
-[EVAL] LITERAL:1
-[STMT_VAR_DEFINE] a:1
-$:1   [STMT_PRINT] ASSIGN (= a LITERAL:2)
-====== EVALUATE ======
-[EVAL] ASSIGN (= a LITERAL:2)
-[EVAL] LITERAL:2
-[EXPR_ASSIGN] a:2
-[STMT_PRINT_EVAL]:2
-[PASS] var a = 1; print a = 2; => 2
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_PRINT] ASSIGN (= a 2)
+[EVAL]ASSIGN (= a 2)
+   [EVAL]2
+[EXPR_ASSIGN] a = 2
+[STMT_PRINT_EVAL]2
+[PASS] expected: 2;
+
+SOURCE: print 1 = 2;
+[TOK] PRINT           'print'
+[TOK] NUMBER          '1'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[line 1] Error at ';': Invalid assignment target.
+[CONSUME][TOK] SEMICOLON       ';'
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+0   [NULL_STMT]
+=================
+$:0   [NULL_STMT]
+[PassError]
+
+SOURCE: {}
+[TOK] LEFT_BRACE      '{'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+[MatchAdv]            LEFT_BRACE
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [1 statements] ====
+0   [STMT_BLOCK]
+=================
+$:0   [STMT_BLOCK]
+[INFO] no expected output
+
+SOURCE: var a = 0; var b = 0; print a = b = 3;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'b'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'b'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'b'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE b
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                ASSIGN (= b 3)
+[EXPR]                ASSIGN (= a ASSIGN (= b 3))
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [3 statements] ====
+0   [STMT_VAR] a = 0
+1   [STMT_VAR] b = 0
+2   [STMT_PRINT] ASSIGN (= a ASSIGN (= b 3))
+=================
+$:0   [STMT_VAR] a = 0
+[EVAL]0
+[STMT_VAR_DEFINE] a = 0
+$:1   [STMT_VAR] b = 0
+[EVAL]0
+[STMT_VAR_DEFINE] b = 0
+$:2   [STMT_PRINT] ASSIGN (= a ASSIGN (= b 3))
+[EVAL]ASSIGN (= a ASSIGN (= b 3))
+   [EVAL]ASSIGN (= b 3)
+      [EVAL]3
+[EXPR_ASSIGN] b = 3
+[EXPR_ASSIGN] a = 3
+[STMT_PRINT_EVAL]3
+[PASS] expected: 3;
+
+SOURCE: var a = 1; print (a = 2) + 3;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            LEFT_PAREN
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                ASSIGN (= a 2)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR]                (GROUP ASSIGN (= a 2))
+[MatchAdv]            PLUS
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                (PLUS (GROUP ASSIGN (= a 2)) 3)
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_PRINT] (PLUS (GROUP ASSIGN (= a 2)) 3)
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_PRINT] (PLUS (GROUP ASSIGN (= a 2)) 3)
+[EVAL](PLUS (GROUP ASSIGN (= a 2)) 3)
+   [EVAL](GROUP ASSIGN (= a 2))
+      [EVAL]ASSIGN (= a 2)
+         [EVAL]2
+[EXPR_ASSIGN] a = 2
+   [EVAL]3
+[RESULT]5
+[STMT_PRINT_EVAL]5
+[PASS] expected: 5;
+
+SOURCE: var a = 1; print a = 2 == 2;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[MatchAdv]            EQUAL_EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                (EQUAL_EQUAL 2 2)
+[EXPR]                ASSIGN (= a (EQUAL_EQUAL 2 2))
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_PRINT] ASSIGN (= a (EQUAL_EQUAL 2 2))
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_PRINT] ASSIGN (= a (EQUAL_EQUAL 2 2))
+[EVAL]ASSIGN (= a (EQUAL_EQUAL 2 2))
+   [EVAL](EQUAL_EQUAL 2 2)
+      [EVAL]2
+      [EVAL]2
+[RESULT]true
+[EXPR_ASSIGN] a = true
+[STMT_PRINT_EVAL]true
+[PASS] expected: true;
+
+SOURCE: { var a = 1; print a; }
+[TOK] LEFT_BRACE      '{'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+[MatchAdv]            LEFT_BRACE
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [1 statements] ====
+0   [STMT_BLOCK]
+=================
+$:0   [STMT_BLOCK]
+[STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+[STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]1
+[PASS] expected: 1;
+
+SOURCE: var a = 1; { print a; }
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] LEFT_BRACE      '{'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            LEFT_BRACE
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [2 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_BLOCK]
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_BLOCK]
+[STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]1
+[PASS] expected: 1;
+
+SOURCE: var a = 1; { var a = 2; print a; } print a;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] LEFT_BRACE      '{'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            LEFT_BRACE
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                2
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [3 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_BLOCK]
+2   [STMT_PRINT] VARIABLE a
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_BLOCK]
+[STMT_VAR] a = 2
+[EVAL]2
+[STMT_VAR_DEFINE] a = 2
+[STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]2
+$:2   [STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]1
+[PASS] expected: 2;1;
+
+SOURCE: var a = 1; { a = 2; } print a;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] LEFT_BRACE      '{'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            LEFT_BRACE
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                2
+[EXPR]                ASSIGN (= a 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [3 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_BLOCK]
+2   [STMT_PRINT] VARIABLE a
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_BLOCK]
+[STMT_EXPR] ASSIGN (= a 2)
+[EVAL]ASSIGN (= a 2)
+   [EVAL]2
+[EXPR_ASSIGN] a = 2
+[STMT_EXPR_EVAL]2
+$:2   [STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]2
+[PASS] expected: 2;
+
+SOURCE: var a = 1; { var a = 2; a = 3; } print a;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] LEFT_BRACE      '{'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'a'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv]            LEFT_BRACE
+[MatchAdv]            VAR
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv]            EQUAL
+================
+====>
+[MatchAdv]            NUMBER
+[EXPR]                2
+[CONSUME][TOK] SEMICOLON       ';'
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[MatchAdv]            EQUAL
+[MatchAdv]            NUMBER
+[EXPR]                3
+[EXPR]                ASSIGN (= a 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv]            PRINT
+================
+====>
+[MatchAdv]            IDENTIFIER
+[EXPR]                VARIABLE a
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [3 statements] ====
+0   [STMT_VAR] a = 1
+1   [STMT_BLOCK]
+2   [STMT_PRINT] VARIABLE a
+=================
+$:0   [STMT_VAR] a = 1
+[EVAL]1
+[STMT_VAR_DEFINE] a = 1
+$:1   [STMT_BLOCK]
+[STMT_VAR] a = 2
+[EVAL]2
+[STMT_VAR_DEFINE] a = 2
+[STMT_EXPR] ASSIGN (= a 3)
+[EVAL]ASSIGN (= a 3)
+   [EVAL]3
+[EXPR_ASSIGN] a = 3
+[STMT_EXPR_EVAL]3
+$:2   [STMT_PRINT] VARIABLE a
+[EVAL]VARIABLE a
+[STMT_PRINT_EVAL]1
+[PASS] expected: 1;
 

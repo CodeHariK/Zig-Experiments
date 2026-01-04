@@ -1,6 +1,8 @@
 CC      = zig cc
 CFLAGS = -std=c23 -Wall -Wextra -Wpedantic -O2 -g \
          -fsanitize=address,undefined
+CFLAGS_DEBUG = -std=c23 -Wall -Wextra -Wpedantic -Og -g \
+               -fsanitize=address,undefined
 TARGET  = build/lox
 SRC     = src/main.c src/arena.c src/lox.c src/debug.c src/expr.c src/parser.c src/scanner.c src/stmt.c
 TEST_TARGET = build/test
