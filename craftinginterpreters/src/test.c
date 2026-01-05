@@ -19,34 +19,42 @@ void replaceNewlinesWithSemicolons(char *output) {
 }
 
 static void assertOutputTest(Lox *lox, const TestCase *test, char *output) {
-  if (test->pass && !(lox->hadError || lox->hadRuntimeError)) {
+  if (test->pass) {
 
-    if (test->expected && strlen(test->expected) > 0) {
+    if (!(lox->hadError || lox->hadRuntimeError)) {
 
-      char actualBuf[1024];
-      char expectedBuf[1024];
+      if (test->expected && strlen(test->expected) > 0) {
 
-      strncpy(actualBuf, output, sizeof(actualBuf));
-      actualBuf[sizeof(actualBuf) - 1] = '\0';
+        char actualBuf[1024];
+        char expectedBuf[1024];
 
-      strncpy(expectedBuf, test->expected, sizeof(expectedBuf));
-      expectedBuf[sizeof(expectedBuf) - 1] = '\0';
+        strncpy(actualBuf, output, sizeof(actualBuf));
+        actualBuf[sizeof(actualBuf) - 1] = '\0';
 
-      replaceNewlinesWithSemicolons(actualBuf);
-      replaceNewlinesWithSemicolons(expectedBuf);
+        strncpy(expectedBuf, test->expected, sizeof(expectedBuf));
+        expectedBuf[sizeof(expectedBuf) - 1] = '\0';
 
-      if (strcmp(actualBuf, expectedBuf) == 0) {
-        printf("[PASS] expected: %s\n", expectedBuf);
+        replaceNewlinesWithSemicolons(actualBuf);
+        replaceNewlinesWithSemicolons(expectedBuf);
+
+        if (strcmp(actualBuf, expectedBuf) == 0) {
+          printf("[PASS] expected: %s\n", expectedBuf);
+        } else {
+          printf("[FAIL] got: %s, expected: %s\n", actualBuf, expectedBuf);
+        }
+
       } else {
-        printf("[FAIL] got: %s, expected: %s\n", actualBuf, expectedBuf);
+        printf("[INFO] no expected output\n");
       }
-
     } else {
-      printf("[INFO] no expected output\n");
+      printf("[FAIL]\n");
     }
-
   } else {
-    printf("[PassError]\n");
+    if (!(lox->hadError || lox->hadRuntimeError)) {
+      printf("[FAIL] expected error\n");
+    } else {
+      printf("[PassError]\n");
+    }
   }
 
   printf("\n");
@@ -179,6 +187,17 @@ void runVarTests(void) {
 
       // Inner assignment does not affect outer shadowed variable
       {"var a = 1; { var a = 2; a = 3; } print a;", "1\n", true},
+
+      {"if (true) print 1;", "1\n", true},
+      {"if (false) {print 1;} else if (false) {print 2;} else {print 3;}",
+       "3\n", true},
+      {"var i = 0; while (i < 3) { print i; i = i + 1; }", "0\n1\n2\n", true},
+
+      {"print \"hi\" or 2;", "hi\n", true},
+      {"print nil or \"yes\";", "yes\n", true},
+      {"print {false and 123};", "false\n", false},
+      {"print (true and 123);", "123\n", true},
+      {"print nil and boom;", "nil\n", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

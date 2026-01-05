@@ -82,7 +82,7 @@ static Expr *parsePrimary(Lox *lox) {
     return newLiteralExpr(lox, boolValue(true));
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_NIL))
-    return newLiteralExpr(lox, nilValue());
+    return newLiteralExpr(lox, NIL_VALUE);
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_NUMBER))
     return newLiteralExpr(lox,
@@ -171,10 +171,34 @@ static Expr *parseEquality(Lox *lox) {
   return expr;
 }
 
+static Expr *parseLogicAnd(Lox *lox) {
+  Expr *expr = parseEquality(lox);
+
+  while (matchAnyTokenAdvance(lox, 1, TOKEN_AND)) {
+    Token op = prevToken(&lox->parser);
+    Expr *right = parseEquality(lox);
+    expr = newLogicalExpr(lox, expr, op, right);
+  }
+
+  return expr;
+}
+
+static Expr *parseLogicOr(Lox *lox) {
+  Expr *expr = parseLogicAnd(lox);
+
+  while (matchAnyTokenAdvance(lox, 1, TOKEN_OR)) {
+    Token op = prevToken(&lox->parser);
+    Expr *right = parseLogicAnd(lox);
+    expr = newLogicalExpr(lox, expr, op, right);
+  }
+
+  return expr;
+}
+
 // assignment     → IDENTIFIER "=" assignment
 //                | equality ;
 static Expr *parseAssignment(Lox *lox) {
-  Expr *expr = parseEquality(lox);
+  Expr *expr = parseLogicOr(lox);
   if (!expr)
     return NULL;
 

@@ -54,6 +54,15 @@ Expr *newAssignExpr(Lox *lox, Token name, Expr *value) {
   return expr;
 }
 
+Expr *newLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  expr->type = EXPR_LOGICAL;
+  expr->as.logical.left = left;
+  expr->as.logical.op = op;
+  expr->as.logical.right = right;
+  return expr;
+}
+
 void valueToString(Value value, char *buffer, size_t size) {
   switch (value.type) {
   case VAL_NIL:
@@ -118,14 +127,15 @@ bool isEqual(Value a, Value b) {
 }
 
 inline Value errorValue() { return (Value){VAL_ERROR, {.boolean = false}}; }
-inline Value nilValue() { return (Value){VAL_NIL, {.boolean = false}}; }
+// inline Value nilValue() { return (Value){VAL_NIL, {.boolean = false}}; }
+const Value NIL_VALUE = {VAL_NIL, {.boolean = false}};
 
 inline Value numberValue(double n) {
   return (Value){VAL_NUMBER, {.number = n}};
 }
 inline Value boolValue(bool b) { return (Value){VAL_BOOL, {.boolean = b}}; }
 inline Value stringValue(char *s) { return (Value){VAL_STRING, {.string = s}}; }
-inline Value literalValue(Expr *expr) { return expr->as.literal.value; }
+static inline Value literalValue(Expr *expr) { return expr->as.literal.value; }
 
 Value evalUnary(Lox *lox, Expr *expr) {
   Value right = evaluate(lox, expr->as.unary.right);
@@ -255,6 +265,20 @@ Value evaluate(Lox *lox, Expr *expr) {
 
     result = value;
     break;
+  }
+
+  case EXPR_LOGICAL: {
+    Value left = evaluate(lox, expr->as.logical.left);
+
+    if (expr->as.logical.op.type == TOKEN_OR) {
+      if (isTruthy(left))
+        return left;
+    } else {
+      if (!isTruthy(left))
+        return left;
+    }
+
+    return evaluate(lox, expr->as.logical.right);
   }
   }
 

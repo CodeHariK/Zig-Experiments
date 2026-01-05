@@ -32,7 +32,7 @@ void loxError(Lox *lox, int line, const char *where, const char *message) {
 void parserError(Lox *lox, const char *message) {
   Token token = peekToken(&lox->parser);
   if (token.type == TOKEN_EOF) {
-    loxError(lox, token.line, " at end", message);
+    loxError(lox, token.line, " at EOF", message);
   } else {
     char where[64];
     snprintf(where, sizeof(where), " at '%s'", token.lexeme);
@@ -197,42 +197,51 @@ void printExpr(Lox *lox, Expr *expr, int indent, bool space, bool newLine,
     printf("%-16s", "");
 
   switch (expr->type) {
-  case EXPR_BINARY:
+  case EXPR_BINARY: {
     printf("(%s ", tokenTypeToString(expr->as.binary.op.type));
     printExpr(lox, expr->as.binary.left, 0, false, false, "");
     printf(" ");
     printExpr(lox, expr->as.binary.right, 0, false, false, "");
     printf(")");
     break;
-
-  case EXPR_UNARY:
+  }
+  case EXPR_UNARY: {
     printf("(%s ", tokenTypeToString(expr->as.unary.op.type));
     printExpr(lox, expr->as.unary.right, 0, false, false, "");
     printf(")");
     break;
-
-  case EXPR_LITERAL:
+  }
+  case EXPR_LITERAL: {
     printValue(lox, expr->as.literal.value, false, false, 1, "LITERAL");
-
     break;
-
-  case EXPR_GROUPING:
+  }
+  case EXPR_GROUPING: {
     printf("(GROUP ");
     printExpr(lox, expr->as.grouping.expression, 0, false, false, "");
     printf(")");
     break;
+  }
 
-  case EXPR_VARIABLE:
+  case EXPR_VARIABLE: {
     printf("VARIABLE %.*s", expr->as.var.name.length, expr->as.var.name.lexeme);
-
     break;
+  }
 
-  case EXPR_ASSIGN:
+  case EXPR_ASSIGN: {
     printf("ASSIGN (= %.*s ", (int)expr->as.assign.name.length,
            expr->as.assign.name.lexeme);
     printExpr(lox, expr->as.assign.value, 0, false, false, "");
     printf(")");
     break;
+  }
+  case EXPR_LOGICAL: {
+    printf("LOGICAL (");
+    printExpr(lox, expr->as.logical.left, 0, false, false, "");
+    printf(" %s ", tokenTypeToString(expr->as.logical.op.type));
+    printExpr(lox, expr->as.logical.right, 0, false, false, "");
+    printf(")");
+    break;
+  }
   }
 
   if (newLine)
@@ -291,6 +300,12 @@ void printStmt(Lox *lox, Stmt *stmt) {
     break;
   case STMT_BLOCK:
     printf("[STMT_BLOCK]\n");
+    break;
+  case STMT_IF:
+    printf("[STMT_IF]\n");
+    break;
+  case STMT_WHILE:
+    printf("[STMT_WHILE]\n");
     break;
   }
   }

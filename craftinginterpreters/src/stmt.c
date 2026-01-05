@@ -76,10 +76,49 @@ static Stmt *parseBlockStmt(Lox *lox) {
   return block;
 }
 
+static Stmt *parseIfStmt(Lox *lox) {
+  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  Expr *condition = parseExpression(lox);
+  consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after 'if'.");
+
+  Stmt *thenBranch = parseStmt(lox);
+
+  Stmt *ifStmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  ifStmt->type = STMT_IF;
+  ifStmt->as.ifStmt.condition = condition;
+  ifStmt->as.ifStmt.then_branch = thenBranch;
+
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_ELSE)) {
+    ifStmt->as.ifStmt.else_branch = parseStmt(lox);
+  } else {
+    ifStmt->as.ifStmt.else_branch = NULL;
+  }
+
+  return ifStmt;
+}
+
+static Stmt *parseWhileStmt(Lox *lox) {
+  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+  Expr *condition = parseExpression(lox);
+  consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after 'while'.");
+
+  Stmt *body = parseStmt(lox);
+
+  Stmt *whileStmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  whileStmt->type = STMT_WHILE;
+  whileStmt->as.whileStmt.condition = condition;
+  whileStmt->as.whileStmt.body = body;
+  return whileStmt;
+}
+
 Stmt *parseStmt(Lox *lox) {
   Stmt *stmt = NULL;
 
-  if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_IF)) {
+    stmt = parseIfStmt(lox);
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_WHILE)) {
+    stmt = parseWhileStmt(lox);
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
     stmt = parseBlockStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
     stmt = parsePrintStmt(lox);
@@ -129,15 +168,16 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     break;
   }
 
-  case STMT_EXPR:
+  case STMT_EXPR: {
     if (stmt->as.expr) {
       Value val = evaluate(lox, stmt->as.expr);
       printValue(lox, val, true, 1, "[STMT_EXPR_EVAL]");
     }
     break;
+  }
 
   case STMT_VAR: {
-    Value val = nilValue();
+    Value val = NIL_VALUE;
     if (stmt->as.var.initializer) {
       val = evaluate(lox, stmt->as.var.initializer);
     }
@@ -147,9 +187,26 @@ void executeStmt(Lox *lox, Stmt *stmt) {
                stmt->as.var.name.lexeme, " = ");
 
     break;
+  }
 
   case STMT_BLOCK:
     executeBlock(lox, stmt->as.block.statements, stmt->as.block.count);
+    break;
+
+  case STMT_IF: {
+    if (isTruthy(evaluate(lox, stmt->as.ifStmt.condition))) {
+      executeStmt(lox, stmt->as.ifStmt.then_branch);
+    } else if (stmt->as.ifStmt.else_branch) {
+      executeStmt(lox, stmt->as.ifStmt.else_branch);
+    }
+    break;
+  }
+
+  case STMT_WHILE: {
+    while (!lox->hadRuntimeError && !lox->hadError &&
+           isTruthy(evaluate(lox, stmt->as.whileStmt.condition))) {
+      executeStmt(lox, stmt->as.whileStmt.body);
+    }
     break;
   }
   }

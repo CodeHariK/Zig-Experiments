@@ -77,6 +77,7 @@ typedef enum {
   EXPR_GROUPING,
   EXPR_VARIABLE,
   EXPR_ASSIGN,
+  EXPR_LOGICAL,
 } ExprType;
 
 typedef enum { VAL_ERROR, VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
@@ -122,10 +123,23 @@ typedef struct Expr {
       struct Expr *initializer;
     } var;
 
+    struct {
+      struct Expr *left;
+      Token op; // TOKEN_AND or TOKEN_OR
+      struct Expr *right;
+    } logical;
+
   } as;
 } Expr;
 
-typedef enum { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK } StmtType;
+typedef enum {
+  STMT_EXPR,
+  STMT_PRINT,
+  STMT_VAR,
+  STMT_BLOCK,
+  STMT_IF,
+  STMT_WHILE,
+} StmtType;
 
 typedef struct Stmt {
   StmtType type;
@@ -143,6 +157,18 @@ typedef struct Stmt {
       struct Stmt **statements;
       int count;
     } block;
+
+    struct {
+      Expr *condition;
+      struct Stmt *then_branch;
+      struct Stmt *else_branch;
+    } ifStmt;
+
+    struct {
+      Expr *condition;
+      struct Stmt *body;
+    } whileStmt;
+
   } as;
 } Stmt;
 
@@ -154,9 +180,11 @@ typedef struct {
 
 const char *tokenTypeToString(TokenType type);
 
+extern const Value NIL_VALUE;
+
 Value numberValue(double n);
 Value boolValue(bool b);
-Value nilValue(void);
+// Value nilValue(void);
 Value errorValue(void);
 Value stringValue(char *s);
 
@@ -250,7 +278,9 @@ Expr *newLiteralExpr(Lox *lox, Value value);
 Expr *newGroupingExpr(Lox *lox, Expr *expression);
 Expr *newVariableExpr(Lox *lox, Token token);
 Expr *newAssignExpr(Lox *lox, Token name, Expr *value);
+Expr *newLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right);
 
+bool isTruthy(Value v);
 Value evaluate(Lox *lox, Expr *expr);
 
 Stmt *parseStmt(Lox *lox);
