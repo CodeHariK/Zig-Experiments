@@ -127,9 +127,9 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
   switch (expr->type) {
   case EXPR_BINARY: {
     printValue(result);
-    printf(" (%s ", tokenTypeToString(expr->as.binary.op.type));
+    printf(" (");
     printExpr(lox, expr->as.binary.left, NO_VALUE, 0, false, false, "");
-    printf(" ");
+    printf(" %s ", tokenTypeToString(expr->as.binary.op.type));
     printExpr(lox, expr->as.binary.right, NO_VALUE, 0, false, false, "");
     printf(")");
     break;
@@ -160,8 +160,8 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
 
   case EXPR_ASSIGN: {
     printf("%s = ", expr->as.assign.name.lexeme);
-    printExpr(lox, expr->as.assign.value, NO_VALUE, 0, false, false, "");
     printValue(result);
+    printExpr(lox, expr->as.assign.value, NO_VALUE, 0, false, false, "");
     break;
   }
   case EXPR_LOGICAL: {
@@ -243,7 +243,43 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
     printf("body:\n");
     printStmt(lox, stmt->as.whileStmt.body, result, indent + 2);
     break;
+    break;
   }
+
+  case STMT_FOR:
+    printf("[STMT_FOR]\n");
+
+    indentPrint(indent + 1);
+    printf("condition:\n");
+    if (stmt->as.forStmt.condition) {
+      printExpr(lox, stmt->as.forStmt.condition, result, indent + 2, false,
+                true, "");
+    } else {
+      indentPrint(indent + 2);
+      printf("(none)\n");
+    }
+
+    indentPrint(indent + 1);
+    printf("increment:\n");
+    if (stmt->as.forStmt.increment) {
+      printExpr(lox, stmt->as.forStmt.increment, result, indent + 2, false,
+                true, "");
+    } else {
+      indentPrint(indent + 2);
+      printf("(none)\n");
+    }
+
+    indentPrint(indent + 1);
+    printf("body:\n");
+    printStmt(lox, stmt->as.forStmt.body, result, indent + 2);
+    break;
+
+  case STMT_BREAK:
+    printf("[STMT_BREAK]\n");
+    break;
+  case STMT_CONTINUE:
+    printf("[STMT_CONTINUE]\n");
+    break;
   }
 }
 

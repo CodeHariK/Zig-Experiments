@@ -44,8 +44,6 @@ typedef enum {
   TOKEN_ELSE,
   TOKEN_FALSE,
   TOKEN_FUN,
-  TOKEN_FOR,
-  TOKEN_IF,
   TOKEN_NIL,
   TOKEN_OR,
   TOKEN_PRINT,
@@ -54,7 +52,12 @@ typedef enum {
   TOKEN_THIS,
   TOKEN_TRUE,
   TOKEN_VAR,
+
+  TOKEN_IF,
   TOKEN_WHILE,
+  TOKEN_FOR,
+  TOKEN_BREAK,
+  TOKEN_CONTINUE,
 
   TOKEN_EOF
 } TokenType;
@@ -141,6 +144,9 @@ typedef enum {
   STMT_BLOCK,
   STMT_IF,
   STMT_WHILE,
+  STMT_BREAK,
+  STMT_CONTINUE,
+  STMT_FOR,
 } StmtType;
 
 typedef struct Stmt {
@@ -173,6 +179,12 @@ typedef struct Stmt {
       Expr *condition;
       struct Stmt *body;
     } whileStmt;
+
+    struct {
+      Expr *condition;
+      Expr *increment;
+      struct Stmt *body;
+    } forStmt;
 
   } as;
 } Stmt;
@@ -222,6 +234,8 @@ typedef struct {
   u32 count;
   u32 current;
 
+  u32 loopDepth;
+
   u32 line;
 } Parser;
 
@@ -242,13 +256,13 @@ typedef struct {
   bool hadRuntimeError;
   char errorMsg[512];
   char runtimeErrorMsg[512];
-
   char output[1024 * 10];
   u32 output_len;
-
   u32 indent;
-
   bool debugPrint;
+
+  bool breakSignal;
+  bool continueSignal;
 
   Arena astArena;
   Scanner scanner;

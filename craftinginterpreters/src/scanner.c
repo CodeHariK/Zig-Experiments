@@ -13,12 +13,15 @@ static inline bool isAlpha(char c) {
 static inline bool isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
 
 static const Keyword keywords[] = {
-    {"and", TOKEN_AND},     {"class", TOKEN_CLASS},   {"else", TOKEN_ELSE},
-    {"false", TOKEN_FALSE}, {"for", TOKEN_FOR},       {"fun", TOKEN_FUN},
-    {"if", TOKEN_IF},       {"nil", TOKEN_NIL},       {"or", TOKEN_OR},
-    {"print", TOKEN_PRINT}, {"return", TOKEN_RETURN}, {"super", TOKEN_SUPER},
-    {"this", TOKEN_THIS},   {"true", TOKEN_TRUE},     {"var", TOKEN_VAR},
-    {"while", TOKEN_WHILE},
+    {"and", TOKEN_AND},       {"class", TOKEN_CLASS},
+    {"else", TOKEN_ELSE},     {"false", TOKEN_FALSE},
+    {"fun", TOKEN_FUN},       {"nil", TOKEN_NIL},
+    {"or", TOKEN_OR},         {"print", TOKEN_PRINT},
+    {"return", TOKEN_RETURN}, {"super", TOKEN_SUPER},
+    {"this", TOKEN_THIS},     {"true", TOKEN_TRUE},
+    {"var", TOKEN_VAR},       {"if", TOKEN_IF},
+    {"while", TOKEN_WHILE},   {"for", TOKEN_FOR},
+    {"break", TOKEN_BREAK},   {"continue", TOKEN_CONTINUE},
 };
 
 static TokenType checkKeyword(const char *text, size_t length) {
@@ -47,31 +50,31 @@ const char *tokenTypeToString(TokenType type) {
   case TOKEN_DOT:
     return "DOT";
   case TOKEN_MINUS:
-    return "MINUS";
+    return "-";
   case TOKEN_PLUS:
-    return "PLUS";
+    return "+";
   case TOKEN_SEMICOLON:
     return "SEMICOLON";
   case TOKEN_SLASH:
-    return "SLASH";
+    return "/";
   case TOKEN_STAR:
-    return "STAR";
+    return "*";
   case TOKEN_NOT:
     return "NOT";
   case TOKEN_NOT_EQUAL:
-    return "NOT_EQUAL";
+    return "!=";
   case TOKEN_EQUAL:
-    return "EQUAL";
+    return "=";
   case TOKEN_EQUAL_EQUAL:
-    return "EQUAL_EQUAL";
+    return "==";
   case TOKEN_GREATER:
-    return "GREATER";
+    return ">";
   case TOKEN_GREATER_EQUAL:
-    return "GREATER_EQUAL";
+    return ">=";
   case TOKEN_LESS:
-    return "LESS";
+    return "<";
   case TOKEN_LESS_EQUAL:
-    return "LESS_EQUAL";
+    return "<=";
   case TOKEN_IDENTIFIER:
     return "IDENTIFIER";
   case TOKEN_STRING:
@@ -88,10 +91,6 @@ const char *tokenTypeToString(TokenType type) {
     return "FALSE";
   case TOKEN_FUN:
     return "FUN";
-  case TOKEN_FOR:
-    return "FOR";
-  case TOKEN_IF:
-    return "IF";
   case TOKEN_NIL:
     return "NIL";
   case TOKEN_OR:
@@ -108,8 +107,18 @@ const char *tokenTypeToString(TokenType type) {
     return "TRUE";
   case TOKEN_VAR:
     return "VAR";
+
+  case TOKEN_IF:
+    return "IF";
   case TOKEN_WHILE:
     return "WHILE";
+  case TOKEN_FOR:
+    return "FOR";
+  case TOKEN_BREAK:
+    return "BREAK";
+  case TOKEN_CONTINUE:
+    return "CONTINUE";
+
   case TOKEN_EOF:
     return "EOF";
   default:

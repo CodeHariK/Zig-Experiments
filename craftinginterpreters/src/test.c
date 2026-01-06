@@ -1,6 +1,8 @@
 #include "lox.h"
 #include <string.h>
 
+const bool DEBUG_PRINT = true;
+
 typedef struct {
   const char *source;
   const char *expected;
@@ -103,7 +105,7 @@ static void runExprTests(void) {
     printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, true);
+    loxInit(&lox, DEBUG_PRINT);
     initScanner(&lox.scanner, test.source);
     scanTokens(&lox);
     initParser(&lox);
@@ -138,7 +140,7 @@ void runStmtTests(void) {
     printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, true);
+    loxInit(&lox, DEBUG_PRINT);
     initScanner(&lox.scanner, test.source);
     scanTokens(&lox);
     initParser(&lox);
@@ -214,9 +216,7 @@ void runVarTests(void) {
       {"var i = 0; for (; i < 3; i = i + 1) print i;", "0;1;2;", true},
       // empty increment
       {"for (var i = 0; i < 3;) { print i; i = i + 1; }", "0;1;2;", true},
-      // empty condition (infinite loop with break simulation)
-      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }",
-       "0;1;2;", false},
+
       // block scoping
       {"var i = 100; for (var i = 0; i < 2; i = i + 1) print i; print i;",
        "0;1;100;", true},
@@ -229,6 +229,39 @@ void runVarTests(void) {
       {"for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;", "13;", false},
       // for inside block
       {"{ for (var i = 0; i < 2; i = i + 1) print i; }", "0;1;", true},
+
+      // empty condition (infinite loop with break simulation)
+      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }",
+       "0;1;2;", true},
+      // break exits only the nearest loop
+      {"var i = 0; var j = 0; "
+       "while (i < 2) { "
+       "  j = 0; "
+       "  while (true) { "
+       "    print i; "
+       "    break; "
+       "  } "
+       "  i = i + 1; "
+       "} ",
+       "0;1;", true},
+
+      // break inside nested blocks and if
+      {"var i = 0; "
+       "while (true) { "
+       "  { "
+       "    if (i == 2) break; "
+       "  } "
+       "  print i; "
+       "  i = i + 1; "
+       "} ",
+       "0;1;", true},
+
+      {"var i = 0; while (i < 3) { "
+       "{ i = i + 1; if (i == 2) continue; print i; } }",
+       "1;3;", true},
+      {"for (var i = 1; i < 4; i = i + 1) { "
+       "if (i == 2) continue; print i; }",
+       "1;3;", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -238,7 +271,7 @@ void runVarTests(void) {
     printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, true);
+    loxInit(&lox, DEBUG_PRINT);
     initScanner(&lox.scanner, test.source);
     scanTokens(&lox);
     initParser(&lox);

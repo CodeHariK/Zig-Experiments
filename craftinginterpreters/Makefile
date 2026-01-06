@@ -13,6 +13,7 @@ TEST_SRC     = src/test.c src/arena.c src/lox.c src/debug.c src/expr.c src/parse
 
 clean:
 	rm -f $(TARGET) $(TEST_TARGET)
+	rm test/test.txt
 
 all: $(clean) $(TARGET)
 
