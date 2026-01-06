@@ -2,9 +2,12 @@
 #include <stdarg.h>
 
 void initParser(Lox *lox) {
-  lox->parser.tokens = lox->scanner.tokens;
-  lox->parser.count = lox->scanner.count;
-  lox->parser.current = 0;
+  lox->parser = (Parser){
+      .tokens = lox->scanner.tokens,
+      .count = lox->scanner.count,
+      .current = 0,
+      .line = 1,
+  };
 }
 
 inline Token peekToken(Parser *parser) {
@@ -30,15 +33,16 @@ bool checkToken(Parser *parser, TokenType type) {
   return peekToken(parser).type == type;
 }
 
-inline bool matchAnyTokenAdvance(Lox *lox, int count, ...) {
+inline bool matchAnyTokenAdvance(Lox *lox, u32 count, ...) {
   va_list args;
   va_start(args, count);
 
-  for (int i = 0; i < count; i++) {
+  for (u32 i = 0; i < count; i++) {
     TokenType type = va_arg(args, TokenType);
     if (checkToken(&lox->parser, type)) {
 
-      printf("[MatchAdv] %-10s %s\n", "", tokenTypeToString(type));
+      Token t = peekToken(&lox->parser);
+      printToken(lox, &t, 1, "[MatchAdv] ");
 
       advanceToken(lox);
       va_end(args);
@@ -64,13 +68,6 @@ Token consumeToken(Lox *lox, TokenType type, const char *message) {
   return tok; // error recovery will improve later
 }
 
-static Expr *_parseExpression(Lox *lox);
-
-Expr *parseExpression(Lox *lox) {
-  printf("================\n");
-  return _parseExpression(lox);
-}
-
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;
 static Expr *parsePrimary(Lox *lox) {
@@ -92,7 +89,7 @@ static Expr *parsePrimary(Lox *lox) {
     return newLiteralExpr(lox, stringValue((char *)prevToken(parser).literal));
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_PAREN)) {
-    Expr *expr = _parseExpression(lox);
+    Expr *expr = parseExpression(lox);
     consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
     return newGroupingExpr(lox, expr);
   }
@@ -218,7 +215,4 @@ static Expr *parseAssignment(Lox *lox) {
   return expr;
 }
 
-static Expr *_parseExpression(Lox *lox) {
-  printf("====>\n");
-  return parseAssignment(lox);
-}
+Expr *parseExpression(Lox *lox) { return parseAssignment(lox); }

@@ -2,10 +2,12 @@
 #ifndef LOX_H
 #define LOX_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#define u32 uint32_t
+#define u8 uint8_t
 
 typedef enum {
   // Single-character tokens.
@@ -61,8 +63,8 @@ typedef struct {
   TokenType type;
   const char *lexeme;
   void *literal;
-  int line;
-  int length;
+  u32 line;
+  u32 length;
 } Token;
 
 typedef struct {
@@ -143,6 +145,9 @@ typedef enum {
 
 typedef struct Stmt {
   StmtType type;
+
+  u32 line;
+
   union {
 
     Expr *expr;       // expression statement
@@ -155,7 +160,7 @@ typedef struct Stmt {
 
     struct {
       struct Stmt **statements;
-      int count;
+      u32 count;
     } block;
 
     struct {
@@ -174,47 +179,50 @@ typedef struct Stmt {
 
 typedef struct {
   Stmt **statements;
-  size_t count;
-  size_t capacity;
+  u32 count;
+  u32 capacity;
 } Program;
 
 const char *tokenTypeToString(TokenType type);
 
 extern const Value NIL_VALUE;
+extern const Value NO_VALUE;
 
 Value numberValue(double n);
 Value boolValue(bool b);
 // Value nilValue(void);
-Value errorValue(void);
+Value errorValue(char *error);
 Value stringValue(char *s);
 
-void valueToString(Value value, char *buffer, size_t size);
+void valueToString(Value value, char *buffer, u32 size);
 
 typedef struct {
-  uint8_t *data;
-  size_t capacity;
-  size_t offset;
+  u8 *data;
+  u32 capacity;
+  u32 offset;
 } Arena;
 
-void arenaInit(Arena *arena, size_t capacity);
-void *arenaAlloc(Arena *arena, size_t size);
+void arenaInit(Arena *arena, u32 capacity);
+void *arenaAlloc(Arena *arena, u32 size);
 void arenaFree(Arena *arena);
 
 typedef struct {
   const char *source;
-  size_t start;
-  size_t current;
-  int line;
+  u32 start;
+  u32 current;
+  u32 line;
 
   Token *tokens;
-  size_t count;
-  size_t capacity;
+  u32 count;
+  u32 capacity;
 } Scanner;
 
 typedef struct {
   Token *tokens;
-  size_t count;
-  size_t current;
+  u32 count;
+  u32 current;
+
+  u32 line;
 } Parser;
 
 typedef struct {
@@ -224,8 +232,8 @@ typedef struct {
 
 typedef struct Environment {
   EnvKV *entries;
-  int count;
-  int capacity;
+  u32 count;
+  u32 capacity;
   struct Environment *enclosing;
 } Environment;
 
@@ -236,9 +244,9 @@ typedef struct {
   char runtimeErrorMsg[512];
 
   char output[1024 * 10];
-  int output_len;
+  u32 output_len;
 
-  int indent;
+  u32 indent;
 
   bool debugPrint;
 
@@ -251,7 +259,7 @@ typedef struct {
 void loxInit(Lox *lox, bool debugPrint);
 void freeLox(Lox *lox);
 
-void loxError(Lox *lox, int line, const char *where, const char *message);
+void loxError(Lox *lox, u32 line, const char *where, const char *message);
 
 void loxRun(Lox *lox, const char *source);
 void loxRunPrompt(Lox *lox);
@@ -264,7 +272,7 @@ Token *scanTokens(Lox *lox);
 void initParser(Lox *lox);
 bool isTokenEOF(Parser *parser);
 bool checkToken(Parser *parser, TokenType type);
-bool matchAnyTokenAdvance(Lox *lox, int count, ...);
+bool matchAnyTokenAdvance(Lox *lox, u32 count, ...);
 Token consumeToken(Lox *lox, TokenType type, const char *message);
 void advanceToken(Lox *lox);
 Token prevToken(Parser *parser);
@@ -294,17 +302,13 @@ bool envGet(Environment *env, const char *name, Value *out);
 bool envAssign(Environment *env, const char *name, Value value);
 void envDefine(Environment *env, const char *name, Value value);
 
-void printTokens(Lox *lox);
-void printExpr(Lox *lox, Expr *expr, int indent, bool space, bool newLine,
-               char *msg);
-void printExprAST(Lox *lox, Expr *expr, int indent);
-void printValue(Lox *lox, Value value, bool newLine, int count, ...);
-void printToken(Lox *lox, const Token *token, int count, ...);
-void printStmtAST(Lox *lox, Stmt *stmt, int indent);
-void printStmt(Lox *lox, Stmt *stmt);
+void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
+               bool newLine, char *msg);
+void printValue(Value value);
+void printToken(Lox *lox, const Token *token, u32 count, ...);
+void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent);
 void printEnvironment(Lox *lox);
 void printProgram(Lox *lox, Program *prog);
-void printProgramAST(Lox *lox, Program *prog);
 
 void loxAppendOutput(Lox *lox, const char *s);
 

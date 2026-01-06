@@ -118,13 +118,15 @@ const char *tokenTypeToString(TokenType type) {
 }
 
 void initScanner(Scanner *scanner, const char *source) {
-  scanner->source = source;
-  scanner->capacity = 8;
-  scanner->tokens = malloc(sizeof(Token) * scanner->capacity);
-  scanner->count = 0;
-  scanner->start = 0;
-  scanner->current = 0;
-  scanner->line = 1;
+  *scanner = (Scanner){
+      .source = source,
+      .capacity = 8,
+      .tokens = malloc(sizeof(Token) * 8),
+      .count = 0,
+      .start = 0,
+      .current = 0,
+      .line = 1,
+  };
 }
 
 void addTokenToArray(Lox *lox, Token token) {
@@ -154,11 +156,13 @@ static void addToken(Lox *lox, TokenType type, void *literal) {
   memcpy(lex, &scanner->source[scanner->start], len);
   lex[len] = '\0'; // null-terminate
 
-  Token token = {.type = type,
-                 .lexeme = lex,
-                 .length = len,
-                 .literal = literal,
-                 .line = scanner->line};
+  Token token = {
+      .type = type,
+      .lexeme = lex,
+      .length = len,
+      .literal = literal,
+      .line = scanner->line,
+  };
 
   addTokenToArray(lox, token);
 }
@@ -289,11 +293,13 @@ Token *scanTokens(Lox *lox) {
   }
 
   // Add EOF token
-  Token eof = {.type = TOKEN_EOF,
-               .lexeme = "",
-               .length = 0,
-               .literal = NULL,
-               .line = scanner->line};
+  Token eof = {
+      .type = TOKEN_EOF,
+      .lexeme = "",
+      .length = 0,
+      .literal = NULL,
+      .line = scanner->line,
+  };
   addTokenToArray(lox, eof);
 
   return scanner->tokens;

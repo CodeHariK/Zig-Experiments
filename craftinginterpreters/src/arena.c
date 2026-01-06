@@ -2,16 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-void arenaInit(Arena *arena, size_t capacity) {
+void arenaInit(Arena *arena, u32 capacity) {
   arena->data = malloc(capacity);
   if (!arena->data)
     exit(1);
 
   arena->capacity = capacity;
-  arena->offset = 0; // ← THIS WAS THE MISSING LINE
+  arena->offset = 0;
 }
 
-void *arenaAlloc(Arena *arena, size_t size) {
+void *arenaAlloc(Arena *arena, u32 size) {
   size = (size + 7) & ~7;
 
   if (arena->offset + size > arena->capacity) {
@@ -31,10 +31,12 @@ Environment *envNew(Environment *enclosing) {
   if (!env)
     exit(1);
 
-  env->entries = malloc(sizeof(EnvKV) * 8);
-  env->count = 0;
-  env->capacity = 8;
-  env->enclosing = enclosing;
+  *env = (Environment){
+      .entries = malloc(sizeof(EnvKV) * 8),
+      .count = 0,
+      .capacity = 8,
+      .enclosing = enclosing,
+  };
 
   return env;
 }
@@ -45,7 +47,7 @@ void envFree(Environment *env) {
 }
 
 bool envGet(Environment *env, const char *name, Value *out) {
-  for (int i = 0; i < env->count; i++) {
+  for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       *out = env->entries[i].value;
       return true;
@@ -65,13 +67,16 @@ void envDefine(Environment *env, const char *name, Value value) {
     env->entries = realloc(env->entries, sizeof(EnvKV) * env->capacity);
   }
 
-  env->entries[env->count].key = strdup(name);
-  env->entries[env->count].value = value;
+  env->entries[env->count] = (EnvKV){
+      .key = strdup(name),
+      .value = value,
+  };
+
   env->count++;
 }
 
 bool envAssign(Environment *env, const char *name, Value value) {
-  for (int i = 0; i < env->count; i++) {
+  for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       env->entries[i].value = value;
       return true;

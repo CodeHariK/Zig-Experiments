@@ -19,26 +19,29 @@ void replaceNewlinesWithSemicolons(char *output) {
 }
 
 static void assertOutputTest(Lox *lox, const TestCase *test, char *output) {
+
+  char actualBuf[1024];
+  strncpy(actualBuf, output, sizeof(actualBuf));
+  replaceNewlinesWithSemicolons(actualBuf);
+  printf("[RESULT] : %s\n", actualBuf);
+
   if (test->pass) {
 
     if (!(lox->hadError || lox->hadRuntimeError)) {
 
       if (test->expected && strlen(test->expected) > 0) {
 
-        char actualBuf[1024];
         char expectedBuf[1024];
 
-        strncpy(actualBuf, output, sizeof(actualBuf));
         actualBuf[sizeof(actualBuf) - 1] = '\0';
 
         strncpy(expectedBuf, test->expected, sizeof(expectedBuf));
         expectedBuf[sizeof(expectedBuf) - 1] = '\0';
 
-        replaceNewlinesWithSemicolons(actualBuf);
         replaceNewlinesWithSemicolons(expectedBuf);
 
         if (strcmp(actualBuf, expectedBuf) == 0) {
-          printf("[PASS] expected: %s\n", expectedBuf);
+          printf("[PASS]\n");
         } else {
           printf("[FAIL] got: %s, expected: %s\n", actualBuf, expectedBuf);
         }
@@ -65,6 +68,7 @@ static void runExprTests(void) {
 
       {"()", NULL, false},
       {"{}", NULL, false},
+      {"!true", "false", true},
       {"!true == false", "true", true},
       {"123.45", "123.45", true},
       {"nil", "nil", true},
@@ -104,7 +108,9 @@ static void runExprTests(void) {
     scanTokens(&lox);
     initParser(&lox);
 
+    printf("=================\n");
     Expr *expr = parseExpression(&lox);
+    printf("=================\n");
     Value result = evaluate(&lox, expr);
 
     char buffer[64];
@@ -122,7 +128,6 @@ void runStmtTests(void) {
       {"2 / 4", "0.5", false},
       {"print 1 + 2;", "3\n", true},
       {"1 + 2;", "", true}, // exprStmt, no print output
-      {"print 2 * 3;", "6\n", true},
       {"print !false;", "true\n", true},
       {"print \"hello\";", "hello\n", true},
   };
@@ -138,7 +143,9 @@ void runStmtTests(void) {
     scanTokens(&lox);
     initParser(&lox);
 
+    printf("=================\n");
     Stmt *stmt = parseStmt(&lox);
+    printf("=================\n");
 
     executeStmt(&lox, stmt);
 
@@ -150,7 +157,7 @@ void runStmtTests(void) {
 
 void runVarTests(void) {
   TestCase tests[] = {
-      {"var a = 42; print a;", "42\n", true},
+      {"var a = 7 * 7; print a/7;", "7\n", true},
       {"var b = 3.14; print b;", "3.14\n", true},
       {"var s = \"hello\"; print s;", "hello\n", true},
       {"var x; print x;", "nil\n", true}, // uninitialized variable
@@ -198,6 +205,30 @@ void runVarTests(void) {
       {"print {false and 123};", "false\n", false},
       {"print (true and 123);", "123\n", true},
       {"print nil and boom;", "nil\n", true},
+
+      // basic counting
+      {"for (var i = 0; i < 3; i = i + 1) print i;", "0;1;2;", true},
+      // initializer without var
+      {"var i = 0; for (i = 1; i < 4; i = i + 1) print i;", "1;2;3;", true},
+      // empty initializer
+      {"var i = 0; for (; i < 3; i = i + 1) print i;", "0;1;2;", true},
+      // empty increment
+      {"for (var i = 0; i < 3;) { print i; i = i + 1; }", "0;1;2;", true},
+      // empty condition (infinite loop with break simulation)
+      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }",
+       "0;1;2;", false},
+      // block scoping
+      {"var i = 100; for (var i = 0; i < 2; i = i + 1) print i; print i;",
+       "0;1;100;", true},
+      // nested for
+      {"for (var i = 0; i < 2; i = i + 1) "
+       "for (var j = 0; j < 2; j = j + 1) "
+       "print i + j;",
+       "0;1;1;2;", true},
+      // for with expression body
+      {"for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;", "13;", false},
+      // for inside block
+      {"{ for (var i = 0; i < 2; i = i + 1) print i; }", "0;1;", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -212,6 +243,7 @@ void runVarTests(void) {
     scanTokens(&lox);
     initParser(&lox);
 
+    printf("=================\n");
     Program *prog = parseProgram(&lox);
     printProgram(&lox, prog);
     executeProgram(&lox, prog);

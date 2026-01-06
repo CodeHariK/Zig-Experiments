@@ -9,6 +9,7 @@ static Stmt *parseExprStatement(Lox *lox) {
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_EXPR;
   stmt->as.expr = expr;
+  stmt->line = lox->parser.line++;
   return stmt;
 }
 
@@ -19,6 +20,7 @@ static Stmt *parsePrintStmt(Lox *lox) {
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_PRINT;
   stmt->as.expr_print = value;
+  stmt->line = lox->parser.line++;
   return stmt;
 }
 
@@ -37,6 +39,7 @@ static Stmt *parseVarStmt(Lox *lox) {
   stmt->type = STMT_VAR;
   stmt->as.var.name = name;
   stmt->as.var.initializer = initializer;
+  stmt->line = lox->parser.line++;
   return stmt;
 }
 
@@ -48,6 +51,8 @@ static Stmt *parseDeclaration(Lox *lox) {
 }
 
 static Stmt *parseBlockStmt(Lox *lox) {
+  int line = lox->parser.line++;
+
   Stmt **stmts = arenaAlloc(&lox->astArena, sizeof(Stmt *) * 8);
   int count = 0;
   int capacity = 8;
@@ -73,10 +78,13 @@ static Stmt *parseBlockStmt(Lox *lox) {
   block->type = STMT_BLOCK;
   block->as.block.statements = stmts;
   block->as.block.count = count;
+  block->line = line;
   return block;
 }
 
 static Stmt *parseIfStmt(Lox *lox) {
+  int line = lox->parser.line++;
+
   consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
   Expr *condition = parseExpression(lox);
   consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after 'if'.");
@@ -87,6 +95,7 @@ static Stmt *parseIfStmt(Lox *lox) {
   ifStmt->type = STMT_IF;
   ifStmt->as.ifStmt.condition = condition;
   ifStmt->as.ifStmt.then_branch = thenBranch;
+  ifStmt->line = line;
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_ELSE)) {
     ifStmt->as.ifStmt.else_branch = parseStmt(lox);
@@ -98,6 +107,8 @@ static Stmt *parseIfStmt(Lox *lox) {
 }
 
 static Stmt *parseWhileStmt(Lox *lox) {
+  int line = lox->parser.line++;
+
   consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   Expr *condition = parseExpression(lox);
   consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after 'while'.");
@@ -108,6 +119,102 @@ static Stmt *parseWhileStmt(Lox *lox) {
   whileStmt->type = STMT_WHILE;
   whileStmt->as.whileStmt.condition = condition;
   whileStmt->as.whileStmt.body = body;
+  whileStmt->line = line;
+
+  return whileStmt;
+}
+
+// STMT_BLOCK
+//  ├─ STMT_VAR   i = 0
+//  └─ STMT_WHILE
+//      ├─ condition: (i < 3)
+//      └─ body:
+//          STMT_BLOCK
+//            ├─ STMT_PRINT i
+//            └─ STMT_EXPR  (i = i + 1)
+static Stmt *parseForStmt(Lox *lox) {
+  int line = lox->parser.line++;
+
+  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+
+  // 1️⃣ initializer
+  Stmt *initializer = NULL;
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_SEMICOLON)) {
+    initializer = NULL;
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
+    initializer = parseVarStmt(lox);
+  } else {
+    initializer = parseExprStatement(lox);
+  }
+
+  // 2️⃣ condition
+  Expr *condition = NULL;
+  if (!checkToken(&lox->parser, TOKEN_SEMICOLON)) {
+    condition = parseExpression(lox);
+  }
+  consumeToken(lox, TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+  // 3️⃣ increment
+  Expr *increment = NULL;
+  if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
+    increment = parseExpression(lox);
+  }
+  consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+  // 4️⃣ body
+  Stmt *body = parseStmt(lox);
+
+  // --- desugaring starts here ---
+
+  // If there is an increment, append it to the loop body
+  if (increment) {
+    Stmt *incStmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+    incStmt->type = STMT_EXPR;
+    incStmt->as.expr = increment;
+    incStmt->line = lox->parser.line++;
+
+    Stmt **stmts = arenaAlloc(&lox->astArena, sizeof(Stmt *) * 2);
+    stmts[0] = body;
+    stmts[1] = incStmt;
+
+    Stmt *block = arenaAlloc(&lox->astArena, sizeof(Stmt));
+    block->type = STMT_BLOCK;
+    block->as.block.statements = stmts;
+    block->as.block.count = 2;
+    block->line = body->line;
+
+    body = block;
+  }
+
+  // Default condition = true
+  if (!condition) {
+    condition = arenaAlloc(&lox->astArena, sizeof(Expr));
+    condition->type = EXPR_LITERAL;
+    condition->as.literal.value = boolValue(true);
+  }
+
+  // Create while
+  Stmt *whileStmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  whileStmt->type = STMT_WHILE;
+  whileStmt->as.whileStmt.condition = condition;
+  whileStmt->as.whileStmt.body = body;
+  whileStmt->line = line;
+
+  // If initializer exists, wrap everything in a block
+  if (initializer) {
+    Stmt **stmts = arenaAlloc(&lox->astArena, sizeof(Stmt *) * 2);
+    stmts[0] = initializer;
+    stmts[1] = whileStmt;
+
+    Stmt *block = arenaAlloc(&lox->astArena, sizeof(Stmt));
+    block->type = STMT_BLOCK;
+    block->as.block.statements = stmts;
+    block->as.block.count = 2;
+    block->line = line;
+
+    return block;
+  }
+
   return whileStmt;
 }
 
@@ -118,6 +225,8 @@ Stmt *parseStmt(Lox *lox) {
     stmt = parseIfStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_WHILE)) {
     stmt = parseWhileStmt(lox);
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_FOR)) {
+    stmt = parseForStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
     stmt = parseBlockStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
@@ -133,6 +242,7 @@ Stmt *parseStmt(Lox *lox) {
 
   return stmt;
 }
+
 void executeBlock(Lox *lox, Stmt **stmts, int count) {
   Environment *previous = lox->env;
   lox->env = envNew(previous);
@@ -145,7 +255,7 @@ void executeBlock(Lox *lox, Stmt **stmts, int count) {
 }
 
 void executeStmt(Lox *lox, Stmt *stmt) {
-  printStmt(lox, stmt);
+  // printStmt(lox, stmt);
 
   if (!stmt)
     return;
@@ -156,22 +266,22 @@ void executeStmt(Lox *lox, Stmt *stmt) {
       loxError(lox, 0, "Null expression in print statement.", "");
       return;
     }
-    Value val = evaluate(lox, stmt->as.expr_print);
+    Value result = evaluate(lox, stmt->as.expr_print);
 
     char buf[64];
-    valueToString(val, buf, sizeof(buf));
+    valueToString(result, buf, sizeof(buf));
 
     loxAppendOutput(lox, buf);
     loxAppendOutput(lox, "\n");
 
-    printValue(lox, val, true, 1, "[STMT_PRINT_EVAL]");
+    printStmt(lox, stmt, result, 0);
     break;
   }
 
   case STMT_EXPR: {
     if (stmt->as.expr) {
       Value val = evaluate(lox, stmt->as.expr);
-      printValue(lox, val, true, 1, "[STMT_EXPR_EVAL]");
+      printStmt(lox, stmt, val, 0);
     }
     break;
   }
@@ -183,17 +293,22 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     }
     envDefine(lox->env, stmt->as.var.name.lexeme, val);
 
-    printValue(lox, val, true, 3, "[STMT_VAR_DEFINE] ",
-               stmt->as.var.name.lexeme, " = ");
+    printStmt(lox, stmt, val, 0);
 
     break;
   }
 
   case STMT_BLOCK:
+    printf("[STMT_BLOCK] %d statements\n", stmt->as.block.count);
     executeBlock(lox, stmt->as.block.statements, stmt->as.block.count);
     break;
 
   case STMT_IF: {
+    printf("==");
+    printStmt(lox, stmt, NO_VALUE, 0);
+    printf("[_IF] %d statements\n",
+           stmt->as.ifStmt.then_branch->as.block.count);
+    printf("==");
     if (isTruthy(evaluate(lox, stmt->as.ifStmt.condition))) {
       executeStmt(lox, stmt->as.ifStmt.then_branch);
     } else if (stmt->as.ifStmt.else_branch) {
@@ -203,6 +318,8 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_WHILE: {
+    printf("[STMT_WHILE] %d statements\n",
+           stmt->as.whileStmt.body->as.block.count);
     while (!lox->hadRuntimeError && !lox->hadError &&
            isTruthy(evaluate(lox, stmt->as.whileStmt.condition))) {
       executeStmt(lox, stmt->as.whileStmt.body);
@@ -245,7 +362,6 @@ void executeProgram(Lox *lox, Program *prog) {
     return;
 
   for (size_t i = 0; i < prog->count; i++) {
-    printf("$:%-3d ", (int)i);
     executeStmt(lox, prog->statements[i]);
 
     if (lox->hadRuntimeError || lox->hadError)

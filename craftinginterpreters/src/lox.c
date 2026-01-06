@@ -4,20 +4,18 @@
 #include <stdlib.h>
 
 void loxInit(Lox *lox, bool debugPrint) {
-  lox->hadError = false;
-  lox->hadRuntimeError = false;
-  lox->debugPrint = debugPrint;
-  lox->errorMsg[0] = '\0';
-  lox->runtimeErrorMsg[0] = '\0';
-
-  lox->output_len = 0;
-  lox->output[0] = '\0';
-
-  lox->indent = 0;
-
-  lox->scanner.source = NULL;
-
-  lox->env = envNew(NULL);
+  *lox = (Lox){
+      .hadError = false,
+      .hadRuntimeError = false,
+      .debugPrint = debugPrint,
+      .errorMsg[0] = '\0',
+      .runtimeErrorMsg[0] = '\0',
+      .output_len = 0,
+      .output[0] = '\0',
+      .scanner.source = NULL,
+      .env = envNew(NULL),
+      .astArena = {0},
+  };
 
   arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
 }

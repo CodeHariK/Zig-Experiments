@@ -3,23 +3,38 @@ SOURCE: ()
 [TOK] LEFT_PAREN      '('
 [TOK] RIGHT_PAREN     ')'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            LEFT_PAREN
-====>
+=================
+[MatchAdv] [TOK] LEFT_PAREN      '('
 [line 1] Error: Expect expression. Got: )
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP [NIL_EXPR])
+[EXPR_GROUP]  (GROUP[NULL_EXPR])
+=================
+[RESULT] : Error: No evaluation;
 [PassError]
 
 SOURCE: {}
 [TOK] LEFT_BRACE      '{'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-================
-====>
+=================
 [line 1] Error: Expect expression. Got: {
+=================
+[RESULT] : Error: No evaluation;
 [PassError]
+
+SOURCE: !true
+[TOK] NOT             '!'
+[TOK] TRUE            'true'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[EXPR_UNARY] NOTtrue
+=================
+   [EVAL_UNARY] falseNOTtrue
+[RESULT] : false
+[PASS]
 
 SOURCE: !true == false
 [TOK] NOT             '!'
@@ -27,42 +42,40 @@ SOURCE: !true == false
 [TOK] EQUAL_EQUAL     '=='
 [TOK] FALSE           'false'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NOT
-[MatchAdv]            TRUE
-[EXPR]                true
-[EXPR]                (NOT true)
-[MatchAdv]            EQUAL_EQUAL
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (EQUAL_EQUAL (NOT true) false)
-[EVAL](EQUAL_EQUAL (NOT true) false)
-   [EVAL](NOT true)
-      [EVAL]true
-   [EVAL]false
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[EXPR_UNARY] NOTtrue
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_BINARY]  (EQUAL_EQUAL NOTtrue false)
+=================
+      [EVAL_UNARY] falseNOTtrue
+   [EVAL_BINARY] true (EQUAL_EQUAL NOTtrue false)
+[RESULT] : true
+[PASS]
 
 SOURCE: 123.45
 [TOK] NUMBER          '123.45'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                123.45
-[EVAL]123.45
-[PASS] expected: 123.45
+=================
+[MatchAdv] [TOK] NUMBER          '123.45'
+[EXPR_LITERAL] 123.45
+=================
+[RESULT] : 123.45
+[PASS]
 
 SOURCE: nil
 [TOK] NIL             'nil'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NIL
-[EXPR]                nil
-[EVAL]nil
-[PASS] expected: nil
+=================
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+=================
+[RESULT] : nil
+[PASS]
 
 SOURCE: var x = 10;
 [TOK] VAR             'var'
@@ -71,9 +84,10 @@ SOURCE: var x = 10;
 [TOK] NUMBER          '10'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-================
-====>
+=================
 [line 1] Error: Expect expression. Got: var
+=================
+[RESULT] : Error: No evaluation;
 [PassError]
 
 SOURCE: print 1 + 2;
@@ -83,31 +97,32 @@ SOURCE: print 1 + 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-================
-====>
+=================
 [line 1] Error: Expect expression. Got: print
+=================
+[RESULT] : Error: No evaluation;
 [PassError]
 
 SOURCE: // comment
 123
 [TOK] NUMBER          '123'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                123
-[EVAL]123
-[PASS] expected: 123
+=================
+[MatchAdv] [TOK] NUMBER          '123'
+[EXPR_LITERAL] 123
+=================
+[RESULT] : 123
+[PASS]
 
 SOURCE: "hello world"
 [TOK] STRING          '"hello world"'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            STRING
-[EXPR]                hello world
-[EVAL]hello world
-[PASS] expected: hello world
+=================
+[MatchAdv] [TOK] STRING          '"hello world"'
+[EXPR_LITERAL] hello world
+=================
+[RESULT] : hello world
+[PASS]
 
 SOURCE: !-!-3
 [TOK] NOT             '!'
@@ -116,26 +131,28 @@ SOURCE: !-!-3
 [TOK] MINUS           '-'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NOT
-[MatchAdv]            MINUS
-[MatchAdv]            NOT
-[MatchAdv]            MINUS
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (MINUS 3)
-[EXPR]                (NOT (MINUS 3))
-[EXPR]                (MINUS (NOT (MINUS 3)))
-[EXPR]                (NOT (MINUS (NOT (MINUS 3))))
-[EVAL](NOT (MINUS (NOT (MINUS 3))))
-   [EVAL](MINUS (NOT (MINUS 3)))
-      [EVAL](NOT (MINUS 3))
-         [EVAL](MINUS 3)
-            [EVAL]3
+=================
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] MINUS           '-'
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] MINUS           '-'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_UNARY] MINUS3
+[EXPR_UNARY] NOTMINUS3
+[EXPR_UNARY] MINUSNOTMINUS3
+[EXPR_UNARY] NOTMINUSNOTMINUS3
+=================
+            [EVAL_UNARY] -3MINUS3
 [line 1] RuntimeError at '!': Operand must be a boolean.
+         [EVAL_UNARY] Error: Operand must be a boolean.
+NOTMINUS3
 [line 1] RuntimeError at '-': Operand must be a number.
+      [EVAL_UNARY] -2.12988e-314MINUSNOTMINUS3
 [line 1] RuntimeError at '!': Operand must be a boolean.
+   [EVAL_UNARY] Error: Operand must be a boolean.
+NOTMINUSNOTMINUS3
+[RESULT] : Error: Operand must be a boolean.;
 [PassError]
 
 SOURCE: 1 + 2 * 3
@@ -145,26 +162,22 @@ SOURCE: 1 + 2 * 3
 [TOK] STAR            '*'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[MatchAdv]            STAR
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (STAR 2 3)
-[EXPR]                (PLUS 1 (STAR 2 3))
-[EVAL](PLUS 1 (STAR 2 3))
-   [EVAL]1
-   [EVAL](STAR 2 3)
-      [EVAL]2
-      [EVAL]3
-[RESULT]6
-[RESULT]7
-[PASS] expected: 7
+=================
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[MatchAdv] [TOK] STAR            '*'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (STAR 2 3)
+[EXPR_BINARY]  (PLUS 1  (STAR 2 3))
+=================
+      [EVAL_BINARY] 6 (STAR 2 3)
+   [EVAL_BINARY] 7 (PLUS 1  (STAR 2 3))
+[RESULT] : 7
+[PASS]
 
 SOURCE: (1 + 2) * 3
 [TOK] LEFT_PAREN      '('
@@ -175,249 +188,224 @@ SOURCE: (1 + 2) * 3
 [TOK] STAR            '*'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (PLUS 1 2)
+=================
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (PLUS 1 2)
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP (PLUS 1 2))
-[MatchAdv]            STAR
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (STAR (GROUP (PLUS 1 2)) 3)
-[EVAL](STAR (GROUP (PLUS 1 2)) 3)
-   [EVAL](GROUP (PLUS 1 2))
-      [EVAL](PLUS 1 2)
-         [EVAL]1
-         [EVAL]2
-[RESULT]3
-   [EVAL]3
-[RESULT]9
-[PASS] expected: 9
+[EXPR_GROUP]  (GROUP (PLUS 1 2))
+[MatchAdv] [TOK] STAR            '*'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (STAR  (GROUP (PLUS 1 2)) 3)
+=================
+         [EVAL_BINARY] 3 (PLUS 1 2)
+      [EVAL_GROUP] 3 (GROUP (PLUS 1 2))
+   [EVAL_BINARY] 9 (STAR  (GROUP (PLUS 1 2)) 3)
+[RESULT] : 9
+[PASS]
 
 SOURCE: 5 > 3
 [TOK] NUMBER          '5'
 [TOK] GREATER         '>'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            GREATER
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (GREATER 5 3)
-[EVAL](GREATER 5 3)
-   [EVAL]5
-   [EVAL]3
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] GREATER         '>'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (GREATER 5 3)
+=================
+   [EVAL_BINARY] true (GREATER 5 3)
+[RESULT] : true
+[PASS]
 
 SOURCE: 5 < 3
 [TOK] NUMBER          '5'
 [TOK] LESS            '<'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            LESS
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (LESS 5 3)
-[EVAL](LESS 5 3)
-   [EVAL]5
-   [EVAL]3
-[RESULT]false
-[PASS] expected: false
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS 5 3)
+=================
+   [EVAL_BINARY] false (LESS 5 3)
+[RESULT] : false
+[PASS]
 
 SOURCE: nil == nil
 [TOK] NIL             'nil'
 [TOK] EQUAL_EQUAL     '=='
 [TOK] NIL             'nil'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NIL
-[EXPR]                nil
-[MatchAdv]            EQUAL_EQUAL
-[MatchAdv]            NIL
-[EXPR]                nil
-[EXPR]                (EQUAL_EQUAL nil nil)
-[EVAL](EQUAL_EQUAL nil nil)
-   [EVAL]nil
-   [EVAL]nil
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[EXPR_BINARY]  (EQUAL_EQUAL nil nil)
+=================
+   [EVAL_BINARY] true (EQUAL_EQUAL nil nil)
+[RESULT] : true
+[PASS]
 
 SOURCE: !false
 [TOK] NOT             '!'
 [TOK] FALSE           'false'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NOT
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (NOT false)
-[EVAL](NOT false)
-   [EVAL]false
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_UNARY] NOTfalse
+=================
+   [EVAL_UNARY] trueNOTfalse
+[RESULT] : true
+[PASS]
 
 SOURCE: 5 > 3
 [TOK] NUMBER          '5'
 [TOK] GREATER         '>'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            GREATER
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (GREATER 5 3)
-[EVAL](GREATER 5 3)
-   [EVAL]5
-   [EVAL]3
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] GREATER         '>'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (GREATER 5 3)
+=================
+   [EVAL_BINARY] true (GREATER 5 3)
+[RESULT] : true
+[PASS]
 
 SOURCE: 5 < 3
 [TOK] NUMBER          '5'
 [TOK] LESS            '<'
 [TOK] NUMBER          '3'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            LESS
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (LESS 5 3)
-[EVAL](LESS 5 3)
-   [EVAL]5
-   [EVAL]3
-[RESULT]false
-[PASS] expected: false
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS 5 3)
+=================
+   [EVAL_BINARY] false (LESS 5 3)
+[RESULT] : false
+[PASS]
 
 SOURCE: 5 >= 5
 [TOK] NUMBER          '5'
 [TOK] GREATER_EQUAL   '>='
 [TOK] NUMBER          '5'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            GREATER_EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                5
-[EXPR]                (GREATER_EQUAL 5 5)
-[EVAL](GREATER_EQUAL 5 5)
-   [EVAL]5
-   [EVAL]5
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] GREATER_EQUAL   '>='
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[EXPR_BINARY]  (GREATER_EQUAL 5 5)
+=================
+   [EVAL_BINARY] true (GREATER_EQUAL 5 5)
+[RESULT] : true
+[PASS]
 
 SOURCE: 5 <= 4
 [TOK] NUMBER          '5'
 [TOK] LESS_EQUAL      '<='
 [TOK] NUMBER          '4'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
-[MatchAdv]            LESS_EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                4
-[EXPR]                (LESS_EQUAL 5 4)
-[EVAL](LESS_EQUAL 5 4)
-   [EVAL]5
-   [EVAL]4
-[RESULT]false
-[PASS] expected: false
+=================
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[MatchAdv] [TOK] LESS_EQUAL      '<='
+[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_LITERAL] 4
+[EXPR_BINARY]  (LESS_EQUAL 5 4)
+=================
+   [EVAL_BINARY] false (LESS_EQUAL 5 4)
+[RESULT] : false
+[PASS]
 
 SOURCE: true == false
 [TOK] TRUE            'true'
 [TOK] EQUAL_EQUAL     '=='
 [TOK] FALSE           'false'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            TRUE
-[EXPR]                true
-[MatchAdv]            EQUAL_EQUAL
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (EQUAL_EQUAL true false)
-[EVAL](EQUAL_EQUAL true false)
-   [EVAL]true
-   [EVAL]false
-[RESULT]false
-[PASS] expected: false
+=================
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_BINARY]  (EQUAL_EQUAL true false)
+=================
+   [EVAL_BINARY] false (EQUAL_EQUAL true false)
+[RESULT] : false
+[PASS]
 
 SOURCE: true != false
 [TOK] TRUE            'true'
 [TOK] NOT_EQUAL       '!='
 [TOK] FALSE           'false'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            TRUE
-[EXPR]                true
-[MatchAdv]            NOT_EQUAL
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (NOT_EQUAL true false)
-[EVAL](NOT_EQUAL true false)
-   [EVAL]true
-   [EVAL]false
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[MatchAdv] [TOK] NOT_EQUAL       '!='
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_BINARY]  (NOT_EQUAL true false)
+=================
+   [EVAL_BINARY] true (NOT_EQUAL true false)
+[RESULT] : true
+[PASS]
 
 SOURCE: nil == nil
 [TOK] NIL             'nil'
 [TOK] EQUAL_EQUAL     '=='
 [TOK] NIL             'nil'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NIL
-[EXPR]                nil
-[MatchAdv]            EQUAL_EQUAL
-[MatchAdv]            NIL
-[EXPR]                nil
-[EXPR]                (EQUAL_EQUAL nil nil)
-[EVAL](EQUAL_EQUAL nil nil)
-   [EVAL]nil
-   [EVAL]nil
-[RESULT]true
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[EXPR_BINARY]  (EQUAL_EQUAL nil nil)
+=================
+   [EVAL_BINARY] true (EQUAL_EQUAL nil nil)
+[RESULT] : true
+[PASS]
 
 SOURCE: !false
 [TOK] NOT             '!'
 [TOK] FALSE           'false'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NOT
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (NOT false)
-[EVAL](NOT false)
-   [EVAL]false
-[PASS] expected: true
+=================
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_UNARY] NOTfalse
+=================
+   [EVAL_UNARY] trueNOTfalse
+[RESULT] : true
+[PASS]
 
 SOURCE: -(1 + 2)
 [TOK] MINUS           '-'
@@ -427,27 +415,24 @@ SOURCE: -(1 + 2)
 [TOK] NUMBER          '2'
 [TOK] RIGHT_PAREN     ')'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            MINUS
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (PLUS 1 2)
+=================
+[MatchAdv] [TOK] MINUS           '-'
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (PLUS 1 2)
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP (PLUS 1 2))
-[EXPR]                (MINUS (GROUP (PLUS 1 2)))
-[EVAL](MINUS (GROUP (PLUS 1 2)))
-   [EVAL](GROUP (PLUS 1 2))
-      [EVAL](PLUS 1 2)
-         [EVAL]1
-         [EVAL]2
-[RESULT]3
-[PASS] expected: -3
+[EXPR_GROUP]  (GROUP (PLUS 1 2))
+[EXPR_UNARY] MINUS (GROUP (PLUS 1 2))
+=================
+         [EVAL_BINARY] 3 (PLUS 1 2)
+      [EVAL_GROUP] 3 (GROUP (PLUS 1 2))
+   [EVAL_UNARY] -3MINUS (GROUP (PLUS 1 2))
+[RESULT] : -3
+[PASS]
 
 SOURCE: (1 + 2) * (3 - 1)
 [TOK] LEFT_PAREN      '('
@@ -462,62 +447,52 @@ SOURCE: (1 + 2) * (3 - 1)
 [TOK] NUMBER          '1'
 [TOK] RIGHT_PAREN     ')'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (PLUS 1 2)
+=================
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (PLUS 1 2)
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP (PLUS 1 2))
-[MatchAdv]            STAR
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            NUMBER
-[EXPR]                3
-[MatchAdv]            MINUS
-[MatchAdv]            NUMBER
-[EXPR]                1
-[EXPR]                (MINUS 3 1)
+[EXPR_GROUP]  (GROUP (PLUS 1 2))
+[MatchAdv] [TOK] STAR            '*'
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[MatchAdv] [TOK] MINUS           '-'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (MINUS 3 1)
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP (MINUS 3 1))
-[EXPR]                (STAR (GROUP (PLUS 1 2)) (GROUP (MINUS 3 1)))
-[EVAL](STAR (GROUP (PLUS 1 2)) (GROUP (MINUS 3 1)))
-   [EVAL](GROUP (PLUS 1 2))
-      [EVAL](PLUS 1 2)
-         [EVAL]1
-         [EVAL]2
-[RESULT]3
-   [EVAL](GROUP (MINUS 3 1))
-      [EVAL](MINUS 3 1)
-         [EVAL]3
-         [EVAL]1
-[RESULT]2
-[RESULT]6
-[PASS] expected: 6
+[EXPR_GROUP]  (GROUP (MINUS 3 1))
+[EXPR_BINARY]  (STAR  (GROUP (PLUS 1 2))  (GROUP (MINUS 3 1)))
+=================
+         [EVAL_BINARY] 3 (PLUS 1 2)
+      [EVAL_GROUP] 3 (GROUP (PLUS 1 2))
+         [EVAL_BINARY] 2 (MINUS 3 1)
+      [EVAL_GROUP] 2 (GROUP (MINUS 3 1))
+   [EVAL_BINARY] 6 (STAR  (GROUP (PLUS 1 2))  (GROUP (MINUS 3 1)))
+[RESULT] : 6
+[PASS]
 
 SOURCE: 2 / 4
 [TOK] NUMBER          '2'
 [TOK] SLASH           '/'
 [TOK] NUMBER          '4'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
-[MatchAdv]            SLASH
-[MatchAdv]            NUMBER
-[EXPR]                4
-[EXPR]                (SLASH 2 4)
-[EVAL](SLASH 2 4)
-   [EVAL]2
-   [EVAL]4
-[RESULT]0.5
-[PASS] expected: 0.5
+=================
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[MatchAdv] [TOK] SLASH           '/'
+[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_LITERAL] 4
+[EXPR_BINARY]  (SLASH 2 4)
+=================
+   [EVAL_BINARY] 0.5 (SLASH 2 4)
+[RESULT] : 0.5
+[PASS]
 
 ====== Statement Tests ======
 SOURCE: 2 / 4
@@ -525,17 +500,17 @@ SOURCE: 2 / 4
 [TOK] SLASH           '/'
 [TOK] NUMBER          '4'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
-[MatchAdv]            SLASH
-[MatchAdv]            NUMBER
-[EXPR]                4
-[EXPR]                (SLASH 2 4)
+=================
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[MatchAdv] [TOK] SLASH           '/'
+[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_LITERAL] 4
+[EXPR_BINARY]  (SLASH 2 4)
 [line 1] Error at EOF: Expect ';' after expression.
 ### SYNCHRONIZE ###
-[NULL_STMT]
+=================
+[RESULT] : 
 [PassError]
 
 SOURCE: print 1 + 2;
@@ -545,23 +520,20 @@ SOURCE: print 1 + 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (PLUS 1 2)
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (PLUS 1 2)
 [CONSUME][TOK] SEMICOLON       ';'
-[STMT_PRINT] (PLUS 1 2)
-[EVAL](PLUS 1 2)
-   [EVAL]1
-   [EVAL]2
-[RESULT]3
-[STMT_PRINT_EVAL]3
-[PASS] expected: 3;
+=================
+   [EVAL_BINARY] 3 (PLUS 1 2)
+$1  : [STMT_PRINT] 3 (PLUS 1 2)
+[RESULT] : 3;
+[PASS]
 
 SOURCE: 1 + 2;
 [TOK] NUMBER          '1'
@@ -569,47 +541,19 @@ SOURCE: 1 + 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (PLUS 1 2)
+=================
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (PLUS 1 2)
 [CONSUME][TOK] SEMICOLON       ';'
-[STMT_EXPR] (PLUS 1 2)
-[EVAL](PLUS 1 2)
-   [EVAL]1
-   [EVAL]2
-[RESULT]3
-[STMT_EXPR_EVAL]3
+=================
+   [EVAL_BINARY] 3 (PLUS 1 2)
+$1  : [STMT_EXPR] 3 (PLUS 1 2)
+[RESULT] : 
 [INFO] no expected output
-
-SOURCE: print 2 * 3;
-[TOK] PRINT           'print'
-[TOK] NUMBER          '2'
-[TOK] STAR            '*'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
-[MatchAdv]            STAR
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (STAR 2 3)
-[CONSUME][TOK] SEMICOLON       ';'
-[STMT_PRINT] (STAR 2 3)
-[EVAL](STAR 2 3)
-   [EVAL]2
-   [EVAL]3
-[RESULT]6
-[STMT_PRINT_EVAL]6
-[PASS] expected: 6;
 
 SOURCE: print !false;
 [TOK] PRINT           'print'
@@ -617,72 +561,79 @@ SOURCE: print !false;
 [TOK] FALSE           'false'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NOT
-[MatchAdv]            FALSE
-[EXPR]                false
-[EXPR]                (NOT false)
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NOT             '!'
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
+[EXPR_UNARY] NOTfalse
 [CONSUME][TOK] SEMICOLON       ';'
-[STMT_PRINT] (NOT false)
-[EVAL](NOT false)
-   [EVAL]false
-[STMT_PRINT_EVAL]true
-[PASS] expected: true;
+=================
+   [EVAL_UNARY] trueNOTfalse
+$1  : [STMT_PRINT] trueNOTfalse
+[RESULT] : true;
+[PASS]
 
 SOURCE: print "hello";
 [TOK] PRINT           'print'
 [TOK] STRING          '"hello"'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            STRING
-[EXPR]                hello
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] STRING          '"hello"'
+[EXPR_LITERAL] hello
 [CONSUME][TOK] SEMICOLON       ';'
-[STMT_PRINT] hello
-[EVAL]hello
-[STMT_PRINT_EVAL]hello
-[PASS] expected: hello;
+=================
+$1  : [STMT_PRINT] hello
+[RESULT] : hello;
+[PASS]
 
 ====== Variable Tests ======
-SOURCE: var a = 42; print a;
+SOURCE: var a = 7 * 7; print a/7;
 [TOK] VAR             'var'
 [TOK] IDENTIFIER      'a'
 [TOK] EQUAL           '='
-[TOK] NUMBER          '42'
+[TOK] NUMBER          '7'
+[TOK] STAR            '*'
+[TOK] NUMBER          '7'
 [TOK] SEMICOLON       ';'
 [TOK] PRINT           'print'
 [TOK] IDENTIFIER      'a'
+[TOK] SLASH           '/'
+[TOK] NUMBER          '7'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                42
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '7'
+[EXPR_LITERAL] 7
+[MatchAdv] [TOK] STAR            '*'
+[MatchAdv] [TOK] NUMBER          '7'
+[EXPR_LITERAL] 7
+[EXPR_BINARY]  (STAR 7 7)
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] SLASH           '/'
+[MatchAdv] [TOK] NUMBER          '7'
+[EXPR_LITERAL] 7
+[EXPR_BINARY]  (SLASH a 7)
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = 42
-1   [STMT_PRINT] VARIABLE a
+$1  : [STMT_VAR] a =  (STAR 7 7)
+$2  : [STMT_PRINT]  (SLASH a 7)
 =================
-$:0   [STMT_VAR] a = 42
-[EVAL]42
-[STMT_VAR_DEFINE] a = 42
-$:1   [STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]42
-[PASS] expected: 42;
+   [EVAL_BINARY] 49 (STAR 7 7)
+$1  : [STMT_VAR] a = 49 (STAR 7 7)
+      [EVAL_VAR] a49
+   [EVAL_BINARY] 7 (SLASH a 7)
+$2  : [STMT_PRINT] 7 (SLASH a 7)
+[RESULT] : 7;
+[PASS]
 
 SOURCE: var b = 3.14; print b;
 [TOK] VAR             'var'
@@ -694,31 +645,26 @@ SOURCE: var b = 3.14; print b;
 [TOK] IDENTIFIER      'b'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'b'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                3.14
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '3.14'
+[EXPR_LITERAL] 3.14
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE b
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'b'
+[EXPR_VAR] b
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] b = 3.14
-1   [STMT_PRINT] VARIABLE b
+$1  : [STMT_VAR] b = 3.14
+$2  : [STMT_PRINT] b
 =================
-$:0   [STMT_VAR] b = 3.14
-[EVAL]3.14
-[STMT_VAR_DEFINE] b = 3.14
-$:1   [STMT_PRINT] VARIABLE b
-[EVAL]VARIABLE b
-[STMT_PRINT_EVAL]3.14
-[PASS] expected: 3.14;
+$1  : [STMT_VAR] b = 3.14
+   [EVAL_VAR] b3.14
+$2  : [STMT_PRINT] b3.14
+[RESULT] : 3.14;
+[PASS]
 
 SOURCE: var s = "hello"; print s;
 [TOK] VAR             'var'
@@ -730,31 +676,26 @@ SOURCE: var s = "hello"; print s;
 [TOK] IDENTIFIER      's'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      's'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            STRING
-[EXPR]                hello
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] STRING          '"hello"'
+[EXPR_LITERAL] hello
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE s
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      's'
+[EXPR_VAR] s
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] s = hello
-1   [STMT_PRINT] VARIABLE s
+$1  : [STMT_VAR] s = hello
+$2  : [STMT_PRINT] s
 =================
-$:0   [STMT_VAR] s = hello
-[EVAL]hello
-[STMT_VAR_DEFINE] s = hello
-$:1   [STMT_PRINT] VARIABLE s
-[EVAL]VARIABLE s
-[STMT_PRINT_EVAL]hello
-[PASS] expected: hello;
+$1  : [STMT_VAR] s = hello
+   [EVAL_VAR] shello
+$2  : [STMT_PRINT] shello
+[RESULT] : hello;
+[PASS]
 
 SOURCE: var x; print x;
 [TOK] VAR             'var'
@@ -764,23 +705,21 @@ SOURCE: var x; print x;
 [TOK] IDENTIFIER      'x'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'x'
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE x
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'x'
+[EXPR_VAR] x
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] x = [NIL_EXPR]1   [STMT_PRINT] VARIABLE x
+$1  : [STMT_VAR] x = [NULL_EXPR]$2  : [STMT_PRINT] x
 =================
-$:0   [STMT_VAR] x = [NIL_EXPR][STMT_VAR_DEFINE] x = nil
-$:1   [STMT_PRINT] VARIABLE x
-[EVAL]VARIABLE x
-[STMT_PRINT_EVAL]nil
-[PASS] expected: nil;
+$1  : [STMT_VAR] x = [NULL_EXPR]   [EVAL_VAR] xnil
+$2  : [STMT_PRINT] xnil
+[RESULT] : nil;
+[PASS]
 
 SOURCE: var y = true; print y;
 [TOK] VAR             'var'
@@ -792,31 +731,26 @@ SOURCE: var y = true; print y;
 [TOK] IDENTIFIER      'y'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'y'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            TRUE
-[EXPR]                true
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE y
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'y'
+[EXPR_VAR] y
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] y = true
-1   [STMT_PRINT] VARIABLE y
+$1  : [STMT_VAR] y = true
+$2  : [STMT_PRINT] y
 =================
-$:0   [STMT_VAR] y = true
-[EVAL]true
-[STMT_VAR_DEFINE] y = true
-$:1   [STMT_PRINT] VARIABLE y
-[EVAL]VARIABLE y
-[STMT_PRINT_EVAL]true
-[PASS] expected: true;
+$1  : [STMT_VAR] y = true
+   [EVAL_VAR] ytrue
+$2  : [STMT_PRINT] ytrue
+[RESULT] : true;
+[PASS]
 
 SOURCE: var c = 10; var d = 5; print c;
 [TOK] VAR             'var'
@@ -833,43 +767,34 @@ SOURCE: var c = 10; var d = 5; print c;
 [TOK] IDENTIFIER      'c'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'c'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                10
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '10'
+[EXPR_LITERAL] 10
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            VAR
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'd'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                5
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE c
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'c'
+[EXPR_VAR] c
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] c = 10
-1   [STMT_VAR] d = 5
-2   [STMT_PRINT] VARIABLE c
+$1  : [STMT_VAR] c = 10
+$2  : [STMT_VAR] d = 5
+$3  : [STMT_PRINT] c
 =================
-$:0   [STMT_VAR] c = 10
-[EVAL]10
-[STMT_VAR_DEFINE] c = 10
-$:1   [STMT_VAR] d = 5
-[EVAL]5
-[STMT_VAR_DEFINE] d = 5
-$:2   [STMT_PRINT] VARIABLE c
-[EVAL]VARIABLE c
-[STMT_PRINT_EVAL]10
-[PASS] expected: 10;
+$1  : [STMT_VAR] c = 10
+$2  : [STMT_VAR] d = 5
+   [EVAL_VAR] c10
+$3  : [STMT_PRINT] c10
+[RESULT] : 10;
+[PASS]
 
 SOURCE: var c = 10; c = 20; print c;
 [TOK] VAR             'var'
@@ -885,46 +810,36 @@ SOURCE: var c = 10; c = 20; print c;
 [TOK] IDENTIFIER      'c'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'c'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                10
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '10'
+[EXPR_LITERAL] 10
 [CONSUME][TOK] SEMICOLON       ';'
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE c
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                20
-[EXPR]                ASSIGN (= c 20)
+[MatchAdv] [TOK] IDENTIFIER      'c'
+[EXPR_VAR] c
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '20'
+[EXPR_LITERAL] 20
+[EXPR_ASSIGN] c = 20
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE c
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'c'
+[EXPR_VAR] c
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] c = 10
-1   [STMT_EXPR] ASSIGN (= c 20)
-2   [STMT_PRINT] VARIABLE c
+$1  : [STMT_VAR] c = 10
+$2  : [STMT_EXPR] c = 20
+$3  : [STMT_PRINT] c
 =================
-$:0   [STMT_VAR] c = 10
-[EVAL]10
-[STMT_VAR_DEFINE] c = 10
-$:1   [STMT_EXPR] ASSIGN (= c 20)
-[EVAL]ASSIGN (= c 20)
-   [EVAL]20
-[EXPR_ASSIGN] c = 20
-[STMT_EXPR_EVAL]20
-$:2   [STMT_PRINT] VARIABLE c
-[EVAL]VARIABLE c
-[STMT_PRINT_EVAL]20
-[PASS] expected: 20;
+$1  : [STMT_VAR] c = 10
+   [EVAL_ASSIGN] c = 2020
+$2  : [STMT_EXPR] c = 2020
+   [EVAL_VAR] c20
+$3  : [STMT_PRINT] c20
+[RESULT] : 20;
+[PASS]
 
 SOURCE: var a = 1; print a = 2;
 [TOK] VAR             'var'
@@ -938,37 +853,30 @@ SOURCE: var a = 1; print a = 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                ASSIGN (= a 2)
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_ASSIGN] a = 2
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_PRINT] ASSIGN (= a 2)
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_PRINT] a = 2
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_PRINT] ASSIGN (= a 2)
-[EVAL]ASSIGN (= a 2)
-   [EVAL]2
-[EXPR_ASSIGN] a = 2
-[STMT_PRINT_EVAL]2
-[PASS] expected: 2;
+$1  : [STMT_VAR] a = 1
+   [EVAL_ASSIGN] a = 22
+$2  : [STMT_PRINT] a = 22
+[RESULT] : 2;
+[PASS]
 
 SOURCE: print 1 = 2;
 [TOK] PRINT           'print'
@@ -977,33 +885,34 @@ SOURCE: print 1 = 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
 [line 1] Error at ';': Invalid assignment target.
 [CONSUME][TOK] SEMICOLON       ';'
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
-0   [NULL_STMT]
+[NULL_STMT]
 =================
-$:0   [NULL_STMT]
+[RESULT] : 
 [PassError]
 
 SOURCE: {}
 [TOK] LEFT_BRACE      '{'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-[MatchAdv]            LEFT_BRACE
+=================
+[MatchAdv] [TOK] LEFT_BRACE      '{'
 [CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [1 statements] ====
-0   [STMT_BLOCK]
+$1  : [STMT_BLOCK]
 =================
-$:0   [STMT_BLOCK]
+[STMT_BLOCK] 0 statements
+[RESULT] : 
 [INFO] no expected output
 
 SOURCE: var a = 0; var b = 0; print a = b = 3;
@@ -1025,55 +934,43 @@ SOURCE: var a = 0; var b = 0; print a = b = 3;
 [TOK] NUMBER          '3'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                0
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            VAR
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'b'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                0
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE b
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                ASSIGN (= b 3)
-[EXPR]                ASSIGN (= a ASSIGN (= b 3))
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'b'
+[EXPR_VAR] b
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_ASSIGN] b = 3
+[EXPR_ASSIGN] a = b = 3
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] a = 0
-1   [STMT_VAR] b = 0
-2   [STMT_PRINT] ASSIGN (= a ASSIGN (= b 3))
+$1  : [STMT_VAR] a = 0
+$2  : [STMT_VAR] b = 0
+$3  : [STMT_PRINT] a = b = 3
 =================
-$:0   [STMT_VAR] a = 0
-[EVAL]0
-[STMT_VAR_DEFINE] a = 0
-$:1   [STMT_VAR] b = 0
-[EVAL]0
-[STMT_VAR_DEFINE] b = 0
-$:2   [STMT_PRINT] ASSIGN (= a ASSIGN (= b 3))
-[EVAL]ASSIGN (= a ASSIGN (= b 3))
-   [EVAL]ASSIGN (= b 3)
-      [EVAL]3
-[EXPR_ASSIGN] b = 3
-[EXPR_ASSIGN] a = 3
-[STMT_PRINT_EVAL]3
-[PASS] expected: 3;
+$1  : [STMT_VAR] a = 0
+$2  : [STMT_VAR] b = 0
+      [EVAL_ASSIGN] b = 33
+   [EVAL_ASSIGN] a = b = 33
+$3  : [STMT_PRINT] a = b = 33
+[RESULT] : 3;
+[PASS]
 
 SOURCE: var a = 1; print (a = 2) + 3;
 [TOK] VAR             'var'
@@ -1091,49 +988,39 @@ SOURCE: var a = 1; print (a = 2) + 3;
 [TOK] NUMBER          '3'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                ASSIGN (= a 2)
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_ASSIGN] a = 2
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP ASSIGN (= a 2))
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (PLUS (GROUP ASSIGN (= a 2)) 3)
+[EXPR_GROUP]  (GROUPa = 2)
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (PLUS  (GROUPa = 2) 3)
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_PRINT] (PLUS (GROUP ASSIGN (= a 2)) 3)
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_PRINT]  (PLUS  (GROUPa = 2) 3)
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_PRINT] (PLUS (GROUP ASSIGN (= a 2)) 3)
-[EVAL](PLUS (GROUP ASSIGN (= a 2)) 3)
-   [EVAL](GROUP ASSIGN (= a 2))
-      [EVAL]ASSIGN (= a 2)
-         [EVAL]2
-[EXPR_ASSIGN] a = 2
-   [EVAL]3
-[RESULT]5
-[STMT_PRINT_EVAL]5
-[PASS] expected: 5;
+$1  : [STMT_VAR] a = 1
+         [EVAL_ASSIGN] a = 22
+      [EVAL_GROUP] 2 (GROUPa = 2)
+   [EVAL_BINARY] 5 (PLUS  (GROUPa = 2) 3)
+$2  : [STMT_PRINT] 5 (PLUS  (GROUPa = 2) 3)
+[RESULT] : 5;
+[PASS]
 
 SOURCE: var a = 1; print a = 2 == 2;
 [TOK] VAR             'var'
@@ -1149,44 +1036,35 @@ SOURCE: var a = 1; print a = 2 == 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
-[MatchAdv]            EQUAL_EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                (EQUAL_EQUAL 2 2)
-[EXPR]                ASSIGN (= a (EQUAL_EQUAL 2 2))
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (EQUAL_EQUAL 2 2)
+[EXPR_ASSIGN] a =  (EQUAL_EQUAL 2 2)
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_PRINT] ASSIGN (= a (EQUAL_EQUAL 2 2))
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_PRINT] a =  (EQUAL_EQUAL 2 2)
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_PRINT] ASSIGN (= a (EQUAL_EQUAL 2 2))
-[EVAL]ASSIGN (= a (EQUAL_EQUAL 2 2))
-   [EVAL](EQUAL_EQUAL 2 2)
-      [EVAL]2
-      [EVAL]2
-[RESULT]true
-[EXPR_ASSIGN] a = true
-[STMT_PRINT_EVAL]true
-[PASS] expected: true;
+$1  : [STMT_VAR] a = 1
+      [EVAL_BINARY] true (EQUAL_EQUAL 2 2)
+   [EVAL_ASSIGN] a =  (EQUAL_EQUAL 2 2)true
+$2  : [STMT_PRINT] a =  (EQUAL_EQUAL 2 2)true
+[RESULT] : true;
+[PASS]
 
 SOURCE: { var a = 1; print a; }
 [TOK] LEFT_BRACE      '{'
@@ -1200,33 +1078,30 @@ SOURCE: { var a = 1; print a; }
 [TOK] SEMICOLON       ';'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [1 statements] ====
-0   [STMT_BLOCK]
+$1  : [STMT_BLOCK]
+   $2  : [STMT_VAR] a = 1
+   $3  : [STMT_PRINT] a
 =================
-$:0   [STMT_BLOCK]
-[STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-[STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]1
-[PASS] expected: 1;
+[STMT_BLOCK] 2 statements
+$2  : [STMT_VAR] a = 1
+   [EVAL_VAR] a1
+$3  : [STMT_PRINT] a1
+[RESULT] : 1;
+[PASS]
 
 SOURCE: var a = 1; { print a; }
 [TOK] VAR             'var'
@@ -1240,34 +1115,30 @@ SOURCE: var a = 1; { print a; }
 [TOK] SEMICOLON       ';'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [2 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_BLOCK]
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_BLOCK]
+   $3  : [STMT_PRINT] a
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_BLOCK]
-[STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]1
-[PASS] expected: 1;
+$1  : [STMT_VAR] a = 1
+[STMT_BLOCK] 1 statements
+   [EVAL_VAR] a1
+$3  : [STMT_PRINT] a1
+[RESULT] : 1;
+[PASS]
 
 SOURCE: var a = 1; { var a = 2; print a; } print a;
 [TOK] VAR             'var'
@@ -1289,55 +1160,45 @@ SOURCE: var a = 1; { var a = 2; print a; } print a;
 [TOK] IDENTIFIER      'a'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            VAR
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_BLOCK]
-2   [STMT_PRINT] VARIABLE a
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_BLOCK]
+   $3  : [STMT_VAR] a = 2
+   $4  : [STMT_PRINT] a
+$5  : [STMT_PRINT] a
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_BLOCK]
-[STMT_VAR] a = 2
-[EVAL]2
-[STMT_VAR_DEFINE] a = 2
-[STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]2
-$:2   [STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]1
-[PASS] expected: 2;1;
+$1  : [STMT_VAR] a = 1
+[STMT_BLOCK] 2 statements
+$3  : [STMT_VAR] a = 2
+   [EVAL_VAR] a2
+$4  : [STMT_PRINT] a2
+   [EVAL_VAR] a1
+$5  : [STMT_PRINT] a1
+[RESULT] : 2;1;
+[PASS]
 
 SOURCE: var a = 1; { a = 2; } print a;
 [TOK] VAR             'var'
@@ -1355,49 +1216,40 @@ SOURCE: var a = 1; { a = 2; } print a;
 [TOK] IDENTIFIER      'a'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            LEFT_BRACE
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                2
-[EXPR]                ASSIGN (= a 2)
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_ASSIGN] a = 2
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_BLOCK]
-2   [STMT_PRINT] VARIABLE a
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_BLOCK]
+   $3  : [STMT_EXPR] a = 2
+$4  : [STMT_PRINT] a
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_BLOCK]
-[STMT_EXPR] ASSIGN (= a 2)
-[EVAL]ASSIGN (= a 2)
-   [EVAL]2
-[EXPR_ASSIGN] a = 2
-[STMT_EXPR_EVAL]2
-$:2   [STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]2
-[PASS] expected: 2;
+$1  : [STMT_VAR] a = 1
+[STMT_BLOCK] 1 statements
+   [EVAL_ASSIGN] a = 22
+$3  : [STMT_EXPR] a = 22
+   [EVAL_VAR] a2
+$4  : [STMT_PRINT] a2
+[RESULT] : 2;
+[PASS]
 
 SOURCE: var a = 1; { var a = 2; a = 3; } print a;
 [TOK] VAR             'var'
@@ -1420,60 +1272,48 @@ SOURCE: var a = 1; { var a = 2; a = 3; } print a;
 [TOK] IDENTIFIER      'a'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            VAR
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
 [CONSUME][TOK] SEMICOLON       ';'
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
-[MatchAdv]            EQUAL
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                ASSIGN (= a 3)
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_ASSIGN] a = 3
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE a
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-0   [STMT_VAR] a = 1
-1   [STMT_BLOCK]
-2   [STMT_PRINT] VARIABLE a
+$1  : [STMT_VAR] a = 1
+$2  : [STMT_BLOCK]
+   $3  : [STMT_VAR] a = 2
+   $4  : [STMT_EXPR] a = 3
+$5  : [STMT_PRINT] a
 =================
-$:0   [STMT_VAR] a = 1
-[EVAL]1
-[STMT_VAR_DEFINE] a = 1
-$:1   [STMT_BLOCK]
-[STMT_VAR] a = 2
-[EVAL]2
-[STMT_VAR_DEFINE] a = 2
-[STMT_EXPR] ASSIGN (= a 3)
-[EVAL]ASSIGN (= a 3)
-   [EVAL]3
-[EXPR_ASSIGN] a = 3
-[STMT_EXPR_EVAL]3
-$:2   [STMT_PRINT] VARIABLE a
-[EVAL]VARIABLE a
-[STMT_PRINT_EVAL]1
-[PASS] expected: 1;
+$1  : [STMT_VAR] a = 1
+[STMT_BLOCK] 2 statements
+$3  : [STMT_VAR] a = 2
+   [EVAL_ASSIGN] a = 33
+$4  : [STMT_EXPR] a = 33
+   [EVAL_VAR] a1
+$5  : [STMT_PRINT] a1
+[RESULT] : 1;
+[PASS]
 
 SOURCE: if (true) print 1;
 [TOK] IF              'if'
@@ -1484,28 +1324,32 @@ SOURCE: if (true) print 1;
 [TOK] NUMBER          '1'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            IF
+=================
+[MatchAdv] [TOK] IF              'if'
 [CONSUME][TOK] LEFT_PAREN      '('
-================
-====>
-[MatchAdv]            TRUE
-[EXPR]                true
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-0   [STMT_IF]
+$1  : [STMT_IF]
+   condition:
+      true
+   then:
+      $2  : [STMT_PRINT] 1
 =================
-$:0   [STMT_IF]
-[EVAL]true
-[STMT_PRINT] 1
-[EVAL]1
-[STMT_PRINT_EVAL]1
-[PASS] expected: 1;
+==$1  : [STMT_IF]
+   condition:
+      true
+   then:
+      $2  : [STMT_PRINT] 1
+[_IF] 19 statements
+==$2  : [STMT_PRINT] 1
+[RESULT] : 1;
+[PASS]
 
 SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
 [TOK] IF              'if'
@@ -1534,58 +1378,86 @@ SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
 [TOK] SEMICOLON       ';'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-[MatchAdv]            IF
+=================
+[MatchAdv] [TOK] IF              'if'
 [CONSUME][TOK] LEFT_PAREN      '('
-================
-====>
-[MatchAdv]            FALSE
-[EXPR]                false
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                1
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv]            ELSE
-[MatchAdv]            IF
+[MatchAdv] [TOK] ELSE            'else'
+[MatchAdv] [TOK] IF              'if'
 [CONSUME][TOK] LEFT_PAREN      '('
-================
-====>
-[MatchAdv]            FALSE
-[EXPR]                false
+[MatchAdv] [TOK] FALSE           'false'
+[EXPR_LITERAL] false
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                2
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv]            ELSE
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                3
+[MatchAdv] [TOK] ELSE            'else'
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [1 statements] ====
-0   [STMT_IF]
+$1  : [STMT_IF]
+   condition:
+      false
+   then:
+      $2  : [STMT_BLOCK]
+         $3  : [STMT_PRINT] 1
+   else:
+      $4  : [STMT_IF]
+         condition:
+            false
+         then:
+            $5  : [STMT_BLOCK]
+               $6  : [STMT_PRINT] 2
+         else:
+            $7  : [STMT_BLOCK]
+               $8  : [STMT_PRINT] 3
 =================
-$:0   [STMT_IF]
-[EVAL]false
-[STMT_IF]
-[EVAL]false
-[STMT_BLOCK]
-[STMT_PRINT] 3
-[EVAL]3
-[STMT_PRINT_EVAL]3
-[PASS] expected: 3;
+==$1  : [STMT_IF]
+   condition:
+      false
+   then:
+      $2  : [STMT_BLOCK]
+         $3  : [STMT_PRINT] 1
+   else:
+      $4  : [STMT_IF]
+         condition:
+            false
+         then:
+            $5  : [STMT_BLOCK]
+               $6  : [STMT_PRINT] 2
+         else:
+            $7  : [STMT_BLOCK]
+               $8  : [STMT_PRINT] 3
+[_IF] 1 statements
+====$4  : [STMT_IF]
+   condition:
+      false
+   then:
+      $5  : [STMT_BLOCK]
+         $6  : [STMT_PRINT] 2
+   else:
+      $7  : [STMT_BLOCK]
+         $8  : [STMT_PRINT] 3
+[_IF] 1 statements
+==[STMT_BLOCK] 1 statements
+$8  : [STMT_PRINT] 3
+[RESULT] : 3;
+[PASS]
 
 SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 [TOK] VAR             'var'
@@ -1611,107 +1483,82 @@ SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 [TOK] SEMICOLON       ';'
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
-[MatchAdv]            VAR
+=================
+[MatchAdv] [TOK] VAR             'var'
 [CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv]            EQUAL
-================
-====>
-[MatchAdv]            NUMBER
-[EXPR]                0
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
 [CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv]            WHILE
+[MatchAdv] [TOK] WHILE           'while'
 [CONSUME][TOK] LEFT_PAREN      '('
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE i
-[MatchAdv]            LESS
-[MatchAdv]            NUMBER
-[EXPR]                3
-[EXPR]                (LESS VARIABLE i 3)
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS i 3)
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv]            LEFT_BRACE
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE i
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
 [CONSUME][TOK] SEMICOLON       ';'
-================
-====>
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE i
-[MatchAdv]            EQUAL
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE i
-[MatchAdv]            PLUS
-[MatchAdv]            NUMBER
-[EXPR]                1
-[EXPR]                (PLUS VARIABLE i 1)
-[EXPR]                ASSIGN (= i (PLUS VARIABLE i 1))
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
 [CONSUME][TOK] SEMICOLON       ';'
 [CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [2 statements] ====
-0   [STMT_VAR] i = 0
-1   [STMT_WHILE]
+$1  : [STMT_VAR] i = 0
+$2  : [STMT_WHILE]
+   condition:
+       (LESS i 3)
+   body:
+      $3  : [STMT_BLOCK]
+         $4  : [STMT_PRINT] i
+         $5  : [STMT_EXPR] i =  (PLUS i 1)
 =================
-$:0   [STMT_VAR] i = 0
-[EVAL]0
-[STMT_VAR_DEFINE] i = 0
-$:1   [STMT_WHILE]
-[EVAL](LESS VARIABLE i 3)
-   [EVAL]VARIABLE i
-   [EVAL]3
-[RESULT]true
-[STMT_BLOCK]
-[STMT_PRINT] VARIABLE i
-[EVAL]VARIABLE i
-[STMT_PRINT_EVAL]0
-[STMT_EXPR] ASSIGN (= i (PLUS VARIABLE i 1))
-[EVAL]ASSIGN (= i (PLUS VARIABLE i 1))
-   [EVAL](PLUS VARIABLE i 1)
-      [EVAL]VARIABLE i
-      [EVAL]1
-[RESULT]1
-[EXPR_ASSIGN] i = 1
-[STMT_EXPR_EVAL]1
-[EVAL](LESS VARIABLE i 3)
-   [EVAL]VARIABLE i
-   [EVAL]3
-[RESULT]true
-[STMT_BLOCK]
-[STMT_PRINT] VARIABLE i
-[EVAL]VARIABLE i
-[STMT_PRINT_EVAL]1
-[STMT_EXPR] ASSIGN (= i (PLUS VARIABLE i 1))
-[EVAL]ASSIGN (= i (PLUS VARIABLE i 1))
-   [EVAL](PLUS VARIABLE i 1)
-      [EVAL]VARIABLE i
-      [EVAL]1
-[RESULT]2
-[EXPR_ASSIGN] i = 2
-[STMT_EXPR_EVAL]2
-[EVAL](LESS VARIABLE i 3)
-   [EVAL]VARIABLE i
-   [EVAL]3
-[RESULT]true
-[STMT_BLOCK]
-[STMT_PRINT] VARIABLE i
-[EVAL]VARIABLE i
-[STMT_PRINT_EVAL]2
-[STMT_EXPR] ASSIGN (= i (PLUS VARIABLE i 1))
-[EVAL]ASSIGN (= i (PLUS VARIABLE i 1))
-   [EVAL](PLUS VARIABLE i 1)
-      [EVAL]VARIABLE i
-      [EVAL]1
-[RESULT]3
-[EXPR_ASSIGN] i = 3
-[STMT_EXPR_EVAL]3
-[EVAL](LESS VARIABLE i 3)
-   [EVAL]VARIABLE i
-   [EVAL]3
-[RESULT]false
-[PASS] expected: 0;1;2;
+$1  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$4  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$5  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i2
+$4  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$5  : [STMT_EXPR] i =  (PLUS i 1)3
+      [EVAL_VAR] i3
+   [EVAL_BINARY] false (LESS i 3)
+[RESULT] : 0;1;2;
+[PASS]
 
 SOURCE: print "hi" or 2;
 [TOK] PRINT           'print'
@@ -1720,23 +1567,21 @@ SOURCE: print "hi" or 2;
 [TOK] NUMBER          '2'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            STRING
-[EXPR]                hi
-[MatchAdv]            OR
-[MatchAdv]            NUMBER
-[EXPR]                2
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] STRING          '"hi"'
+[EXPR_LITERAL] hi
+[MatchAdv] [TOK] OR              'or'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_LOGICAL]  hi OR 2
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-0   [STMT_PRINT] LOGICAL (hi OR 2)
+$1  : [STMT_PRINT]  hi OR 2
 =================
-$:0   [STMT_PRINT] LOGICAL (hi OR 2)
-[EVAL]LOGICAL (hi OR 2)
-   [EVAL]hi
-[STMT_PRINT_EVAL]hi
-[PASS] expected: hi;
+$1  : [STMT_PRINT] hi hi OR 2
+[RESULT] : hi;
+[PASS]
 
 SOURCE: print nil or "yes";
 [TOK] PRINT           'print'
@@ -1745,24 +1590,22 @@ SOURCE: print nil or "yes";
 [TOK] STRING          '"yes"'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NIL
-[EXPR]                nil
-[MatchAdv]            OR
-[MatchAdv]            STRING
-[EXPR]                yes
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[MatchAdv] [TOK] OR              'or'
+[MatchAdv] [TOK] STRING          '"yes"'
+[EXPR_LITERAL] yes
+[EXPR_LOGICAL]  nil OR yes
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-0   [STMT_PRINT] LOGICAL (nil OR yes)
+$1  : [STMT_PRINT]  nil OR yes
 =================
-$:0   [STMT_PRINT] LOGICAL (nil OR yes)
-[EVAL]LOGICAL (nil OR yes)
-   [EVAL]nil
-   [EVAL]yes
-[STMT_PRINT_EVAL]yes
-[PASS] expected: yes;
+   [EVAL_LOGICAL] yes nil OR yes
+$1  : [STMT_PRINT] yes nil OR yes
+[RESULT] : yes;
+[PASS]
 
 SOURCE: print {false and 123};
 [TOK] PRINT           'print'
@@ -1773,16 +1616,15 @@ SOURCE: print {false and 123};
 [TOK] RIGHT_BRACE     '}'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
+=================
+[MatchAdv] [TOK] PRINT           'print'
 [line 1] Error: Expect expression. Got: {
 [line 1] Error at '{': Expect ';' after value.
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
-0   [NULL_STMT]
+[NULL_STMT]
 =================
-$:0   [NULL_STMT]
+[RESULT] : 
 [PassError]
 
 SOURCE: print (true and 123);
@@ -1794,29 +1636,26 @@ SOURCE: print (true and 123);
 [TOK] RIGHT_PAREN     ')'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            LEFT_PAREN
-====>
-[MatchAdv]            TRUE
-[EXPR]                true
-[MatchAdv]            AND
-[MatchAdv]            NUMBER
-[EXPR]                123
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[MatchAdv] [TOK] AND             'and'
+[MatchAdv] [TOK] NUMBER          '123'
+[EXPR_LITERAL] 123
+[EXPR_LOGICAL]  true AND 123
 [CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR]                (GROUP LOGICAL (true AND 123))
+[EXPR_GROUP]  (GROUP true AND 123)
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-0   [STMT_PRINT] (GROUP LOGICAL (true AND 123))
+$1  : [STMT_PRINT]  (GROUP true AND 123)
 =================
-$:0   [STMT_PRINT] (GROUP LOGICAL (true AND 123))
-[EVAL](GROUP LOGICAL (true AND 123))
-   [EVAL]LOGICAL (true AND 123)
-      [EVAL]true
-      [EVAL]123
-[STMT_PRINT_EVAL]123
-[PASS] expected: 123;
+      [EVAL_LOGICAL] 123 true AND 123
+   [EVAL_GROUP] 123 (GROUP true AND 123)
+$1  : [STMT_PRINT] 123 (GROUP true AND 123)
+[RESULT] : 123;
+[PASS]
 
 SOURCE: print nil and boom;
 [TOK] PRINT           'print'
@@ -1825,21 +1664,1085 @@ SOURCE: print nil and boom;
 [TOK] IDENTIFIER      'boom'
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
-[MatchAdv]            PRINT
-================
-====>
-[MatchAdv]            NIL
-[EXPR]                nil
-[MatchAdv]            AND
-[MatchAdv]            IDENTIFIER
-[EXPR]                VARIABLE boom
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NIL             'nil'
+[EXPR_LITERAL] nil
+[MatchAdv] [TOK] AND             'and'
+[MatchAdv] [TOK] IDENTIFIER      'boom'
+[EXPR_VAR] boom
+[EXPR_LOGICAL]  nil AND boom
 [CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-0   [STMT_PRINT] LOGICAL (nil AND VARIABLE boom)
+$1  : [STMT_PRINT]  nil AND boom
 =================
-$:0   [STMT_PRINT] LOGICAL (nil AND VARIABLE boom)
-[EVAL]LOGICAL (nil AND VARIABLE boom)
-   [EVAL]nil
-[STMT_PRINT_EVAL]nil
-[PASS] expected: nil;
+$1  : [STMT_PRINT] nil nil AND boom
+[RESULT] : nil;
+[PASS]
+
+SOURCE: for (var i = 0; i < 3; i = i + 1) print i;
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS i 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [1 statements] ====
+$1  : [STMT_BLOCK]
+   $2  : [STMT_VAR] i = 0
+   $1  : [STMT_WHILE]
+      condition:
+          (LESS i 3)
+      body:
+         $3  : [STMT_BLOCK]
+            $3  : [STMT_PRINT] i
+            $4  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+[STMT_BLOCK] 2 statements
+$2  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$3  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$4  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$3  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$4  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i2
+$3  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$4  : [STMT_EXPR] i =  (PLUS i 1)3
+      [EVAL_VAR] i3
+   [EVAL_BINARY] false (LESS i 3)
+[RESULT] : 0;1;2;
+[PASS]
+
+SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) print i;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '4'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_ASSIGN] i = 1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_LITERAL] 4
+[EXPR_BINARY]  (LESS i 4)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_VAR] i = 0
+$2  : [STMT_BLOCK]
+   $3  : [STMT_EXPR] i = 1
+   $2  : [STMT_WHILE]
+      condition:
+          (LESS i 4)
+      body:
+         $4  : [STMT_BLOCK]
+            $4  : [STMT_PRINT] i
+            $5  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+$1  : [STMT_VAR] i = 0
+[STMT_BLOCK] 2 statements
+   [EVAL_ASSIGN] i = 11
+$3  : [STMT_EXPR] i = 11
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 4)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] true (LESS i 4)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i2
+$4  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$5  : [STMT_EXPR] i =  (PLUS i 1)3
+      [EVAL_VAR] i3
+   [EVAL_BINARY] true (LESS i 4)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i3
+$4  : [STMT_PRINT] i3
+         [EVAL_VAR] i3
+      [EVAL_BINARY] 4 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)4
+$5  : [STMT_EXPR] i =  (PLUS i 1)4
+      [EVAL_VAR] i4
+   [EVAL_BINARY] false (LESS i 4)
+[RESULT] : 1;2;3;
+[PASS]
+
+SOURCE: var i = 0; for (; i < 3; i = i + 1) print i;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS i 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_VAR] i = 0
+$2  : [STMT_WHILE]
+   condition:
+       (LESS i 3)
+   body:
+      $3  : [STMT_BLOCK]
+         $3  : [STMT_PRINT] i
+         $4  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+$1  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$3  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$4  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$3  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$4  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i2
+$3  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$4  : [STMT_EXPR] i =  (PLUS i 1)3
+      [EVAL_VAR] i3
+   [EVAL_BINARY] false (LESS i 3)
+[RESULT] : 0;1;2;
+[PASS]
+
+SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS i 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [1 statements] ====
+$1  : [STMT_BLOCK]
+   $2  : [STMT_VAR] i = 0
+   $1  : [STMT_WHILE]
+      condition:
+          (LESS i 3)
+      body:
+         $3  : [STMT_BLOCK]
+            $4  : [STMT_PRINT] i
+            $5  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+[STMT_BLOCK] 2 statements
+$2  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$4  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$5  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i2
+$4  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$5  : [STMT_EXPR] i =  (PLUS i 1)3
+      [EVAL_VAR] i3
+   [EVAL_BINARY] false (LESS i 3)
+[RESULT] : 0;1;2;
+[PASS]
+
+SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] SEMICOLON       ';'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] IF              'if'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL_EQUAL     '=='
+[TOK] NUMBER          '3'
+[TOK] RIGHT_PAREN     ')'
+[TOK] IDENTIFIER      'break'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] SEMICOLON       ';'
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IF              'if'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL_EQUAL     '=='
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (EQUAL_EQUAL i 3)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] IDENTIFIER      'break'
+[EXPR_VAR] break
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [2 statements] ====
+$1  : [STMT_VAR] i = 0
+$2  : [STMT_WHILE]
+   condition:
+      true
+   body:
+      $3  : [STMT_BLOCK]
+         $4  : [STMT_PRINT] i
+         $5  : [STMT_EXPR] i =  (PLUS i 1)
+         $6  : [STMT_IF]
+            condition:
+                (EQUAL_EQUAL i 3)
+            then:
+               $7  : [STMT_EXPR] break
+=================
+$1  : [STMT_VAR] i = 0
+[STMT_WHILE] 3 statements
+[STMT_BLOCK] 3 statements
+   [EVAL_VAR] i0
+$4  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$5  : [STMT_EXPR] i =  (PLUS i 1)1
+==$6  : [STMT_IF]
+   condition:
+       (EQUAL_EQUAL i 3)
+   then:
+      $7  : [STMT_EXPR] break
+[_IF] 2025849664 statements
+==      [EVAL_VAR] i1
+   [EVAL_BINARY] false (EQUAL_EQUAL i 3)
+[STMT_BLOCK] 3 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+==$6  : [STMT_IF]
+   condition:
+       (EQUAL_EQUAL i 3)
+   then:
+      $7  : [STMT_EXPR] break
+[_IF] 2025849664 statements
+==      [EVAL_VAR] i2
+   [EVAL_BINARY] false (EQUAL_EQUAL i 3)
+[STMT_BLOCK] 3 statements
+   [EVAL_VAR] i2
+$4  : [STMT_PRINT] i2
+         [EVAL_VAR] i2
+      [EVAL_BINARY] 3 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)3
+$5  : [STMT_EXPR] i =  (PLUS i 1)3
+==$6  : [STMT_IF]
+   condition:
+       (EQUAL_EQUAL i 3)
+   then:
+      $7  : [STMT_EXPR] break
+[_IF] 2025849664 statements
+==      [EVAL_VAR] i3
+   [EVAL_BINARY] true (EQUAL_EQUAL i 3)
+[line 1] Error at variable: Undefined variable.
+$7  : [STMT_EXPR] breakError: Undefined variable.
+
+[RESULT] : 0;1;2;
+[PassError]
+
+SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) print i; print i;
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '100'
+[TOK] SEMICOLON       ';'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '100'
+[EXPR_LITERAL] 100
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (LESS i 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [3 statements] ====
+$1  : [STMT_VAR] i = 100
+$2  : [STMT_BLOCK]
+   $3  : [STMT_VAR] i = 0
+   $2  : [STMT_WHILE]
+      condition:
+          (LESS i 2)
+      body:
+         $4  : [STMT_BLOCK]
+            $4  : [STMT_PRINT] i
+            $5  : [STMT_EXPR] i =  (PLUS i 1)
+$6  : [STMT_PRINT] i
+=================
+$1  : [STMT_VAR] i = 100
+[STMT_BLOCK] 2 statements
+$3  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$4  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$5  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] false (LESS i 2)
+   [EVAL_VAR] i100
+$6  : [STMT_PRINT] i100
+[RESULT] : 0;1;100;
+[PASS]
+
+SOURCE: for (var i = 0; i < 2; i = i + 1) for (var j = 0; j < 2; j = j + 1) print i + j;
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'j'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'j'
+[TOK] LESS            '<'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'j'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'j'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] IDENTIFIER      'j'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (LESS i 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'j'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'j'
+[EXPR_VAR] j
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (LESS j 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'j'
+[EXPR_VAR] j
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'j'
+[EXPR_VAR] j
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS j 1)
+[EXPR_ASSIGN] j =  (PLUS j 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] IDENTIFIER      'j'
+[EXPR_VAR] j
+[EXPR_BINARY]  (PLUS i j)
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [1 statements] ====
+$1  : [STMT_BLOCK]
+   $2  : [STMT_VAR] i = 0
+   $1  : [STMT_WHILE]
+      condition:
+          (LESS i 2)
+      body:
+         $3  : [STMT_BLOCK]
+            $3  : [STMT_BLOCK]
+               $4  : [STMT_VAR] j = 0
+               $3  : [STMT_WHILE]
+                  condition:
+                      (LESS j 2)
+                  body:
+                     $5  : [STMT_BLOCK]
+                        $5  : [STMT_PRINT]  (PLUS i j)
+                        $6  : [STMT_EXPR] j =  (PLUS j 1)
+            $7  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+[STMT_BLOCK] 2 statements
+$2  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+[STMT_BLOCK] 2 statements
+$4  : [STMT_VAR] j = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] j0
+   [EVAL_BINARY] true (LESS j 2)
+[STMT_BLOCK] 2 statements
+      [EVAL_VAR] i0
+      [EVAL_VAR] j0
+   [EVAL_BINARY] 0 (PLUS i j)
+$5  : [STMT_PRINT] 0 (PLUS i j)
+         [EVAL_VAR] j0
+      [EVAL_BINARY] 1 (PLUS j 1)
+   [EVAL_ASSIGN] j =  (PLUS j 1)1
+$6  : [STMT_EXPR] j =  (PLUS j 1)1
+      [EVAL_VAR] j1
+   [EVAL_BINARY] true (LESS j 2)
+[STMT_BLOCK] 2 statements
+      [EVAL_VAR] i0
+      [EVAL_VAR] j1
+   [EVAL_BINARY] 1 (PLUS i j)
+$5  : [STMT_PRINT] 1 (PLUS i j)
+         [EVAL_VAR] j1
+      [EVAL_BINARY] 2 (PLUS j 1)
+   [EVAL_ASSIGN] j =  (PLUS j 1)2
+$6  : [STMT_EXPR] j =  (PLUS j 1)2
+      [EVAL_VAR] j2
+   [EVAL_BINARY] false (LESS j 2)
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$7  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+[STMT_BLOCK] 2 statements
+$4  : [STMT_VAR] j = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] j0
+   [EVAL_BINARY] true (LESS j 2)
+[STMT_BLOCK] 2 statements
+      [EVAL_VAR] i1
+      [EVAL_VAR] j0
+   [EVAL_BINARY] 1 (PLUS i j)
+$5  : [STMT_PRINT] 1 (PLUS i j)
+         [EVAL_VAR] j0
+      [EVAL_BINARY] 1 (PLUS j 1)
+   [EVAL_ASSIGN] j =  (PLUS j 1)1
+$6  : [STMT_EXPR] j =  (PLUS j 1)1
+      [EVAL_VAR] j1
+   [EVAL_BINARY] true (LESS j 2)
+[STMT_BLOCK] 2 statements
+      [EVAL_VAR] i1
+      [EVAL_VAR] j1
+   [EVAL_BINARY] 2 (PLUS i j)
+$5  : [STMT_PRINT] 2 (PLUS i j)
+         [EVAL_VAR] j1
+      [EVAL_BINARY] 2 (PLUS j 1)
+   [EVAL_ASSIGN] j =  (PLUS j 1)2
+$6  : [STMT_EXPR] j =  (PLUS j 1)2
+      [EVAL_VAR] j2
+   [EVAL_BINARY] false (LESS j 2)
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$7  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] false (LESS i 2)
+[RESULT] : 0;1;1;2;
+[PASS]
+
+SOURCE: for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '3'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '10'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_LITERAL] 3
+[EXPR_BINARY]  (LESS i 3)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '10'
+[EXPR_LITERAL] 10
+[EXPR_BINARY]  (PLUS i 10)
+[EXPR_ASSIGN] i =  (PLUS i 10)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_BLOCK]
+   $2  : [STMT_VAR] i = 0
+   $1  : [STMT_WHILE]
+      condition:
+          (LESS i 3)
+      body:
+         $3  : [STMT_BLOCK]
+            $3  : [STMT_EXPR] i =  (PLUS i 10)
+            $4  : [STMT_EXPR] i =  (PLUS i 1)
+$5  : [STMT_PRINT] i
+=================
+[STMT_BLOCK] 2 statements
+$2  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 3)
+[STMT_BLOCK] 2 statements
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 10 (PLUS i 10)
+   [EVAL_ASSIGN] i =  (PLUS i 10)10
+$3  : [STMT_EXPR] i =  (PLUS i 10)10
+         [EVAL_VAR] i10
+      [EVAL_BINARY] 11 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)11
+$4  : [STMT_EXPR] i =  (PLUS i 1)11
+      [EVAL_VAR] i11
+   [EVAL_BINARY] false (LESS i 3)
+[line 1] Error at variable: Undefined variable.
+$5  : [STMT_PRINT] iError: Undefined variable.
+
+[RESULT] : Error: Undefined variable.;;
+[PassError]
+
+SOURCE: { for (var i = 0; i < 2; i = i + 1) print i; }
+[TOK] LEFT_BRACE      '{'
+[TOK] FOR             'for'
+[TOK] LEFT_PAREN      '('
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] LESS            '<'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'i'
+[TOK] EQUAL           '='
+[TOK] IDENTIFIER      'i'
+[TOK] PLUS            '+'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] FOR             'for'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] LESS            '<'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[EXPR_BINARY]  (LESS i 2)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] EQUAL           '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[MatchAdv] [TOK] PLUS            '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (PLUS i 1)
+[EXPR_ASSIGN] i =  (PLUS i 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [1 statements] ====
+$1  : [STMT_BLOCK]
+   $2  : [STMT_BLOCK]
+      $3  : [STMT_VAR] i = 0
+      $2  : [STMT_WHILE]
+         condition:
+             (LESS i 2)
+         body:
+            $4  : [STMT_BLOCK]
+               $4  : [STMT_PRINT] i
+               $5  : [STMT_EXPR] i =  (PLUS i 1)
+=================
+[STMT_BLOCK] 1 statements
+[STMT_BLOCK] 2 statements
+$3  : [STMT_VAR] i = 0
+[STMT_WHILE] 2 statements
+      [EVAL_VAR] i0
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i0
+$4  : [STMT_PRINT] i0
+         [EVAL_VAR] i0
+      [EVAL_BINARY] 1 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)1
+$5  : [STMT_EXPR] i =  (PLUS i 1)1
+      [EVAL_VAR] i1
+   [EVAL_BINARY] true (LESS i 2)
+[STMT_BLOCK] 2 statements
+   [EVAL_VAR] i1
+$4  : [STMT_PRINT] i1
+         [EVAL_VAR] i1
+      [EVAL_BINARY] 2 (PLUS i 1)
+   [EVAL_ASSIGN] i =  (PLUS i 1)2
+$5  : [STMT_EXPR] i =  (PLUS i 1)2
+      [EVAL_VAR] i2
+   [EVAL_BINARY] false (LESS i 2)
+[RESULT] : 0;1;
+[PASS]
 
