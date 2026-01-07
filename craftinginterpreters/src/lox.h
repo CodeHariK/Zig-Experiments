@@ -100,9 +100,12 @@ struct Value {
   } as;
 };
 
-typedef struct {
-  Value value;
-} ReturnSignal;
+typedef enum {
+  SIGNAL_NONE,
+  SIGNAL_BREAK,
+  SIGNAL_CONTINUE,
+  SIGNAL_RETURN
+} ControlSignalType;
 
 typedef enum {
   EXPR_BINARY,
@@ -304,12 +307,12 @@ typedef struct {
   u32 indent;
   bool debugPrint;
 
-  bool breakSignal;
-  bool continueSignal;
-  ReturnSignal *returnSignal;
+  struct {
+    ControlSignalType type;
+    Value returnValue;
+  } signal;
 
   Arena astArena;
-  Arena runtimeArena;
 
   Scanner scanner;
   Parser parser;

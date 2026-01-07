@@ -98,7 +98,7 @@ static void runExprTests(void) {
       {"2 / 4", "0.5", true},
   };
 
-  for (size_t i = 0; i < sizeof(exprTests) / sizeof(exprTests[0]); i++) {
+  for (u32 i = 0; i < sizeof(exprTests) / sizeof(exprTests[0]); i++) {
 
     TestCase test = exprTests[i];
 
@@ -134,7 +134,7 @@ void runStmtTests(void) {
       {"print \"hello\";", "hello\n", true},
   };
 
-  for (size_t i = 0; i < sizeof(stmtTests) / sizeof(stmtTests[0]); i++) {
+  for (u32 i = 0; i < sizeof(stmtTests) / sizeof(stmtTests[0]); i++) {
     TestCase test = stmtTests[i];
 
     printf("SOURCE: %s\n", test.source);
@@ -283,7 +283,7 @@ void runVarTests(void) {
       //
   };
 
-  for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+  for (u32 i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
 
     TestCase test = tests[i];
 

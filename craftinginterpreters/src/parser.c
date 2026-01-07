@@ -557,14 +557,14 @@ static Value evaluateFunctionCall(Lox *lox, Expr *expr) {
 
   Value result = NIL_VALUE;
 
-  if (lox->returnSignal) {
-    result = lox->returnSignal->value;
+  if (lox->signal.type == SIGNAL_RETURN) {
+    result = lox->signal.returnValue;
   }
 
   // Restore environment
   lox->env = previous;
 
-  lox->returnSignal = NULL;
+  lox->signal.type = SIGNAL_NONE;
 
   return result;
 }

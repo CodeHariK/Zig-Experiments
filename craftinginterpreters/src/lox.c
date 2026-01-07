@@ -23,11 +23,10 @@ void loxInit(Lox *lox, bool debugPrint) {
       .scanner.source = NULL,
       .env = envNew(NULL),
       .astArena = {0},
-      .runtimeArena = {0},
+      .signal = {.type = SIGNAL_NONE},
   };
 
-  arenaInit(&lox->astArena, 1024 * 1024);    // 1 MB is plenty
-  arenaInit(&lox->runtimeArena, 1024 * 256); // 1 MB is plenty
+  arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
 
   // Define native functions
   envDefine(lox->env, "clock", (Value){VAL_NATIVE, {.native = clockNative}});
@@ -40,7 +39,7 @@ void loxRun(Lox *lox, const char *source) {
   initParser(lox);
 
   Program *prog = parseProgram(lox);
-  for (size_t i = 0; i < prog->count; i++) {
+  for (u32 i = 0; i < prog->count; i++) {
     executeStmt(lox, prog->statements[i]);
   }
 }

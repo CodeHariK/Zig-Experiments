@@ -24,9 +24,9 @@ static const Keyword keywords[] = {
     {"break", TOKEN_BREAK},   {"continue", TOKEN_CONTINUE},
 };
 
-static TokenType checkKeyword(const char *text, size_t length) {
-  size_t numKeywords = sizeof(keywords) / sizeof(keywords[0]);
-  for (size_t i = 0; i < numKeywords; i++) {
+static TokenType checkKeyword(const char *text, u8 length) {
+  u8 numKeywords = sizeof(keywords) / sizeof(keywords[0]);
+  for (u8 i = 0; i < numKeywords; i++) {
     if (strlen(keywords[i].name) == length &&
         strncmp(text, keywords[i].name, length) == 0) {
       return keywords[i].type;
@@ -160,7 +160,7 @@ void addTokenToArray(Lox *lox, Token token) {
 
 static void addToken(Lox *lox, TokenType type, void *literal) {
   Scanner *scanner = &lox->scanner;
-  size_t len = scanner->current - scanner->start;
+  u32 len = scanner->current - scanner->start;
   char *lex = malloc(len + 1);
   memcpy(lex, &scanner->source[scanner->start], len);
   lex[len] = '\0'; // null-terminate
@@ -331,7 +331,7 @@ static void multiLineStringScan(Lox *lox) {
   advanceChar(scanner);
 
   // Trim the surrounding quotes
-  size_t length = scanner->current - scanner->start - 2; // exclude quotes
+  u32 length = scanner->current - scanner->start - 2; // exclude quotes
   char *value = malloc(length + 1);
   if (!value) {
     fprintf(stderr, "Memory allocation failed\n");
@@ -360,7 +360,7 @@ static void numberScan(Lox *lox) {
   }
 
   // Convert substring to double
-  size_t length = scanner->current - scanner->start;
+  u32 length = scanner->current - scanner->start;
   char *text = malloc(length + 1);
   if (!text) {
     fprintf(stderr, "Memory allocation failed\n");

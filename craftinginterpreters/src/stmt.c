@@ -336,7 +336,7 @@ static void executeBlock(Lox *lox, Stmt **stmts, int count) {
   for (int i = 0; i < count; i++) {
     executeStmt(lox, stmts[i]);
 
-    if (lox->breakSignal || lox->continueSignal || lox->returnSignal)
+    if (lox->signal.type != SIGNAL_NONE)
       break;
   }
 
@@ -398,7 +398,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
       executeStmt(lox, stmt->as.ifStmt.else_branch);
     }
 
-    if (lox->breakSignal) {
+    if (lox->signal.type == SIGNAL_BREAK) {
       return;
     }
 
@@ -411,13 +411,13 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
       executeStmt(lox, stmt->as.whileStmt.body);
 
-      if (lox->breakSignal) {
-        lox->breakSignal = false;
+      if (lox->signal.type == SIGNAL_BREAK) {
+        lox->signal.type = SIGNAL_NONE;
         break;
       }
 
-      if (lox->continueSignal) {
-        lox->continueSignal = false;
+      if (lox->signal.type == SIGNAL_CONTINUE) {
+        lox->signal.type = SIGNAL_NONE;
         // continue;
       }
     }
@@ -433,13 +433,13 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
       executeStmt(lox, stmt->as.forStmt.body);
 
-      if (lox->breakSignal) {
-        lox->breakSignal = false;
+      if (lox->signal.type == SIGNAL_BREAK) {
+        lox->signal.type = SIGNAL_NONE;
         break;
       }
 
-      if (lox->continueSignal) {
-        lox->continueSignal = false;
+      if (lox->signal.type == SIGNAL_CONTINUE) {
+        lox->signal.type = SIGNAL_NONE;
         // fall through to increment
       }
 
@@ -470,12 +470,12 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_BREAK: {
-    lox->breakSignal = true;
+    lox->signal.type = SIGNAL_BREAK;
     printf("[STMT_BREAK_EXEC]\n");
     break;
   }
   case STMT_CONTINUE: {
-    lox->continueSignal = true;
+    lox->signal.type = SIGNAL_CONTINUE;
     printf("[STMT_CONTINUE_EXEC]\n");
     break;
   }
@@ -486,9 +486,8 @@ void executeStmt(Lox *lox, Stmt *stmt) {
       value = evaluate(lox, stmt->as.returnStmt.value);
     }
 
-    ReturnSignal *signal = arenaAlloc(&lox->runtimeArena, sizeof(ReturnSignal));
-    signal->value = value;
-    lox->returnSignal = signal;
+    lox->signal.type = SIGNAL_RETURN;
+    lox->signal.returnValue = value;
 
     printf("[STMT_RETURN_EXEC]");
     printValue(value);
@@ -531,7 +530,7 @@ void executeProgram(Lox *lox, Program *prog) {
   if (!prog)
     return;
 
-  for (size_t i = 0; i < prog->count; i++) {
+  for (u8 i = 0; i < prog->count; i++) {
     executeStmt(lox, prog->statements[i]);
 
     if (lox->hadRuntimeError || lox->hadError)

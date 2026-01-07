@@ -148,7 +148,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.14214e-314-NOT-3
+      [EVAL_UNARY] -2.14586e-314-NOT-3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-NOT-3
@@ -3792,6 +3792,6 @@ $1  : [STMT_PRINT] clock()
 =================
       [EVAL_VAR] clock <native fn>
 $1  : [STMT_PRINT] clock()
-[RESULT] : 0.011823;
+[RESULT] : 0.003176;
 [INFO] no expected output
 

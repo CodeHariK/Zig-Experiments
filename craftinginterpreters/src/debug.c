@@ -16,7 +16,7 @@ void freeLox(Lox *lox) {
 void freeScanner(Scanner *scanner) {
   free(scanner->tokens);
 
-  for (size_t i = 0; i < scanner->count; i++) {
+  for (u32 i = 0; i < scanner->count; i++) {
     // free((void *)scanner->tokens[i].lexeme);
     free(scanner->tokens[i].literal);
   }
@@ -337,7 +337,7 @@ void printProgram(Lox *lox, Program *prog) {
 
   printf("==== Program [%d statements] ====\n", prog->count);
 
-  for (size_t i = 0; i < prog->count; i++) {
+  for (u32 i = 0; i < prog->count; i++) {
     printStmt(lox, prog->statements[i], NO_VALUE, 0);
   }
 
