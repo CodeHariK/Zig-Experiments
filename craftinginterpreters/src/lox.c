@@ -15,9 +15,11 @@ void loxInit(Lox *lox, bool debugPrint) {
       .scanner.source = NULL,
       .env = envNew(NULL),
       .astArena = {0},
+      .runtimeArena = {0},
   };
 
-  arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
+  arenaInit(&lox->astArena, 1024 * 1024);    // 1 MB is plenty
+  arenaInit(&lox->runtimeArena, 1024 * 256); // 1 MB is plenty
 }
 
 void loxRun(Lox *lox, const char *source) {

@@ -94,6 +94,10 @@ typedef struct {
   } as;
 } Value;
 
+typedef struct {
+  Value value;
+} ReturnSignal;
+
 typedef enum {
   EXPR_BINARY,
   EXPR_UNARY,
@@ -212,7 +216,8 @@ typedef struct Stmt {
     } functionStmt;
 
     struct {
-      Expr *value;
+      Token keyword; // the 'return' token
+      Expr *value;   // may be NULL
     } returnStmt;
 
   } as;
@@ -278,6 +283,7 @@ typedef struct {
   u32 current;
 
   u32 loopDepth;
+  u32 functionDepth;
 
   u32 line;
 } Parser;
@@ -294,8 +300,11 @@ typedef struct {
 
   bool breakSignal;
   bool continueSignal;
+  ReturnSignal *returnSignal;
 
   Arena astArena;
+  Arena runtimeArena;
+
   Scanner scanner;
   Parser parser;
   Environment *env;

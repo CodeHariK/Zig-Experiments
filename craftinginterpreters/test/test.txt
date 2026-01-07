@@ -148,7 +148,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.12897e-314-NOT-3
+      [EVAL_UNARY] -2.14039e-314-NOT-3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-NOT-3
@@ -2614,6 +2614,7 @@ $3  : [STMT_PRINT] i 2
 $4  : [STMT_EXPR] i = 3 ( i + 1)
       [EVAL_VAR] i 3
    [EVAL_BINARY] true ( i == 3)
+[STMT_BREAK_EXEC]
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -2739,6 +2740,7 @@ $2  : [STMT_VAR] j = 0
 $5  : [STMT_EXPR] j = 00
    [EVAL_VAR] i 0
 $8  : [STMT_PRINT] i 0
+[STMT_BREAK_EXEC]
          [EVAL_VAR] i 0
       [EVAL_BINARY] 1 ( i + 1)
    [EVAL_ASSIGN] i = 1 ( i + 1)
@@ -2749,6 +2751,7 @@ $10 : [STMT_EXPR] i = 1 ( i + 1)
 $5  : [STMT_EXPR] j = 00
    [EVAL_VAR] i 1
 $8  : [STMT_PRINT] i 1
+[STMT_BREAK_EXEC]
          [EVAL_VAR] i 1
       [EVAL_BINARY] 2 ( i + 1)
    [EVAL_ASSIGN] i = 2 ( i + 1)
@@ -2867,6 +2870,7 @@ $7  : [STMT_PRINT] i 1
 $8  : [STMT_EXPR] i = 2 ( i + 1)
       [EVAL_VAR] i 2
    [EVAL_BINARY] true ( i == 2)
+[STMT_BREAK_EXEC]
 [RESULT] : 0;1;
 [PASS]
 
@@ -2985,6 +2989,7 @@ $8  : [STMT_PRINT] i 1
 $5  : [STMT_EXPR] i = 2 ( i + 1)
       [EVAL_VAR] i 2
    [EVAL_BINARY] true ( i == 2)
+[STMT_CONTINUE_EXEC]
       [EVAL_VAR] i 2
    [EVAL_BINARY] true ( i < 3)
          [EVAL_VAR] i 2
@@ -3107,6 +3112,7 @@ $5  : [STMT_PRINT] i 1
    [EVAL_BINARY] true ( i < 4)
       [EVAL_VAR] i 2
    [EVAL_BINARY] true ( i == 2)
+[STMT_CONTINUE_EXEC]
          [EVAL_VAR] i 2
       [EVAL_BINARY] 3 ( i + 1)
    [EVAL_ASSIGN] i = 3 ( i + 1)
@@ -3322,5 +3328,299 @@ $4  : [STMT_PRINT] x 10
 $5  : [STMT_EXPR] inner()
 $6  : [STMT_EXPR] outer()
 [RESULT] : 10;
+[PASS]
+
+SOURCE: fun f() { return 123; print 0; } print f();
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] RETURN          'return'
+[TOK] NUMBER          '123'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'f'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] NUMBER          '123'
+[EXPR_LITERAL] 123
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'f'
+[EXPR_VAR] f 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] f()
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_FUNCTION] f ()
+      $1  : [STMT_BLOCK]
+         $1  : [STMT_RETURN]
+         $2  : [STMT_PRINT] 0
+$3  : [STMT_PRINT] f()
+=================
+[ENV_DEFINE_FUNCTION]<fn f>
+      [EVAL_VAR] f <fn f>
+[STMT_RETURN_EXEC]123
+$3  : [STMT_PRINT] f()
+[RESULT] : 123;
+[PASS]
+
+SOURCE: fun f() {} print f();
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'f'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'f'
+[EXPR_VAR] f 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] f()
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_FUNCTION] f ()
+      $1  : [STMT_BLOCK]
+$2  : [STMT_PRINT] f()
+=================
+[ENV_DEFINE_FUNCTION]<fn f>
+      [EVAL_VAR] f <fn f>
+$2  : [STMT_PRINT] f()
+[RESULT] : nil;
+[PASS]
+
+SOURCE: fun f() { if (true) return 1; return 2; } print f();
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] IF              'if'
+[TOK] LEFT_PAREN      '('
+[TOK] TRUE            'true'
+[TOK] RIGHT_PAREN     ')'
+[TOK] RETURN          'return'
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] RETURN          'return'
+[TOK] NUMBER          '2'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'f'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'f'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] IF              'if'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] TRUE            'true'
+[EXPR_LITERAL] true
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_LITERAL] 2
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'f'
+[EXPR_VAR] f 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] f()
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_FUNCTION] f ()
+      $1  : [STMT_BLOCK]
+         $2  : [STMT_IF]
+            condition:
+               true
+            then:
+               $1  : [STMT_RETURN]
+         $1  : [STMT_RETURN]
+$3  : [STMT_PRINT] f()
+=================
+[ENV_DEFINE_FUNCTION]<fn f>
+      [EVAL_VAR] f <fn f>
+[STMT_RETURN_EXEC]1
+$3  : [STMT_PRINT] f()
+[RESULT] : 1;
+[PASS]
+
+SOURCE: fun fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print fact(5);
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'fact'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'n'
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] IF              'if'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'n'
+[TOK] <=              '<='
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] RETURN          'return'
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] RETURN          'return'
+[TOK] IDENTIFIER      'n'
+[TOK] *               '*'
+[TOK] IDENTIFIER      'fact'
+[TOK] LEFT_PAREN      '('
+[TOK] IDENTIFIER      'n'
+[TOK] -               '-'
+[TOK] NUMBER          '1'
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'fact'
+[TOK] LEFT_PAREN      '('
+[TOK] NUMBER          '5'
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'fact'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] IDENTIFIER      'n'
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] IF              'if'
+[CONSUME][TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] IDENTIFIER      'n'
+[EXPR_VAR] n 
+[MatchAdv] [TOK] <=              '<='
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  ( n <= 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] IDENTIFIER      'n'
+[EXPR_VAR] n 
+[MatchAdv] [TOK] *               '*'
+[MatchAdv] [TOK] IDENTIFIER      'fact'
+[EXPR_VAR] fact 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] IDENTIFIER      'n'
+[EXPR_VAR] n 
+[MatchAdv] [TOK] -               '-'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  ( n - 1)
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] fact( ( n - 1))
+[EXPR_BINARY]  ( n * fact( ( n - 1)))
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'fact'
+[EXPR_VAR] fact 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] fact(5)
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [2 statements] ====
+$1  : [STMT_FUNCTION] fact (n)
+      $1  : [STMT_BLOCK]
+         $2  : [STMT_IF]
+            condition:
+                ( n <= 1)
+            then:
+               $1  : [STMT_RETURN]
+         $1  : [STMT_RETURN]
+$3  : [STMT_PRINT] fact(5)
+=================
+[ENV_DEFINE_FUNCTION]<fn fact>
+      [EVAL_VAR] fact <fn fact>
+         [EVAL_VAR] n 5
+      [EVAL_BINARY] false ( n <= 1)
+         [EVAL_VAR] n 5
+            [EVAL_VAR] fact <fn fact>
+               [EVAL_VAR] n 5
+            [EVAL_BINARY] 4 ( n - 1)
+               [EVAL_VAR] n 4
+            [EVAL_BINARY] false ( n <= 1)
+               [EVAL_VAR] n 4
+                  [EVAL_VAR] fact <fn fact>
+                     [EVAL_VAR] n 4
+                  [EVAL_BINARY] 3 ( n - 1)
+                     [EVAL_VAR] n 3
+                  [EVAL_BINARY] false ( n <= 1)
+                     [EVAL_VAR] n 3
+                        [EVAL_VAR] fact <fn fact>
+                           [EVAL_VAR] n 3
+                        [EVAL_BINARY] 2 ( n - 1)
+                           [EVAL_VAR] n 2
+                        [EVAL_BINARY] false ( n <= 1)
+                           [EVAL_VAR] n 2
+                              [EVAL_VAR] fact <fn fact>
+                                 [EVAL_VAR] n 2
+                              [EVAL_BINARY] 1 ( n - 1)
+                                 [EVAL_VAR] n 1
+                              [EVAL_BINARY] true ( n <= 1)
+[STMT_RETURN_EXEC]1
+                           [EVAL_BINARY] 2 ( n * fact( ( n - 1)))
+[STMT_RETURN_EXEC]2
+                        [EVAL_BINARY] 6 ( n * fact( ( n - 1)))
+[STMT_RETURN_EXEC]6
+                     [EVAL_BINARY] 24 ( n * fact( ( n - 1)))
+[STMT_RETURN_EXEC]24
+                  [EVAL_BINARY] 120 ( n * fact( ( n - 1)))
+[STMT_RETURN_EXEC]120
+$3  : [STMT_PRINT] fact(5)
+[RESULT] : 120;
 [PASS]
 

@@ -267,6 +267,15 @@ void runVarTests(void) {
       {"fun add(a, b) { print a + b; } add(2, 3);", "5;", true},
       {"fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();",
        "10;", true},
+
+      {"fun f() { return 123; print 0; } print f();", "123;", true},
+      {"fun f() {} print f();", "nil;", true},
+      {"fun f() { if (true) return 1; return 2; } print f();", "1;", true},
+      {"fun fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print "
+       "fact(5);",
+       "120;", true},
+
+      //
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

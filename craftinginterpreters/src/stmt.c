@@ -89,6 +89,8 @@ static Stmt *parseFunctionStmt(Lox *lox) {
 
   consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
 
+  lox->parser.functionDepth++;
+
   Token *params = NULL;
   int paramCount = 0;
   int capacity = 0;
@@ -125,6 +127,8 @@ static Stmt *parseFunctionStmt(Lox *lox) {
   stmt->as.functionStmt.paramCount = paramCount;
   stmt->as.functionStmt.body = body;
   stmt->line = name.line;
+
+  lox->parser.functionDepth--;
 
   return stmt;
 }
@@ -187,17 +191,21 @@ static Stmt *parseContinueStmt(Lox *lox) {
   return stmt;
 }
 
-Stmt *parseReturnStmt(Lox *lox) {
-  consumeToken(lox, TOKEN_SEMICOLON, "Expect ';' after 'return'.");
+static Stmt *parseReturnStmt(Lox *lox) {
+  Token keyword = prevToken(&lox->parser);
+  Expr *value = NULL;
+
+  if (!checkToken(&lox->parser, TOKEN_SEMICOLON)) {
+    value = parseExpression(lox);
+  }
+
+  consumeToken(lox, TOKEN_SEMICOLON, "Expect ';' after return value.");
 
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_RETURN;
-  stmt->line = lox->parser.line++;
-
-  if (lox->parser.loopDepth == 0) {
-    loxError(lox, prevToken(&lox->parser).line,
-             "Can't use 'return' outside of a function.", "");
-  }
+  stmt->as.returnStmt.keyword = keyword;
+  stmt->as.returnStmt.value = value;
+  stmt->line = keyword.line;
 
   return stmt;
 }
@@ -299,6 +307,12 @@ Stmt *parseStmt(Lox *lox) {
     stmt = parseBreakStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_CONTINUE)) {
     stmt = parseContinueStmt(lox);
+  } else if (matchAnyTokenAdvance(lox, 1, TOKEN_RETURN)) {
+    if (lox->parser.loopDepth == 0 && lox->parser.functionDepth == 0) {
+      loxError(lox, prevToken(&lox->parser).line,
+               "Can't return from top-level code.", "");
+    }
+    return parseReturnStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
     stmt = parseBlockStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_PRINT)) {
@@ -322,7 +336,7 @@ static void executeBlock(Lox *lox, Stmt **stmts, int count) {
   for (int i = 0; i < count; i++) {
     executeStmt(lox, stmts[i]);
 
-    if (lox->breakSignal || lox->continueSignal)
+    if (lox->breakSignal || lox->continueSignal || lox->returnSignal)
       break;
   }
 
@@ -457,14 +471,30 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
   case STMT_BREAK: {
     lox->breakSignal = true;
+    printf("[STMT_BREAK_EXEC]\n");
     break;
   }
   case STMT_CONTINUE: {
     lox->continueSignal = true;
+    printf("[STMT_CONTINUE_EXEC]\n");
     break;
   }
   case STMT_RETURN: {
-    break;
+    Value value = NIL_VALUE;
+
+    if (stmt->as.returnStmt.value) {
+      value = evaluate(lox, stmt->as.returnStmt.value);
+    }
+
+    ReturnSignal *signal = arenaAlloc(&lox->runtimeArena, sizeof(ReturnSignal));
+    signal->value = value;
+    lox->returnSignal = signal;
+
+    printf("[STMT_RETURN_EXEC]");
+    printValue(value);
+    printf("\n");
+
+    return;
   }
   }
 }

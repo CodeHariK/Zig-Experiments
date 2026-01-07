@@ -514,23 +514,36 @@ static Value evaluateFunctionCall(Lox *lox, Expr *expr) {
     return NIL_VALUE;
   }
 
+  // 1. Evaluate arguments in CURRENT environment
+  Value args[255];
+  for (u8 i = 0; i < fn->paramCount; i++) {
+    args[i] = evaluate(lox, expr->as.call.arguments[i]);
+  }
+
   // Create call environment
   Environment *previous = lox->env;
   lox->env = envNew(fn->closure);
 
   // Bind parameters
   for (u8 i = 0; i < fn->paramCount; i++) {
-    Value arg = evaluate(lox, expr->as.call.arguments[i]);
-    envDefine(lox->env, fn->params[i].lexeme, arg);
+    envDefine(lox->env, fn->params[i].lexeme, args[i]);
   }
 
   // Execute body
   executeStmt(lox, fn->body);
 
+  Value result = NIL_VALUE;
+
+  if (lox->returnSignal) {
+    result = lox->returnSignal->value;
+  }
+
   // Restore environment
   lox->env = previous;
 
-  return NIL_VALUE;
+  lox->returnSignal = NULL;
+
+  return result;
 }
 
 Value evaluate(Lox *lox, Expr *expr) {
