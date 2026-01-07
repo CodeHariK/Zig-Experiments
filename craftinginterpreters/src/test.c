@@ -262,6 +262,11 @@ void runVarTests(void) {
       {"for (var i = 1; i < 4; i = i + 1) { "
        "if (i == 2) continue; print i; }",
        "1;3;", true},
+
+      {"fun hello() { print 123; } hello();", "123;", true},
+      {"fun add(a, b) { print a + b; } add(2, 3);", "5;", true},
+      {"fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();",
+       "10;", true},
   };
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

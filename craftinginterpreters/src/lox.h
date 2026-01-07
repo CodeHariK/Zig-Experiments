@@ -76,16 +76,13 @@ typedef struct {
 } Keyword;
 
 typedef enum {
-  EXPR_BINARY,
-  EXPR_UNARY,
-  EXPR_LITERAL,
-  EXPR_GROUPING,
-  EXPR_VARIABLE,
-  EXPR_ASSIGN,
-  EXPR_LOGICAL,
-} ExprType;
-
-typedef enum { VAL_ERROR, VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_STRING } ValueType;
+  VAL_ERROR,
+  VAL_NIL,
+  VAL_BOOL,
+  VAL_NUMBER,
+  VAL_STRING,
+  VAL_FUNCTION,
+} ValueType;
 
 typedef struct {
   ValueType type;
@@ -93,10 +90,24 @@ typedef struct {
     bool boolean;
     double number;
     char *string;
+    struct LoxFunction *function;
   } as;
 } Value;
 
+typedef enum {
+  EXPR_BINARY,
+  EXPR_UNARY,
+  EXPR_LITERAL,
+  EXPR_GROUPING,
+  EXPR_VARIABLE,
+  EXPR_ASSIGN,
+  EXPR_LOGICAL,
+  EXPR_CALL,
+} ExprType;
+
 typedef struct Expr {
+  u32 line;
+
   ExprType type;
   union {
     struct {
@@ -134,6 +145,11 @@ typedef struct Expr {
       struct Expr *right;
     } logical;
 
+    struct {
+      struct Expr *callee;
+      struct Expr **arguments;
+      u8 argCount;
+    } call;
   } as;
 } Expr;
 
@@ -147,6 +163,8 @@ typedef enum {
   STMT_BREAK,
   STMT_CONTINUE,
   STMT_FOR,
+  STMT_FUNCTION,
+  STMT_RETURN,
 } StmtType;
 
 typedef struct Stmt {
@@ -186,8 +204,39 @@ typedef struct Stmt {
       struct Stmt *body;
     } forStmt;
 
+    struct {
+      Token name;
+      Token *params;
+      u32 paramCount;
+      struct Stmt *body;
+    } functionStmt;
+
+    struct {
+      Expr *value;
+    } returnStmt;
+
   } as;
 } Stmt;
+
+typedef struct {
+  const char *key;
+  Value value;
+} EnvKV;
+
+typedef struct Environment {
+  EnvKV *entries;
+  u32 count;
+  u32 capacity;
+  struct Environment *enclosing;
+} Environment;
+
+typedef struct LoxFunction {
+  Token name;
+  Token *params;
+  u32 paramCount;
+  Stmt *body;
+  Environment *closure;
+} LoxFunction;
 
 typedef struct {
   Stmt **statements;
@@ -199,12 +248,6 @@ const char *tokenTypeToString(TokenType type);
 
 extern const Value NIL_VALUE;
 extern const Value NO_VALUE;
-
-Value numberValue(double n);
-Value boolValue(bool b);
-// Value nilValue(void);
-Value errorValue(char *error);
-Value stringValue(char *s);
 
 void valueToString(Value value, char *buffer, u32 size);
 
@@ -238,18 +281,6 @@ typedef struct {
 
   u32 line;
 } Parser;
-
-typedef struct {
-  const char *key;
-  Value value;
-} EnvKV;
-
-typedef struct Environment {
-  EnvKV *entries;
-  u32 count;
-  u32 capacity;
-  struct Environment *enclosing;
-} Environment;
 
 typedef struct {
   bool hadError;
@@ -293,14 +324,6 @@ Token prevToken(Parser *parser);
 Token peekToken(Parser *parser);
 
 Expr *parseExpression(Lox *lox);
-
-Expr *newBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right);
-Expr *newUnaryExpr(Lox *lox, Token op, Expr *right);
-Expr *newLiteralExpr(Lox *lox, Value value);
-Expr *newGroupingExpr(Lox *lox, Expr *expression);
-Expr *newVariableExpr(Lox *lox, Token token);
-Expr *newAssignExpr(Lox *lox, Token name, Expr *value);
-Expr *newLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right);
 
 bool isTruthy(Value v);
 Value evaluate(Lox *lox, Expr *expr);

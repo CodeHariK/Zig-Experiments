@@ -2,6 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+static Stmt *parseDeclaration(Lox *lox);
+
+static Value makeFunction(LoxFunction *fn) {
+  Value v;
+  v.type = VAL_FUNCTION;
+  v.as.function = fn;
+  return v;
+}
+
 static Stmt *parseExprStatement(Lox *lox) {
   Expr *expr = parseExpression(lox);
   consumeToken(lox, TOKEN_SEMICOLON, "Expect ';' after expression.");
@@ -43,13 +52,6 @@ static Stmt *parseVarStmt(Lox *lox) {
   return stmt;
 }
 
-static Stmt *parseDeclaration(Lox *lox) {
-  if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
-    return parseVarStmt(lox);
-  }
-  return parseStmt(lox);
-}
-
 static Stmt *parseBlockStmt(Lox *lox) {
   int line = lox->parser.line++;
 
@@ -80,6 +82,61 @@ static Stmt *parseBlockStmt(Lox *lox) {
   block->as.block.count = count;
   block->line = line;
   return block;
+}
+
+static Stmt *parseFunctionStmt(Lox *lox) {
+  Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect function name.");
+
+  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+
+  Token *params = NULL;
+  int paramCount = 0;
+  int capacity = 0;
+
+  if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
+    do {
+      if (paramCount >= 255) {
+        parserError(lox, "Can't have more than 255 parameters.");
+      }
+
+      if (paramCount + 1 > capacity) {
+        capacity = capacity < 8 ? 8 : capacity * 2;
+        Token *newParams = arenaAlloc(&lox->astArena, sizeof(Token) * capacity);
+        if (params)
+          memcpy(newParams, params, sizeof(Token) * paramCount);
+        params = newParams;
+      }
+
+      params[paramCount++] =
+          consumeToken(lox, TOKEN_IDENTIFIER, "Expect parameter name.");
+    } while (matchAnyTokenAdvance(lox, 1, TOKEN_COMMA));
+  }
+
+  consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+
+  consumeToken(lox, TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+
+  Stmt *body = parseBlockStmt(lox);
+
+  Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  stmt->type = STMT_FUNCTION;
+  stmt->as.functionStmt.name = name;
+  stmt->as.functionStmt.params = params;
+  stmt->as.functionStmt.paramCount = paramCount;
+  stmt->as.functionStmt.body = body;
+  stmt->line = name.line;
+
+  return stmt;
+}
+
+static Stmt *parseDeclaration(Lox *lox) {
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_FUN)) {
+    return parseFunctionStmt(lox);
+  }
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_VAR)) {
+    return parseVarStmt(lox);
+  }
+  return parseStmt(lox);
 }
 
 static Stmt *parseIfStmt(Lox *lox) {
@@ -127,6 +184,21 @@ static Stmt *parseContinueStmt(Lox *lox) {
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_CONTINUE;
   stmt->line = lox->parser.line++;
+  return stmt;
+}
+
+Stmt *parseReturnStmt(Lox *lox) {
+  consumeToken(lox, TOKEN_SEMICOLON, "Expect ';' after 'return'.");
+
+  Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
+  stmt->type = STMT_RETURN;
+  stmt->line = lox->parser.line++;
+
+  if (lox->parser.loopDepth == 0) {
+    loxError(lox, prevToken(&lox->parser).line,
+             "Can't use 'return' outside of a function.", "");
+  }
+
   return stmt;
 }
 
@@ -243,7 +315,7 @@ Stmt *parseStmt(Lox *lox) {
   return stmt;
 }
 
-void executeBlock(Lox *lox, Stmt **stmts, int count) {
+static void executeBlock(Lox *lox, Stmt **stmts, int count) {
   Environment *previous = lox->env;
   lox->env = envNew(previous);
 
@@ -332,7 +404,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
       if (lox->continueSignal) {
         lox->continueSignal = false;
-        continue;
+        // continue;
       }
     }
     break;
@@ -364,13 +436,34 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     break;
   }
 
+  case STMT_FUNCTION: {
+    LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
+
+    fn->name = stmt->as.functionStmt.name;
+    fn->params = stmt->as.functionStmt.params;
+    fn->paramCount = stmt->as.functionStmt.paramCount;
+    fn->body = stmt->as.functionStmt.body;
+    fn->closure = lox->env; // 🔥 closure captured here
+
+    Value fnValue = makeFunction(fn);
+    envDefine(lox->env, fn->name.lexeme, fnValue);
+
+    printf("[ENV_DEFINE_FUNCTION]");
+    printValue(fnValue);
+    printf("\n");
+    // printStmt(lox, stmt, fnValue, 0);
+    break;
+  }
+
   case STMT_BREAK: {
     lox->breakSignal = true;
     break;
   }
-
   case STMT_CONTINUE: {
     lox->continueSignal = true;
+    break;
+  }
+  case STMT_RETURN: {
     break;
   }
   }
