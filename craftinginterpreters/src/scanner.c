@@ -288,7 +288,7 @@ static void scanToken(Lox *lox) {
     } else if (isAlpha(c)) {
       identifierScan(lox);
     } else {
-      loxError(lox, scanner->line, " @ ", "Unexpected character.");
+      scanError(lox, scanner->line, "Unexpected character.");
     }
     break;
   }
@@ -323,7 +323,7 @@ static void multiLineStringScan(Lox *lox) {
   }
 
   if (isEOFchar(scanner)) {
-    loxError(lox, scanner->line, " @ ", "Unterminated string.");
+    scanError(lox, scanner->line, "Unterminated string.");
     return;
   }
 

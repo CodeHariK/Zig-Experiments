@@ -82,17 +82,23 @@ typedef enum {
   VAL_NUMBER,
   VAL_STRING,
   VAL_FUNCTION,
+  VAL_NATIVE,
 } ValueType;
 
-typedef struct {
+typedef struct Value Value;
+
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+struct Value {
   ValueType type;
   union {
     bool boolean;
     double number;
     char *string;
     struct LoxFunction *function;
+    NativeFn native;
   } as;
-} Value;
+};
 
 typedef struct {
   Value value;
@@ -313,8 +319,6 @@ typedef struct {
 void loxInit(Lox *lox, bool debugPrint);
 void freeLox(Lox *lox);
 
-void loxError(Lox *lox, u32 line, const char *where, const char *message);
-
 void loxRun(Lox *lox, const char *source);
 void loxRunPrompt(Lox *lox);
 void loxRunFile(Lox *lox, const char *path);
@@ -358,8 +362,12 @@ void printProgram(Lox *lox, Program *prog);
 
 void loxAppendOutput(Lox *lox, const char *s);
 
-void runtimeError(Lox *lox, Token op, const char *message);
-void parserError(Lox *lox, const char *message);
+// Error handling
+void reportError(Lox *lox, u32 line, const char *where, const char *message);
+void scanError(Lox *lox, u32 line, const char *message);
+void parseError(Lox *lox, const char *message);
+void runtimeError(Lox *lox, Token token, const char *message);
+void runtimeErrorAt(Lox *lox, u32 line, const char *message);
 void printError(Lox *lox);
 void synchronize(Lox *lox);
 

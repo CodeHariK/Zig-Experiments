@@ -22,31 +22,43 @@ void freeScanner(Scanner *scanner) {
   }
 }
 
-void loxError(Lox *lox, u32 line, const char *where, const char *message) {
+// Error handling implementations
+void reportError(Lox *lox, u32 line, const char *where, const char *message) {
   snprintf(lox->errorMsg, sizeof(lox->errorMsg), "[line %d] Error%s: %s\n",
            line, where, message);
   printf("%s", lox->errorMsg);
   lox->hadError = true;
 }
 
-void parserError(Lox *lox, const char *message) {
+void scanError(Lox *lox, u32 line, const char *message) {
+  reportError(lox, line, "", message);
+}
+
+void parseError(Lox *lox, const char *message) {
   Token token = peekToken(&lox->parser);
   if (token.type == TOKEN_EOF) {
-    loxError(lox, token.line, " at EOF", message);
+    reportError(lox, token.line, " at EOF", message);
   } else {
     char where[64];
-    snprintf(where, sizeof(where), " at '%s'", token.lexeme);
-    loxError(lox, token.line, where, message);
+    snprintf(where, sizeof(where), " at '%.*s'", (int)token.length,
+             token.lexeme);
+    reportError(lox, token.line, where, message);
   }
 }
 
-void runtimeError(Lox *lox, Token op, const char *message) {
+void runtimeError(Lox *lox, Token token, const char *message) {
   snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
-           "[line %d] RuntimeError at '%.*s': %s\n", op.line, (int)(op.length),
-           op.lexeme, message);
+           "[line %d] RuntimeError at '%.*s': %s\n", token.line,
+           (int)(token.length), token.lexeme, message);
   printf("%s", lox->runtimeErrorMsg);
   lox->hadRuntimeError = true;
-  // exit(70);
+}
+
+void runtimeErrorAt(Lox *lox, u32 line, const char *message) {
+  snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
+           "[line %d] RuntimeError: %s\n", line, message);
+  printf("%s", lox->runtimeErrorMsg);
+  lox->hadRuntimeError = true;
 }
 
 void printError(Lox *lox) {

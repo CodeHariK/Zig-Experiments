@@ -275,6 +275,11 @@ void runVarTests(void) {
        "fact(5);",
        "120;", true},
 
+      {"fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } "
+       "return count; } var c = makeCounter(); print c(); print c();",
+       "1;2;", true},
+
+      {"print clock();", "", true},
       //
   };
 

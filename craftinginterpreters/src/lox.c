@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <time.h>
+
+Value clockNative(int argCount, Value *args) {
+  (void)argCount;
+  (void)args;
+  return (Value){VAL_NUMBER, {.number = (double)clock() / CLOCKS_PER_SEC}};
+}
+
 void loxInit(Lox *lox, bool debugPrint) {
   *lox = (Lox){
       .hadError = false,
@@ -20,6 +28,9 @@ void loxInit(Lox *lox, bool debugPrint) {
 
   arenaInit(&lox->astArena, 1024 * 1024);    // 1 MB is plenty
   arenaInit(&lox->runtimeArena, 1024 * 256); // 1 MB is plenty
+
+  // Define native functions
+  envDefine(lox->env, "clock", (Value){VAL_NATIVE, {.native = clockNative}});
 }
 
 void loxRun(Lox *lox, const char *source) {
@@ -59,6 +70,12 @@ void loxRunFile(Lox *lox, const char *path) {
 
   loxRun(lox, buffer);
 
+  if (lox->output_len > 0) {
+    printf("%s", lox->output);
+    lox->output_len = 0;
+    lox->output[0] = '\0';
+  }
+
   free(buffer);
 
   if (lox->hadError) {
@@ -78,6 +95,12 @@ void loxRunPrompt(Lox *lox) {
     }
 
     loxRun(lox, line);
+
+    if (lox->output_len > 0) {
+      printf("%s", lox->output);
+      lox->output_len = 0;
+      lox->output[0] = '\0';
+    }
 
     lox->hadError = false;
   }

@@ -50,6 +50,9 @@ void valueToString(Value value, char *buffer, u32 size) {
   case VAL_FUNCTION:
     snprintf(buffer, size, "<fn %s>", value.as.function->name.lexeme);
     break;
+  case VAL_NATIVE:
+    snprintf(buffer, size, "<native fn>");
+    break;
   }
 }
 
@@ -88,6 +91,9 @@ static bool isEqual(Value a, Value b) {
 
   case VAL_FUNCTION:
     return strcmp(a.as.function->name.lexeme, b.as.function->name.lexeme) == 0;
+
+  case VAL_NATIVE:
+    return a.as.native == b.as.native;
   }
 
   return false;
@@ -154,7 +160,7 @@ Token consumeToken(Lox *lox, TokenType type, const char *message) {
 
     advanceToken(lox);
   } else {
-    parserError(lox, message);
+    parseError(lox, message);
   }
 
   return tok; // error recovery will improve later
@@ -253,8 +259,7 @@ static Expr *parsePrimary(Lox *lox) {
     return parseVariableExpr(lox, prevToken(parser));
   }
 
-  loxError(lox, peekToken(parser).line, ": Expect expression. Got",
-           peekToken(parser).lexeme);
+  parseError(lox, "Expect expression.");
   return NULL;
 }
 
@@ -270,7 +275,7 @@ static Expr *parseFunctionCall(Lox *lox) {
       if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
         do {
           if (argCount >= 255) {
-            parserError(lox, "Can't have more than 255 arguments.");
+            parseError(lox, "Can't have more than 255 arguments.");
           }
 
           if (argCount + 1 > capacity) {
@@ -413,7 +418,7 @@ static Expr *parseAssignment(Lox *lox) {
       return parseAssignExpr(lox, name, value);
     }
 
-    parserError(lox, "Invalid assignment target.");
+    parseError(lox, "Invalid assignment target.");
   }
 
   return expr;
@@ -500,17 +505,35 @@ static Value evaluateFunctionCall(Lox *lox, Expr *expr) {
 
   Value callee = evaluate(lox, expr->as.call.callee);
 
-  if (callee.type != VAL_FUNCTION) {
-    loxError(lox, expr->line, "Can only call functions.", "");
+  if (callee.type != VAL_FUNCTION && callee.type != VAL_NATIVE) {
+    runtimeErrorAt(lox, expr->line, "Can only call functions and classes.");
     return NIL_VALUE;
+  }
+
+  if (callee.type == VAL_NATIVE) {
+    NativeFn native = callee.as.native;
+    // simple native call, assuming no arg check for now or handle it inside
+    // For clock(), argCount is 0.
+    // But general native fns might want to check args.
+    // Let's pass checking responsibility to the native function?
+    // Or just pass args.
+
+    // 1. Evaluate arguments
+    Value args[255];
+    for (u8 i = 0; i < expr->as.call.argCount; i++) {
+      args[i] = evaluate(lox, expr->as.call.arguments[i]);
+    }
+
+    return native(expr->as.call.argCount, args);
   }
 
   LoxFunction *fn = callee.as.function;
 
   if (expr->as.call.argCount != fn->paramCount) {
-    loxError(lox, expr->line, "", "");
-    printf("Expected %d arguments but got %d\n", fn->paramCount,
-           expr->as.call.argCount);
+    char msg[100];
+    snprintf(msg, sizeof(msg), "Expected %d arguments but got %d.",
+             fn->paramCount, expr->as.call.argCount);
+    runtimeErrorAt(lox, expr->line, msg);
     return NIL_VALUE;
   }
 
@@ -576,8 +599,7 @@ Value evaluate(Lox *lox, Expr *expr) {
 
   case EXPR_VARIABLE: {
     if (!envGet(lox->env, expr->as.var.name.lexeme, &result)) {
-      loxError(lox, expr->as.var.name.line, " at variable",
-               "Undefined variable.");
+      runtimeError(lox, expr->as.var.name, "Undefined variable.");
       result = errorValue("Undefined variable.");
       break;
     }

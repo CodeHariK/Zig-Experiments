@@ -98,7 +98,7 @@ static Stmt *parseFunctionStmt(Lox *lox) {
   if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
     do {
       if (paramCount >= 255) {
-        parserError(lox, "Can't have more than 255 parameters.");
+        parseError(lox, "Can't have more than 255 parameters.");
       }
 
       if (paramCount + 1 > capacity) {
@@ -175,8 +175,8 @@ static Stmt *parseBreakStmt(Lox *lox) {
   stmt->line = lox->parser.line++;
 
   if (lox->parser.loopDepth == 0) {
-    loxError(lox, prevToken(&lox->parser).line,
-             "Can't use 'break' outside of a loop.", "");
+    reportError(lox, prevToken(&lox->parser).line, " at 'break'",
+                "Can't use 'break' outside of a loop.");
   }
 
   return stmt;
@@ -309,8 +309,8 @@ Stmt *parseStmt(Lox *lox) {
     stmt = parseContinueStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_RETURN)) {
     if (lox->parser.loopDepth == 0 && lox->parser.functionDepth == 0) {
-      loxError(lox, prevToken(&lox->parser).line,
-               "Can't return from top-level code.", "");
+      reportError(lox, prevToken(&lox->parser).line, " at 'return'",
+                  "Can't return from top-level code.");
     }
     return parseReturnStmt(lox);
   } else if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_BRACE)) {
@@ -352,7 +352,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   switch (stmt->type) {
   case STMT_PRINT: {
     if (!stmt->as.expr_print) {
-      loxError(lox, 0, "Null expression in print statement.", "");
+      runtimeErrorAt(lox, 0, "Null expression in print statement.");
       return;
     }
     Value result = evaluate(lox, stmt->as.expr_print);

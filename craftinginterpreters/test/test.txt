@@ -5,7 +5,7 @@ SOURCE: ()
 [TOK] EOF             ''
 =================
 [MatchAdv] [TOK] LEFT_PAREN      '('
-[line 1] Error: Expect expression. Got: )
+[line 1] Error at ')': Expect expression.
 [CONSUME][TOK] RIGHT_PAREN     ')'
 [EXPR_GROUP]  (GROUP[NULL_EXPR])
 =================
@@ -17,7 +17,7 @@ SOURCE: {}
 [TOK] RIGHT_BRACE     '}'
 [TOK] EOF             ''
 =================
-[line 1] Error: Expect expression. Got: {
+[line 1] Error at '{': Expect expression.
 =================
 [RESULT] : Error: No evaluation;
 [PassError]
@@ -85,7 +85,7 @@ SOURCE: var x = 10;
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
 =================
-[line 1] Error: Expect expression. Got: var
+[line 1] Error at 'var': Expect expression.
 =================
 [RESULT] : Error: No evaluation;
 [PassError]
@@ -98,7 +98,7 @@ SOURCE: print 1 + 2;
 [TOK] SEMICOLON       ';'
 [TOK] EOF             ''
 =================
-[line 1] Error: Expect expression. Got: print
+[line 1] Error at 'print': Expect expression.
 =================
 [RESULT] : Error: No evaluation;
 [PassError]
@@ -148,7 +148,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.14039e-314-NOT-3
+      [EVAL_UNARY] -2.14214e-314-NOT-3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-NOT-3
@@ -1574,7 +1574,7 @@ SOURCE: print {false and 123};
 [TOK] EOF             ''
 =================
 [MatchAdv] [TOK] PRINT           'print'
-[line 1] Error: Expect expression. Got: {
+[line 1] Error at '{': Expect expression.
 [line 1] Error at '{': Expect ';' after value.
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
@@ -2406,7 +2406,7 @@ $2  : [STMT_EXPR] i = 10 ( i + 10)
    [EVAL_ASSIGN] i = 11 ( i + 1)
       [EVAL_VAR] i 11
    [EVAL_BINARY] false ( i < 3)
-[line 1] Error at variable: Undefined variable.
+[line 1] RuntimeError at 'i': Undefined variable.
 $3  : [STMT_PRINT] i Error: Undefined variable.
 
 [RESULT] : Error: Undefined variable.;;
@@ -3623,4 +3623,175 @@ $3  : [STMT_PRINT] fact(5)
 $3  : [STMT_PRINT] fact(5)
 [RESULT] : 120;
 [PASS]
+
+SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } return count; } var c = makeCounter(); print c(); print c();
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'makeCounter'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'i'
+[TOK] =               '='
+[TOK] NUMBER          '0'
+[TOK] SEMICOLON       ';'
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'count'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] IDENTIFIER      'i'
+[TOK] =               '='
+[TOK] IDENTIFIER      'i'
+[TOK] +               '+'
+[TOK] NUMBER          '1'
+[TOK] SEMICOLON       ';'
+[TOK] RETURN          'return'
+[TOK] IDENTIFIER      'i'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] RETURN          'return'
+[TOK] IDENTIFIER      'count'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'c'
+[TOK] =               '='
+[TOK] IDENTIFIER      'makeCounter'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'c'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'c'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'makeCounter'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'i'
+[MatchAdv] [TOK] =               '='
+[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_LITERAL] 0
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'count'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i 
+[MatchAdv] [TOK] =               '='
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i 
+[MatchAdv] [TOK] +               '+'
+[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  ( i + 1)
+[EXPR_ASSIGN] i =  ( i + 1)
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] IDENTIFIER      'i'
+[EXPR_VAR] i 
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] RETURN          'return'
+[MatchAdv] [TOK] IDENTIFIER      'count'
+[EXPR_VAR] count 
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'c'
+[MatchAdv] [TOK] =               '='
+[MatchAdv] [TOK] IDENTIFIER      'makeCounter'
+[EXPR_VAR] makeCounter 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] makeCounter()
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'c'
+[EXPR_VAR] c 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] c()
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'c'
+[EXPR_VAR] c 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] c()
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [4 statements] ====
+$1  : [STMT_FUNCTION] makeCounter ()
+      $1  : [STMT_BLOCK]
+         $2  : [STMT_VAR] i = 0
+         $1  : [STMT_FUNCTION] count ()
+               $3  : [STMT_BLOCK]
+                  $4  : [STMT_EXPR] i =  ( i + 1)
+                  $1  : [STMT_RETURN]
+         $1  : [STMT_RETURN]
+$5  : [STMT_VAR] c = makeCounter()
+$6  : [STMT_PRINT] c()
+$7  : [STMT_PRINT] c()
+=================
+[ENV_DEFINE_FUNCTION]<fn makeCounter>
+      [EVAL_VAR] makeCounter <fn makeCounter>
+$2  : [STMT_VAR] i = 0
+[ENV_DEFINE_FUNCTION]<fn count>
+      [EVAL_VAR] count <fn count>
+[STMT_RETURN_EXEC]<fn count>
+$5  : [STMT_VAR] c = makeCounter()
+         [EVAL_VAR] c <fn count>
+               [EVAL_VAR] i 0
+            [EVAL_BINARY] 1 ( i + 1)
+         [EVAL_ASSIGN] i = 1 ( i + 1)
+$4  : [STMT_EXPR] i = 1 ( i + 1)
+         [EVAL_VAR] i 1
+[STMT_RETURN_EXEC]1
+$6  : [STMT_PRINT] c()
+            [EVAL_VAR] c <fn count>
+                  [EVAL_VAR] i 1
+               [EVAL_BINARY] 2 ( i + 1)
+            [EVAL_ASSIGN] i = 2 ( i + 1)
+$4  : [STMT_EXPR] i = 2 ( i + 1)
+            [EVAL_VAR] i 2
+[STMT_RETURN_EXEC]2
+$7  : [STMT_PRINT] c()
+[RESULT] : 1;2;
+[PASS]
+
+SOURCE: print clock();
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'clock'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'clock'
+[EXPR_VAR] clock 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] clock()
+[CONSUME][TOK] SEMICOLON       ';'
+==== Program [1 statements] ====
+$1  : [STMT_PRINT] clock()
+=================
+      [EVAL_VAR] clock <native fn>
+$1  : [STMT_PRINT] clock()
+[RESULT] : 0.011823;
+[INFO] no expected output
 
