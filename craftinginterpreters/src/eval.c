@@ -156,8 +156,11 @@ static Value evalCall(Lox *lox, Expr *expr) {
     envDefine(lox->env, lox, fn->params[i].lexeme, args[i]);
   }
 
+  LoxFunction *prev = lox->currentFunction;
+  lox->currentFunction = fn;
   // Execute body
   executeStmt(lox, fn->body);
+  lox->currentFunction = prev;
 
   Value result = NIL_VALUE;
 

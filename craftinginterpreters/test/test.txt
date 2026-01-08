@@ -91,7 +91,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 ! - 3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.14282e-314- ! - 3
+      [EVAL_UNARY] -2.15641e-314- ! - 3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 ! - ! - 3
@@ -1775,7 +1775,7 @@ FUNCTION
    define f = <fn f>
       [EVAL_VAR] $f <fn f>
    BLOCK
-      RETURN123
+      RETURN 123
 @3  : [STMT_PRINT] $f ()
 [RESULT] : 123;
 [PASS]
@@ -1822,7 +1822,7 @@ FUNCTION
    BLOCK
       IF
          BLOCK
-            RETURN1
+            RETURN 1
 @4  : [STMT_PRINT] $f ()
 [RESULT] : 1;
 [PASS]
@@ -1900,15 +1900,15 @@ FUNCTION
                                  [EVAL_VAR] $n 1
                               [EVAL_BINARY] true ($n <= 1)
                                  BLOCK
-                                    RETURN1
+                                    RETURN 1
                            [EVAL_BINARY] 2 ($n * $fact ( ($n - 1)))
-RETURN2
+RETURN 2
                         [EVAL_BINARY] 6 ($n * $fact ( ($n - 1)))
-RETURN6
+RETURN 6
                      [EVAL_BINARY] 24 ($n * $fact ( ($n - 1)))
-RETURN24
+RETURN 24
                   [EVAL_BINARY] 120 ($n * $fact ( ($n - 1)))
-RETURN120
+RETURN 120
 @4  : [STMT_PRINT] $fact (5)
 [RESULT] : 120;
 [PASS]
@@ -1951,7 +1951,7 @@ FUNCTION
       FUNCTION
          define count = <fn count>
             [EVAL_VAR] $count <fn count>
-RETURN<fn count>
+RETURN <fn count>
       define c = <fn count>
 @5  : [STMT_VAR] c = $makeCounter ()
             [EVAL_VAR] $c <fn count>
@@ -1961,7 +1961,7 @@ RETURN<fn count>
          [EVAL_ASSIGN] i = 1 ($i + 1)
 @4  : [STMT_EXPR] i = 1 ($i + 1)
                   [EVAL_VAR] $i 1
-RETURN1
+RETURN 1
 @6  : [STMT_PRINT] $c ()
                   [EVAL_VAR] $c <fn count>
          BLOCK
@@ -1970,7 +1970,7 @@ RETURN1
             [EVAL_ASSIGN] i = 2 ($i + 1)
 @4  : [STMT_EXPR] i = 2 ($i + 1)
                         [EVAL_VAR] $i 2
-RETURN2
+RETURN 2
 @7  : [STMT_PRINT] $c ()
 [RESULT] : 1;2;
 [PASS]
@@ -1984,7 +1984,7 @@ SOURCE: print clock();
 =================
       [EVAL_VAR] $clock <native fn>
 @1  : [STMT_PRINT] $clock ()
-[RESULT] : 0.003701;
+[RESULT] : 0.003428;
 [INFO] no expected output
 
 SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
@@ -2039,6 +2039,7 @@ SOURCE: return 123;
 ==== Program [1 statements] ====
 @1  : [STMT_RETURN]
 =================
+[line 1] Error: Can't return from top-level code.
 Resolve error. No execution
 [RESULT] : 
 [PassError]
@@ -2110,12 +2111,12 @@ CLASS
             [EVAL_VAR] $Foo <class Foo>
    define this = <instance Foo>
    BLOCK
-      RETURN123
+      RETURN 123
 @2  : [STMT_PRINT] $Foo ().get()
 [RESULT] : 123;
 [PASS]
 
-SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } }var f = Foo(42); print f.get();
+SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } } var f = Foo(42); print f.get();
 =================
 [EXPR_VAR] $x 
 [EXPR_VAR] $Foo 
@@ -2152,8 +2153,52 @@ CLASS
                   [EVAL_VAR] $f <instance Foo>
    define this = <instance Foo>
    BLOCK
-      RETURN42
+      RETURN 42
 @5  : [STMT_PRINT] $f .get()
 [RESULT] : 42;
+[PASS]
+
+SOURCE: class Foo { init() { return 123; } } print Foo();
+=================
+[EXPR_LITERAL] 123
+[EXPR_VAR] $Foo 
+[EXPR_CALL] $Foo ()
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+      @1  : [STMT_FUNCTION] init ()
+            @1  : [STMT_BLOCK]
+               @1  : [STMT_RETURN]
+)
+@2  : [STMT_PRINT] $Foo ()
+=================
+CLASS
+   define init = <fn init>
+   define Foo = <class Foo>
+      [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+   BLOCK
+      [line 1] RuntimeError at 'return': Can't return a value from an initializer.
+@2  : [STMT_PRINT] $Foo ()
+[RESULT] : <instance Foo>;
+[PassError]
+
+SOURCE: fun init() { return 123; } print init();
+=================
+[EXPR_LITERAL] 123
+[EXPR_VAR] $init 
+[EXPR_CALL] $init ()
+==== Program [2 statements] ====
+@1  : [STMT_FUNCTION] init ()
+      @1  : [STMT_BLOCK]
+         @1  : [STMT_RETURN]
+@2  : [STMT_PRINT] $init ()
+=================
+FUNCTION
+   define init = <fn init>
+      [EVAL_VAR] $init <fn init>
+   BLOCK
+      RETURN 123
+@2  : [STMT_PRINT] $init ()
+[RESULT] : 123;
 [PASS]
 

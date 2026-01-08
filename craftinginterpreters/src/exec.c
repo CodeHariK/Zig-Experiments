@@ -1,4 +1,5 @@
 #include "lox.h"
+#include <string.h>
 
 static void executeBlock(Lox *lox, Stmt **stmts, int count) {
   Environment *previous = lox->env;
@@ -132,16 +133,8 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   case STMT_FUNCTION: {
     printf("FUNCTION\n");
 
-    LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
-
-    fn->name = stmt->as.functionStmt.name;
-    fn->params = stmt->as.functionStmt.params;
-    fn->paramCount = stmt->as.functionStmt.paramCount;
-    fn->body = stmt->as.functionStmt.body;
-    fn->closure = lox->env; // 🔥 closure captured here
-
-    Value fnValue = makeFunction(fn);
-    envDefine(lox->env, lox, fn->name.lexeme, fnValue);
+    Value fnValue = makeFunction(lox, stmt, false);
+    envDefine(lox->env, lox, fnValue.as.function->name.lexeme, fnValue);
 
     break;
   }
@@ -156,14 +149,8 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     for (int i = 0; i < stmt->as.classStmt.methodCount; i++) {
       Stmt *method = stmt->as.classStmt.methods[i];
 
-      LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
-      fn->name = method->as.functionStmt.name;
-      fn->params = method->as.functionStmt.params;
-      fn->paramCount = method->as.functionStmt.paramCount;
-      fn->body = method->as.functionStmt.body;
-      fn->closure = lox->env;
-
-      envDefine(klass->methods, lox, fn->name.lexeme, makeFunction(fn));
+      Value fnValue = makeFunction(lox, method, true);
+      envDefine(klass->methods, lox, fnValue.as.function->name.lexeme, fnValue);
     }
 
     Value classValue;
@@ -189,12 +176,18 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
     if (stmt->as.returnStmt.value) {
       value = evaluate(lox, stmt->as.returnStmt.value);
+
+      if (lox->currentFunction && lox->currentFunction->isInitializer) {
+        runtimeError(lox, stmt->as.returnStmt.keyword,
+                     "Can't return a value from an initializer.");
+        return;
+      }
     }
 
     lox->signal.type = SIGNAL_RETURN;
     lox->signal.returnValue = value;
 
-    printf("RETURN");
+    printf("RETURN ");
     printValue(value);
     printf("\n");
 

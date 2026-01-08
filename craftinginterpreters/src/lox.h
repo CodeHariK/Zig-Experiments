@@ -303,6 +303,7 @@ typedef struct LoxFunction {
   u32 paramCount;
   Stmt *body;
   Environment *closure;
+  bool isInitializer;
 } LoxFunction;
 
 typedef struct LoxClass {
@@ -378,6 +379,8 @@ typedef struct {
     Value returnValue;
   } signal;
 
+  LoxFunction *currentFunction;
+
   Arena astArena;
 
   Scanner scanner;
@@ -422,7 +425,7 @@ Program *parseProgram(Lox *lox);
 void executeStmt(Lox *lox, Stmt *stmt);
 void executeProgram(Lox *lox, Program *prog);
 
-Value makeFunction(LoxFunction *fn);
+Value makeFunction(Lox *lox, Stmt *functionStmt, bool isClass);
 Value bindMethod(Lox *lox, Value method, LoxInstance *instance);
 
 void defineNativeFunctions(Lox *lox);

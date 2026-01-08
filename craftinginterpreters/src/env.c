@@ -198,6 +198,7 @@ static void resolveExpr(Resolver *r, Lox *lox, Expr *expr) {
   }
 
   case EXPR_ASSIGN: {
+    // a = value;
     resolveExpr(r, lox, expr->as.assign.value);
     resolveLocal(r, expr, expr->as.assign.name);
     break;
@@ -214,14 +215,15 @@ static void resolveExpr(Resolver *r, Lox *lox, Expr *expr) {
   case EXPR_GET:
     resolveExpr(r, lox, expr->as.getExpr.object);
     break;
-
   case EXPR_SET:
+    // this.x = value;  or  obj.x = value;
     resolveExpr(r, lox, expr->as.setExpr.object);
     resolveExpr(r, lox, expr->as.setExpr.value);
     break;
   case EXPR_THIS: {
     if (r->scopeCount == 0) {
-      // error: can't use 'this' outside class
+      reportError(lox, expr->as.thisExpr.keyword.line, "",
+                  "Can't use 'this' outside of a class.");
       return;
     }
     resolveLocal(r, expr, expr->as.thisExpr.keyword);
@@ -237,7 +239,7 @@ static void beginScope(Resolver *r) {
 
 static void endScope(Resolver *r) { r->scopeCount--; }
 
-static void declareVar(Resolver *r, Token name) {
+static void declareVar(Resolver *r, Lox *lox, Token name) {
   if (r->scopeCount == 0)
     return;
 
@@ -245,7 +247,8 @@ static void declareVar(Resolver *r, Token name) {
 
   for (i32 i = 0; i < scope->varCount; i++) {
     if (strcmp(scope->vars[i].name, name.lexeme) == 0) {
-      // error: redeclaration
+      reportError(lox, name.line, "",
+                  "Variable already declared in this scope.");
       return;
     }
   }
@@ -290,7 +293,7 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     break;
 
   case STMT_VAR:
-    declareVar(r, stmt->as.var.name);
+    declareVar(r, lox, stmt->as.var.name);
 
     if (stmt->as.var.initializer)
       resolveExpr(r, lox, stmt->as.var.initializer);
@@ -330,14 +333,14 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
 
   case STMT_FUNCTION:
     // Declare function name in enclosing scope
-    declareVar(r, stmt->as.functionStmt.name);
+    declareVar(r, lox, stmt->as.functionStmt.name);
     defineVar(r);
 
     // Resolve function body in its own scope
     beginScope(r);
 
     for (u8 i = 0; i < stmt->as.functionStmt.paramCount; i++) {
-      declareVar(r, stmt->as.functionStmt.params[i]);
+      declareVar(r, lox, stmt->as.functionStmt.params[i]);
       defineVar(r);
     }
 
@@ -347,7 +350,7 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     break;
 
   case STMT_CLASS:
-    declareVar(r, stmt->as.classStmt.name);
+    declareVar(r, lox, stmt->as.classStmt.name);
     defineVar(r);
 
     beginScope(r);  // for methods
@@ -362,8 +365,8 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
 
   case STMT_RETURN:
     if (r->scopeCount == 0) {
-      // return outside function → error (optional enforcement)
-      // reportError(...)
+      reportError(lox, stmt->as.returnStmt.keyword.line, "",
+                  "Can't return from top-level code.");
     }
 
     if (stmt->as.returnStmt.value)

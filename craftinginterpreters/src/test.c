@@ -290,9 +290,12 @@ void runVarTests(void) {
       {"class Foo {} print Foo;", "<class Foo>;", true},
       {"class Foo {} var f = Foo(); print f;", "<instance Foo>;", true},
       {"class Foo { get() { return 123; } } print Foo().get();", "123;", true},
-      {"class Foo { init(x){ this.x = x; } get(){ return this.x; } }"
+      {"class Foo { init(x){ this.x = x; } get(){ return this.x; } } "
        "var f = Foo(42); print f.get();",
        "42;", true},
+      {"class Foo { init() { return 123; } } print Foo();", "<instance Foo>;",
+       false},
+      {"fun init() { return 123; } print init();", "123;", true},
 
   };
 

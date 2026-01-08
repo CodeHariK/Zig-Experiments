@@ -111,11 +111,21 @@ bool isEqual(Value a, Value b) {
   return false;
 }
 
-Value makeFunction(LoxFunction *fn) {
-  Value v;
-  v.type = VAL_FUNCTION;
-  v.as.function = fn;
-  return v;
+Value makeFunction(Lox *lox, Stmt *func, bool isClass) {
+
+  LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
+  fn->name = func->as.functionStmt.name;
+  fn->params = func->as.functionStmt.params;
+  fn->paramCount = func->as.functionStmt.paramCount;
+  fn->body = func->as.functionStmt.body;
+  fn->closure = lox->env;
+  if (isClass) {
+    fn->isInitializer = strcmp(fn->name.lexeme, "init") == 0;
+  } else {
+    fn->isInitializer = false;
+  }
+
+  return (Value){.type = VAL_FUNCTION, .as.function = fn};
 }
 
 Value bindMethod(Lox *lox, Value method, LoxInstance *instance) {
@@ -133,5 +143,5 @@ Value bindMethod(Lox *lox, Value method, LoxInstance *instance) {
   *bound = *fn;
   bound->closure = env;
 
-  return makeFunction(bound);
+  return (Value){.type = VAL_FUNCTION, .as.function = bound};
 }
