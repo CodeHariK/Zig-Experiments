@@ -1,21 +1,13 @@
 ====== Expression Tests ======
 SOURCE: ()
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] LEFT_PAREN      '('
 [line 1] Error at ')': Expect expression.
-[CONSUME][TOK] RIGHT_PAREN     ')'
 [EXPR_GROUP]  (GROUP[NULL_EXPR])
 =================
 [RESULT] : Error: No evaluation;
 [PassError]
 
 SOURCE: {}
-[TOK] LEFT_BRACE      '{'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
 [line 1] Error at '{': Expect expression.
 =================
@@ -23,67 +15,41 @@ SOURCE: {}
 [PassError]
 
 SOURCE: !true
-[TOK] NOT             '!'
-[TOK] TRUE            'true'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[EXPR_UNARY] NOTtrue
+[EXPR_UNARY] ! true
 =================
-   [EVAL_UNARY] falseNOTtrue
+   [EVAL_UNARY] false! true
 [RESULT] : false
 [PASS]
 
 SOURCE: !true == false
-[TOK] NOT             '!'
-[TOK] TRUE            'true'
-[TOK] ==              '=='
-[TOK] FALSE           'false'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[EXPR_UNARY] NOTtrue
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] FALSE           'false'
+[EXPR_UNARY] ! true
 [EXPR_LITERAL] false
-[EXPR_BINARY]  ( NOTtrue== false)
+[EXPR_BINARY]  (! true== false)
 =================
-      [EVAL_UNARY] falseNOTtrue
-   [EVAL_BINARY] true ( NOTtrue== false)
+      [EVAL_UNARY] false! true
+   [EVAL_BINARY] true (! true== false)
 [RESULT] : true
 [PASS]
 
 SOURCE: 123.45
-[TOK] NUMBER          '123.45'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '123.45'
 [EXPR_LITERAL] 123.45
 =================
 [RESULT] : 123.45
 [PASS]
 
 SOURCE: nil
-[TOK] NIL             'nil'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
 =================
 [RESULT] : nil
 [PASS]
 
 SOURCE: var x = 10;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'x'
-[TOK] =               '='
-[TOK] NUMBER          '10'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
 [line 1] Error at 'var': Expect expression.
 =================
@@ -91,12 +57,6 @@ SOURCE: var x = 10;
 [PassError]
 
 SOURCE: print 1 + 2;
-[TOK] PRINT           'print'
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
 [line 1] Error at 'print': Expect expression.
 =================
@@ -105,408 +65,235 @@ SOURCE: print 1 + 2;
 
 SOURCE: // comment
 123
-[TOK] NUMBER          '123'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '123'
 [EXPR_LITERAL] 123
 =================
 [RESULT] : 123
 [PASS]
 
 SOURCE: "hello world"
-[TOK] STRING          '"hello world"'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] STRING          '"hello world"'
 [EXPR_LITERAL] hello world
 =================
 [RESULT] : hello world
 [PASS]
 
 SOURCE: !-!-3
-[TOK] NOT             '!'
-[TOK] -               '-'
-[TOK] NOT             '!'
-[TOK] -               '-'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] -               '-'
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] -               '-'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_UNARY] -3
-[EXPR_UNARY] NOT-3
-[EXPR_UNARY] -NOT-3
-[EXPR_UNARY] NOT-NOT-3
+[EXPR_UNARY] - 3
+[EXPR_UNARY] ! - 3
+[EXPR_UNARY] - ! - 3
+[EXPR_UNARY] ! - ! - 3
 =================
-            [EVAL_UNARY] -3-3
+            [EVAL_UNARY] -3- 3
 [line 1] RuntimeError at '!': Operand must be a boolean.
          [EVAL_UNARY] Error: Operand must be a boolean.
-NOT-3
+! - 3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.15774e-314-NOT-3
+      [EVAL_UNARY] -2.14282e-314- ! - 3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
-NOT-NOT-3
+! - ! - 3
 [RESULT] : Error: Operand must be a boolean.;
 [PassError]
 
 SOURCE: 1 + 2 * 3
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] *               '*'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[MatchAdv] [TOK] *               '*'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( 2* 3)
-[EXPR_BINARY]  ( 1+  ( 2* 3))
+[EXPR_BINARY]  (2* 3)
+[EXPR_BINARY]  (1+  (2* 3))
 =================
-      [EVAL_BINARY] 6 ( 2* 3)
-   [EVAL_BINARY] 7 ( 1+  ( 2* 3))
+      [EVAL_BINARY] 6 (2* 3)
+   [EVAL_BINARY] 7 (1+  (2* 3))
 [RESULT] : 7
 [PASS]
 
 SOURCE: (1 + 2) * 3
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] *               '*'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 1+ 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_GROUP]  (GROUP ( 1+ 2))
-[MatchAdv] [TOK] *               '*'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_BINARY]  (1+ 2)
+[EXPR_GROUP]  (GROUP (1+ 2))
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  (  (GROUP ( 1+ 2))* 3)
+[EXPR_BINARY]  ( (GROUP (1+ 2))* 3)
 =================
-         [EVAL_BINARY] 3 ( 1+ 2)
-      [EVAL_GROUP] 3 (GROUP ( 1+ 2))
-   [EVAL_BINARY] 9 (  (GROUP ( 1+ 2))* 3)
+         [EVAL_BINARY] 3 (1+ 2)
+      [EVAL_GROUP] 3 (GROUP (1+ 2))
+   [EVAL_BINARY] 9 ( (GROUP (1+ 2))* 3)
 [RESULT] : 9
 [PASS]
 
 SOURCE: 5 > 3
-[TOK] NUMBER          '5'
-[TOK] >               '>'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] >               '>'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( 5> 3)
+[EXPR_BINARY]  (5> 3)
 =================
-   [EVAL_BINARY] true ( 5> 3)
+   [EVAL_BINARY] true (5> 3)
 [RESULT] : true
 [PASS]
 
 SOURCE: 5 < 3
-[TOK] NUMBER          '5'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( 5< 3)
+[EXPR_BINARY]  (5< 3)
 =================
-   [EVAL_BINARY] false ( 5< 3)
+   [EVAL_BINARY] false (5< 3)
 [RESULT] : false
 [PASS]
 
 SOURCE: nil == nil
-[TOK] NIL             'nil'
-[TOK] ==              '=='
-[TOK] NIL             'nil'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[EXPR_BINARY]  ( nil== nil)
+[EXPR_BINARY]  (nil== nil)
 =================
-   [EVAL_BINARY] true ( nil== nil)
+   [EVAL_BINARY] true (nil== nil)
 [RESULT] : true
 [PASS]
 
 SOURCE: !false
-[TOK] NOT             '!'
-[TOK] FALSE           'false'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[EXPR_UNARY] NOTfalse
+[EXPR_UNARY] ! false
 =================
-   [EVAL_UNARY] trueNOTfalse
+   [EVAL_UNARY] true! false
 [RESULT] : true
 [PASS]
 
 SOURCE: 5 > 3
-[TOK] NUMBER          '5'
-[TOK] >               '>'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] >               '>'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( 5> 3)
+[EXPR_BINARY]  (5> 3)
 =================
-   [EVAL_BINARY] true ( 5> 3)
+   [EVAL_BINARY] true (5> 3)
 [RESULT] : true
 [PASS]
 
 SOURCE: 5 < 3
-[TOK] NUMBER          '5'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( 5< 3)
+[EXPR_BINARY]  (5< 3)
 =================
-   [EVAL_BINARY] false ( 5< 3)
+   [EVAL_BINARY] false (5< 3)
 [RESULT] : false
 [PASS]
 
 SOURCE: 5 >= 5
-[TOK] NUMBER          '5'
-[TOK] >=              '>='
-[TOK] NUMBER          '5'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] >=              '>='
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[EXPR_BINARY]  ( 5>= 5)
+[EXPR_BINARY]  (5>= 5)
 =================
-   [EVAL_BINARY] true ( 5>= 5)
+   [EVAL_BINARY] true (5>= 5)
 [RESULT] : true
 [PASS]
 
 SOURCE: 5 <= 4
-[TOK] NUMBER          '5'
-[TOK] <=              '<='
-[TOK] NUMBER          '4'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[MatchAdv] [TOK] <=              '<='
-[MatchAdv] [TOK] NUMBER          '4'
 [EXPR_LITERAL] 4
-[EXPR_BINARY]  ( 5<= 4)
+[EXPR_BINARY]  (5<= 4)
 =================
-   [EVAL_BINARY] false ( 5<= 4)
+   [EVAL_BINARY] false (5<= 4)
 [RESULT] : false
 [PASS]
 
 SOURCE: true == false
-[TOK] TRUE            'true'
-[TOK] ==              '=='
-[TOK] FALSE           'false'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[EXPR_BINARY]  ( true== false)
+[EXPR_BINARY]  (true== false)
 =================
-   [EVAL_BINARY] false ( true== false)
+   [EVAL_BINARY] false (true== false)
 [RESULT] : false
 [PASS]
 
 SOURCE: true != false
-[TOK] TRUE            'true'
-[TOK] !=              '!='
-[TOK] FALSE           'false'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[MatchAdv] [TOK] !=              '!='
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[EXPR_BINARY]  ( true!= false)
+[EXPR_BINARY]  (true!= false)
 =================
-   [EVAL_BINARY] true ( true!= false)
+   [EVAL_BINARY] true (true!= false)
 [RESULT] : true
 [PASS]
 
 SOURCE: nil == nil
-[TOK] NIL             'nil'
-[TOK] ==              '=='
-[TOK] NIL             'nil'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[EXPR_BINARY]  ( nil== nil)
+[EXPR_BINARY]  (nil== nil)
 =================
-   [EVAL_BINARY] true ( nil== nil)
+   [EVAL_BINARY] true (nil== nil)
 [RESULT] : true
 [PASS]
 
 SOURCE: !false
-[TOK] NOT             '!'
-[TOK] FALSE           'false'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[EXPR_UNARY] NOTfalse
+[EXPR_UNARY] ! false
 =================
-   [EVAL_UNARY] trueNOTfalse
+   [EVAL_UNARY] true! false
 [RESULT] : true
 [PASS]
 
 SOURCE: -(1 + 2)
-[TOK] -               '-'
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] -               '-'
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 1+ 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_GROUP]  (GROUP ( 1+ 2))
-[EXPR_UNARY] - (GROUP ( 1+ 2))
+[EXPR_BINARY]  (1+ 2)
+[EXPR_GROUP]  (GROUP (1+ 2))
+[EXPR_UNARY] -  (GROUP (1+ 2))
 =================
-         [EVAL_BINARY] 3 ( 1+ 2)
-      [EVAL_GROUP] 3 (GROUP ( 1+ 2))
-   [EVAL_UNARY] -3- (GROUP ( 1+ 2))
+         [EVAL_BINARY] 3 (1+ 2)
+      [EVAL_GROUP] 3 (GROUP (1+ 2))
+   [EVAL_UNARY] -3-  (GROUP (1+ 2))
 [RESULT] : -3
 [PASS]
 
 SOURCE: (1 + 2) * (3 - 1)
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] *               '*'
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '3'
-[TOK] -               '-'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 1+ 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_GROUP]  (GROUP ( 1+ 2))
-[MatchAdv] [TOK] *               '*'
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_BINARY]  (1+ 2)
+[EXPR_GROUP]  (GROUP (1+ 2))
 [EXPR_LITERAL] 3
-[MatchAdv] [TOK] -               '-'
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( 3- 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_GROUP]  (GROUP ( 3- 1))
-[EXPR_BINARY]  (  (GROUP ( 1+ 2))*  (GROUP ( 3- 1)))
+[EXPR_BINARY]  (3- 1)
+[EXPR_GROUP]  (GROUP (3- 1))
+[EXPR_BINARY]  ( (GROUP (1+ 2))*  (GROUP (3- 1)))
 =================
-         [EVAL_BINARY] 3 ( 1+ 2)
-      [EVAL_GROUP] 3 (GROUP ( 1+ 2))
-         [EVAL_BINARY] 2 ( 3- 1)
-      [EVAL_GROUP] 2 (GROUP ( 3- 1))
-   [EVAL_BINARY] 6 (  (GROUP ( 1+ 2))*  (GROUP ( 3- 1)))
+         [EVAL_BINARY] 3 (1+ 2)
+      [EVAL_GROUP] 3 (GROUP (1+ 2))
+         [EVAL_BINARY] 2 (3- 1)
+      [EVAL_GROUP] 2 (GROUP (3- 1))
+   [EVAL_BINARY] 6 ( (GROUP (1+ 2))*  (GROUP (3- 1)))
 [RESULT] : 6
 [PASS]
 
 SOURCE: 2 / 4
-[TOK] NUMBER          '2'
-[TOK] /               '/'
-[TOK] NUMBER          '4'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[MatchAdv] [TOK] /               '/'
-[MatchAdv] [TOK] NUMBER          '4'
 [EXPR_LITERAL] 4
-[EXPR_BINARY]  ( 2/ 4)
+[EXPR_BINARY]  (2/ 4)
 =================
-   [EVAL_BINARY] 0.5 ( 2/ 4)
+   [EVAL_BINARY] 0.5 (2/ 4)
 [RESULT] : 0.5
 [PASS]
 
 ====== Statement Tests ======
 SOURCE: 2 / 4
-[TOK] NUMBER          '2'
-[TOK] /               '/'
-[TOK] NUMBER          '4'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[MatchAdv] [TOK] /               '/'
-[MatchAdv] [TOK] NUMBER          '4'
 [EXPR_LITERAL] 4
-[EXPR_BINARY]  ( 2/ 4)
+[EXPR_BINARY]  (2/ 4)
 [line 1] Error at EOF: Expect ';' after expression.
 ### SYNCHRONIZE ###
 =================
@@ -514,3361 +301,1859 @@ SOURCE: 2 / 4
 [PassError]
 
 SOURCE: print 1 + 2;
-[TOK] PRINT           'print'
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 1+ 2)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  (1+ 2)
 =================
-   [EVAL_BINARY] 3 ( 1+ 2)
-$1  : [STMT_PRINT] 3 ( 1+ 2)
+   [EVAL_BINARY] 3 (1+ 2)
+@1  : [STMT_PRINT] 3 (1+ 2)
 [RESULT] : 3;
 [PASS]
 
 SOURCE: 1 + 2;
-[TOK] NUMBER          '1'
-[TOK] +               '+'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 1+ 2)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  (1+ 2)
 =================
-   [EVAL_BINARY] 3 ( 1+ 2)
-$1  : [STMT_EXPR] 3 ( 1+ 2)
+   [EVAL_BINARY] 3 (1+ 2)
+@1  : [STMT_EXPR] 3 (1+ 2)
 [RESULT] : 
 [INFO] no expected output
 
 SOURCE: print !false;
-[TOK] PRINT           'print'
-[TOK] NOT             '!'
-[TOK] FALSE           'false'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NOT             '!'
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[EXPR_UNARY] NOTfalse
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_UNARY] ! false
 =================
-   [EVAL_UNARY] trueNOTfalse
-$1  : [STMT_PRINT] trueNOTfalse
+   [EVAL_UNARY] true! false
+@1  : [STMT_PRINT] true! false
 [RESULT] : true;
 [PASS]
 
 SOURCE: print "hello";
-[TOK] PRINT           'print'
-[TOK] STRING          '"hello"'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] STRING          '"hello"'
 [EXPR_LITERAL] hello
-[CONSUME][TOK] SEMICOLON       ';'
 =================
-$1  : [STMT_PRINT] hello
+@1  : [STMT_PRINT] hello
 [RESULT] : hello;
 [PASS]
 
 ====== Variable Tests ======
 SOURCE: var a = 7 * 7; print a/7;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '7'
-[TOK] *               '*'
-[TOK] NUMBER          '7'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] /               '/'
-[TOK] NUMBER          '7'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '7'
 [EXPR_LITERAL] 7
-[MatchAdv] [TOK] *               '*'
-[MatchAdv] [TOK] NUMBER          '7'
 [EXPR_LITERAL] 7
-[EXPR_BINARY]  ( 7* 7)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] /               '/'
-[MatchAdv] [TOK] NUMBER          '7'
+[EXPR_BINARY]  (7* 7)
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 7
-[EXPR_BINARY]  ( a / 7)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($a / 7)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a =  ( 7* 7)
-$2  : [STMT_PRINT]  ( a / 7)
+@1  : [STMT_VAR] a =  (7* 7)
+@2  : [STMT_PRINT]  ($a / 7)
 =================
-   [EVAL_BINARY] 49 ( 7* 7)
-$1  : [STMT_VAR] a = 49 ( 7* 7)
-      [EVAL_VAR] a 49
-   [EVAL_BINARY] 7 ( a / 7)
-$2  : [STMT_PRINT] 7 ( a / 7)
+   [EVAL_BINARY] 49 (7* 7)
+   define a = 49
+@1  : [STMT_VAR] a = 49 (7* 7)
+      [EVAL_VAR] $a 49
+   [EVAL_BINARY] 7 ($a / 7)
+@2  : [STMT_PRINT] 7 ($a / 7)
 [RESULT] : 7;
 [PASS]
 
 SOURCE: var b = 3.14; print b;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'b'
-[TOK] =               '='
-[TOK] NUMBER          '3.14'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'b'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'b'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '3.14'
 [EXPR_LITERAL] 3.14
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'b'
-[EXPR_VAR] b 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $b 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] b = 3.14
-$2  : [STMT_PRINT] b 
+@1  : [STMT_VAR] b = 3.14
+@2  : [STMT_PRINT] $b 
 =================
-$1  : [STMT_VAR] b = 3.14
-   [EVAL_VAR] b 3.14
-$2  : [STMT_PRINT] b 3.14
+   define b = 3.14
+@1  : [STMT_VAR] b = 3.14
+   [EVAL_VAR] $b 3.14
+@2  : [STMT_PRINT] $b 3.14
 [RESULT] : 3.14;
 [PASS]
 
 SOURCE: var s = "hello"; print s;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      's'
-[TOK] =               '='
-[TOK] STRING          '"hello"'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      's'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      's'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] STRING          '"hello"'
 [EXPR_LITERAL] hello
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      's'
-[EXPR_VAR] s 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $s 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] s = hello
-$2  : [STMT_PRINT] s 
+@1  : [STMT_VAR] s = hello
+@2  : [STMT_PRINT] $s 
 =================
-$1  : [STMT_VAR] s = hello
-   [EVAL_VAR] s hello
-$2  : [STMT_PRINT] s hello
+   define s = hello
+@1  : [STMT_VAR] s = hello
+   [EVAL_VAR] $s hello
+@2  : [STMT_PRINT] $s hello
 [RESULT] : hello;
 [PASS]
 
 SOURCE: var x; print x;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'x'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'x'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'x'
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'x'
-[EXPR_VAR] x 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $x 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] x = [NULL_EXPR]$2  : [STMT_PRINT] x 
+@1  : [STMT_VAR] x = [NULL_EXPR]@2  : [STMT_PRINT] $x 
 =================
-$1  : [STMT_VAR] x = [NULL_EXPR]   [EVAL_VAR] x nil
-$2  : [STMT_PRINT] x nil
+   define x = nil
+@1  : [STMT_VAR] x = [NULL_EXPR]   [EVAL_VAR] $x nil
+@2  : [STMT_PRINT] $x nil
 [RESULT] : nil;
 [PASS]
 
 SOURCE: var y = true; print y;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'y'
-[TOK] =               '='
-[TOK] TRUE            'true'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'y'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'y'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'y'
-[EXPR_VAR] y 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $y 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] y = true
-$2  : [STMT_PRINT] y 
+@1  : [STMT_VAR] y = true
+@2  : [STMT_PRINT] $y 
 =================
-$1  : [STMT_VAR] y = true
-   [EVAL_VAR] y true
-$2  : [STMT_PRINT] y true
+   define y = true
+@1  : [STMT_VAR] y = true
+   [EVAL_VAR] $y true
+@2  : [STMT_PRINT] $y true
 [RESULT] : true;
 [PASS]
 
 SOURCE: var c = 10; var d = 5; print c;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'c'
-[TOK] =               '='
-[TOK] NUMBER          '10'
-[TOK] SEMICOLON       ';'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'd'
-[TOK] =               '='
-[TOK] NUMBER          '5'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'c'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'c'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '10'
 [EXPR_LITERAL] 10
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'd'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '5'
 [EXPR_LITERAL] 5
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'c'
-[EXPR_VAR] c 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $c 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] c = 10
-$2  : [STMT_VAR] d = 5
-$3  : [STMT_PRINT] c 
+@1  : [STMT_VAR] c = 10
+@2  : [STMT_VAR] d = 5
+@3  : [STMT_PRINT] $c 
 =================
-$1  : [STMT_VAR] c = 10
-$2  : [STMT_VAR] d = 5
-   [EVAL_VAR] c 10
-$3  : [STMT_PRINT] c 10
+   define c = 10
+@1  : [STMT_VAR] c = 10
+   define d = 5
+@2  : [STMT_VAR] d = 5
+   [EVAL_VAR] $c 10
+@3  : [STMT_PRINT] $c 10
 [RESULT] : 10;
 [PASS]
 
 SOURCE: var c = 10; c = 20; print c;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'c'
-[TOK] =               '='
-[TOK] NUMBER          '10'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'c'
-[TOK] =               '='
-[TOK] NUMBER          '20'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'c'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'c'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '10'
 [EXPR_LITERAL] 10
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'c'
-[EXPR_VAR] c 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '20'
+[EXPR_VAR] $c 
 [EXPR_LITERAL] 20
 [EXPR_ASSIGN] c = 20
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'c'
-[EXPR_VAR] c 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $c 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] c = 10
-$2  : [STMT_EXPR] c = 20
-$3  : [STMT_PRINT] c 
+@1  : [STMT_VAR] c = 10
+@2  : [STMT_EXPR] c = 20
+@3  : [STMT_PRINT] $c 
 =================
-$1  : [STMT_VAR] c = 10
+   define c = 10
+@1  : [STMT_VAR] c = 10
    [EVAL_ASSIGN] c = 2020
-$2  : [STMT_EXPR] c = 2020
-   [EVAL_VAR] c 20
-$3  : [STMT_PRINT] c 20
+@2  : [STMT_EXPR] c = 2020
+   [EVAL_VAR] $c 20
+@3  : [STMT_PRINT] $c 20
 [RESULT] : 20;
 [PASS]
 
 SOURCE: var a = 1; print a = 2;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_ASSIGN] a = 2
-[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_PRINT] a = 2
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_PRINT] a = 2
 =================
-$1  : [STMT_VAR] a = 1
+   define a = 1
+@1  : [STMT_VAR] a = 1
    [EVAL_ASSIGN] a = 22
-$2  : [STMT_PRINT] a = 22
+@2  : [STMT_PRINT] a = 22
 [RESULT] : 2;
 [PASS]
 
 SOURCE: print 1 = 2;
-[TOK] PRINT           'print'
-[TOK] NUMBER          '1'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
 [line 1] Error at ';': Invalid assignment target.
-[CONSUME][TOK] SEMICOLON       ';'
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
 [NULL_STMT]
 =================
+Resolve error. No execution
 [RESULT] : 
 [PassError]
 
 SOURCE: {}
-[TOK] LEFT_BRACE      '{'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
+@1  : [STMT_BLOCK]
 =================
+BLOCK
 [RESULT] : 
 [INFO] no expected output
 
 SOURCE: var a = 0; var b = 0; print a = b = 3;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'b'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] IDENTIFIER      'b'
-[TOK] =               '='
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'b'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'b'
-[EXPR_VAR] b 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $a 
+[EXPR_VAR] $b 
 [EXPR_LITERAL] 3
 [EXPR_ASSIGN] b = 3
 [EXPR_ASSIGN] a = b = 3
-[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] a = 0
-$2  : [STMT_VAR] b = 0
-$3  : [STMT_PRINT] a = b = 3
+@1  : [STMT_VAR] a = 0
+@2  : [STMT_VAR] b = 0
+@3  : [STMT_PRINT] a = b = 3
 =================
-$1  : [STMT_VAR] a = 0
-$2  : [STMT_VAR] b = 0
+   define a = 0
+@1  : [STMT_VAR] a = 0
+   define b = 0
+@2  : [STMT_VAR] b = 0
       [EVAL_ASSIGN] b = 33
    [EVAL_ASSIGN] a = 3b = 3
-$3  : [STMT_PRINT] a = 3b = 3
+@3  : [STMT_PRINT] a = 3b = 3
 [RESULT] : 3;
 [PASS]
 
 SOURCE: var a = 1; print (a = 2) + 3;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] +               '+'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_ASSIGN] a = 2
-[CONSUME][TOK] RIGHT_PAREN     ')'
 [EXPR_GROUP]  (GROUPa = 2)
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  (  (GROUPa = 2)+ 3)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ( (GROUPa = 2)+ 3)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_PRINT]  (  (GROUPa = 2)+ 3)
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_PRINT]  ( (GROUPa = 2)+ 3)
 =================
-$1  : [STMT_VAR] a = 1
+   define a = 1
+@1  : [STMT_VAR] a = 1
          [EVAL_ASSIGN] a = 22
       [EVAL_GROUP] 2 (GROUPa = 2)
-   [EVAL_BINARY] 5 (  (GROUPa = 2)+ 3)
-$2  : [STMT_PRINT] 5 (  (GROUPa = 2)+ 3)
+   [EVAL_BINARY] 5 ( (GROUPa = 2)+ 3)
+@2  : [STMT_PRINT] 5 ( (GROUPa = 2)+ 3)
 [RESULT] : 5;
 [PASS]
 
 SOURCE: var a = 1; print a = 2 == 2;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] ==              '=='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 2
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( 2== 2)
-[EXPR_ASSIGN] a =  ( 2== 2)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  (2== 2)
+[EXPR_ASSIGN] a =  (2== 2)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_PRINT] a =  ( 2== 2)
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_PRINT] a =  (2== 2)
 =================
-$1  : [STMT_VAR] a = 1
-      [EVAL_BINARY] true ( 2== 2)
-   [EVAL_ASSIGN] a = true ( 2== 2)
-$2  : [STMT_PRINT] a = true ( 2== 2)
+   define a = 1
+@1  : [STMT_VAR] a = 1
+      [EVAL_BINARY] true (2== 2)
+   [EVAL_ASSIGN] a = true (2== 2)
+@2  : [STMT_PRINT] a = true (2== 2)
 [RESULT] : true;
 [PASS]
 
 SOURCE: { var a = 1; print a; }
-[TOK] LEFT_BRACE      '{'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_VAR] $a 
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $2  : [STMT_VAR] a = 1
-   $3  : [STMT_PRINT] a 
+@1  : [STMT_BLOCK]
+   @2  : [STMT_VAR] a = 1
+   @3  : [STMT_PRINT] $a 
 =================
-$2  : [STMT_VAR] a = 1
-   [EVAL_VAR] a 1
-$3  : [STMT_PRINT] a 1
+BLOCK
+         define a = 1
+@2  : [STMT_VAR] a = 1
+      [EVAL_VAR] $a 1
+@3  : [STMT_PRINT] $a 1
 [RESULT] : 1;
 [PASS]
 
 SOURCE: var a = 1; { print a; }
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_VAR] $a 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_BLOCK]
-   $3  : [STMT_PRINT] a 
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_BLOCK]
+   @3  : [STMT_PRINT] $a 
 =================
-$1  : [STMT_VAR] a = 1
-   [EVAL_VAR] a 1
-$3  : [STMT_PRINT] a 1
+   define a = 1
+@1  : [STMT_VAR] a = 1
+BLOCK
+      [EVAL_VAR] $a 1
+@3  : [STMT_PRINT] $a 1
 [RESULT] : 1;
 [PASS]
 
 SOURCE: var a = 1; { var a = 2; print a; } print a;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] LEFT_BRACE      '{'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $a 
+[EXPR_VAR] $a 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_BLOCK]
-   $3  : [STMT_VAR] a = 2
-   $4  : [STMT_PRINT] a 
-$5  : [STMT_PRINT] a 
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_BLOCK]
+   @3  : [STMT_VAR] a = 2
+   @4  : [STMT_PRINT] $a 
+@5  : [STMT_PRINT] $a 
 =================
-$1  : [STMT_VAR] a = 1
-$3  : [STMT_VAR] a = 2
-   [EVAL_VAR] a 2
-$4  : [STMT_PRINT] a 2
-   [EVAL_VAR] a 1
-$5  : [STMT_PRINT] a 1
+   define a = 1
+@1  : [STMT_VAR] a = 1
+BLOCK
+         define a = 2
+@3  : [STMT_VAR] a = 2
+      [EVAL_VAR] $a 2
+@4  : [STMT_PRINT] $a 2
+   [EVAL_VAR] $a 1
+@5  : [STMT_PRINT] $a 1
 [RESULT] : 2;1;
 [PASS]
 
 SOURCE: var a = 1; { a = 2; } print a;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] LEFT_BRACE      '{'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_ASSIGN] a = 2
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $a 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_BLOCK]
-   $3  : [STMT_EXPR] a = 2
-$4  : [STMT_PRINT] a 
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_BLOCK]
+   @3  : [STMT_EXPR] a = 2
+@4  : [STMT_PRINT] $a 
 =================
-$1  : [STMT_VAR] a = 1
-   [EVAL_ASSIGN] a = 22
-$3  : [STMT_EXPR] a = 22
-   [EVAL_VAR] a 2
-$4  : [STMT_PRINT] a 2
+   define a = 1
+@1  : [STMT_VAR] a = 1
+BLOCK
+      [EVAL_ASSIGN] a = 22
+@3  : [STMT_EXPR] a = 22
+   [EVAL_VAR] $a 2
+@4  : [STMT_PRINT] $a 2
 [RESULT] : 2;
 [PASS]
 
 SOURCE: var a = 1; { var a = 2; a = 3; } print a;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] LEFT_BRACE      '{'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 3
 [EXPR_ASSIGN] a = 3
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $a 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] a = 1
-$2  : [STMT_BLOCK]
-   $3  : [STMT_VAR] a = 2
-   $4  : [STMT_EXPR] a = 3
-$5  : [STMT_PRINT] a 
+@1  : [STMT_VAR] a = 1
+@2  : [STMT_BLOCK]
+   @3  : [STMT_VAR] a = 2
+   @4  : [STMT_EXPR] a = 3
+@5  : [STMT_PRINT] $a 
 =================
-$1  : [STMT_VAR] a = 1
-$3  : [STMT_VAR] a = 2
-   [EVAL_ASSIGN] a = 33
-$4  : [STMT_EXPR] a = 33
-   [EVAL_VAR] a 1
-$5  : [STMT_PRINT] a 1
-[RESULT] : 1;
-[PASS]
-
-SOURCE: if (true) print 1;
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] TRUE            'true'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
-=================
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] TRUE            'true'
-[EXPR_LITERAL] true
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '1'
-[EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-==== Program [1 statements] ====
-$1  : [STMT_IF]
-   condition:
-      true
-   then:
-      $2  : [STMT_PRINT] 1
-=================
-$2  : [STMT_PRINT] 1
+   define a = 1
+@1  : [STMT_VAR] a = 1
+BLOCK
+         define a = 2
+@3  : [STMT_VAR] a = 2
+      [EVAL_ASSIGN] a = 33
+@4  : [STMT_EXPR] a = 33
+   [EVAL_VAR] $a 1
+@5  : [STMT_PRINT] $a 1
 [RESULT] : 1;
 [PASS]
 
 SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] FALSE           'false'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] ELSE            'else'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] FALSE           'false'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] ELSE            'else'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] ELSE            'else'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] FALSE           'false'
 [EXPR_LITERAL] false
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] ELSE            'else'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
 ==== Program [1 statements] ====
-$1  : [STMT_IF]
+@1  : [STMT_IF]
    condition:
       false
    then:
-      $2  : [STMT_BLOCK]
-         $3  : [STMT_PRINT] 1
+      @2  : [STMT_BLOCK]
+         @3  : [STMT_PRINT] 1
    else:
-      $4  : [STMT_IF]
+      @4  : [STMT_IF]
          condition:
             false
          then:
-            $5  : [STMT_BLOCK]
-               $6  : [STMT_PRINT] 2
+            @5  : [STMT_BLOCK]
+               @6  : [STMT_PRINT] 2
          else:
-            $7  : [STMT_BLOCK]
-               $8  : [STMT_PRINT] 3
+            @7  : [STMT_BLOCK]
+               @8  : [STMT_PRINT] 3
 =================
-$8  : [STMT_PRINT] 3
+IF
+   IF
+      BLOCK
+         @8  : [STMT_PRINT] 3
 [RESULT] : 3;
 [PASS]
 
 SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] WHILE           'while'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] WHILE           'while'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_WHILE]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_WHILE]
    condition:
-       ( i < 3)
+       ($i < 3)
    body:
-      $3  : [STMT_BLOCK]
-         $4  : [STMT_PRINT] i 
-         $5  : [STMT_EXPR] i =  ( i + 1)
+      @3  : [STMT_BLOCK]
+         @4  : [STMT_PRINT] $i 
+         @5  : [STMT_EXPR] i =  ($i + 1)
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 0
-$4  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$5  : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 1
-$4  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$5  : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 2
-$4  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-$5  : [STMT_EXPR] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i < 3)
+   define i = 0
+@1  : [STMT_VAR] i = 0
+WHILE
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 0
+@4  : [STMT_PRINT] $i 0
+               [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@5  : [STMT_EXPR] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 1
+@4  : [STMT_PRINT] $i 1
+               [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@5  : [STMT_EXPR] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 2
+@4  : [STMT_PRINT] $i 2
+               [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+@5  : [STMT_EXPR] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
 [PASS]
 
 SOURCE: print "hi" or 2;
-[TOK] PRINT           'print'
-[TOK] STRING          '"hi"'
-[TOK] OR              'or'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] STRING          '"hi"'
 [EXPR_LITERAL] hi
-[MatchAdv] [TOK] OR              'or'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
 [EXPR_LOGICAL]  hi OR 2
-[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-$1  : [STMT_PRINT]  hi OR 2
+@1  : [STMT_PRINT]  hi OR 2
 =================
-$1  : [STMT_PRINT] hi hi OR 2
+@1  : [STMT_PRINT] hi hi OR 2
 [RESULT] : hi;
 [PASS]
 
 SOURCE: print nil or "yes";
-[TOK] PRINT           'print'
-[TOK] NIL             'nil'
-[TOK] OR              'or'
-[TOK] STRING          '"yes"'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[MatchAdv] [TOK] OR              'or'
-[MatchAdv] [TOK] STRING          '"yes"'
 [EXPR_LITERAL] yes
 [EXPR_LOGICAL]  nil OR yes
-[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-$1  : [STMT_PRINT]  nil OR yes
+@1  : [STMT_PRINT]  nil OR yes
 =================
    [EVAL_LOGICAL] yes nil OR yes
-$1  : [STMT_PRINT] yes nil OR yes
+@1  : [STMT_PRINT] yes nil OR yes
 [RESULT] : yes;
 [PASS]
 
 SOURCE: print {false and 123};
-[TOK] PRINT           'print'
-[TOK] LEFT_BRACE      '{'
-[TOK] FALSE           'false'
-[TOK] AND             'and'
-[TOK] NUMBER          '123'
-[TOK] RIGHT_BRACE     '}'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
 [line 1] Error at '{': Expect expression.
 [line 1] Error at '{': Expect ';' after value.
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
 [NULL_STMT]
 =================
+Resolve error. No execution
 [RESULT] : 
 [PassError]
 
 SOURCE: print (true and 123);
-[TOK] PRINT           'print'
-[TOK] LEFT_PAREN      '('
-[TOK] TRUE            'true'
-[TOK] AND             'and'
-[TOK] NUMBER          '123'
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[MatchAdv] [TOK] AND             'and'
-[MatchAdv] [TOK] NUMBER          '123'
 [EXPR_LITERAL] 123
 [EXPR_LOGICAL]  true AND 123
-[CONSUME][TOK] RIGHT_PAREN     ')'
 [EXPR_GROUP]  (GROUP true AND 123)
-[CONSUME][TOK] SEMICOLON       ';'
 ==== Program [1 statements] ====
-$1  : [STMT_PRINT]  (GROUP true AND 123)
+@1  : [STMT_PRINT]  (GROUP true AND 123)
 =================
       [EVAL_LOGICAL] 123 true AND 123
    [EVAL_GROUP] 123 (GROUP true AND 123)
-$1  : [STMT_PRINT] 123 (GROUP true AND 123)
+@1  : [STMT_PRINT] 123 (GROUP true AND 123)
 [RESULT] : 123;
 [PASS]
 
 SOURCE: print nil and boom;
-[TOK] PRINT           'print'
-[TOK] NIL             'nil'
-[TOK] AND             'and'
-[TOK] IDENTIFIER      'boom'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NIL             'nil'
 [EXPR_LITERAL] nil
-[MatchAdv] [TOK] AND             'and'
-[MatchAdv] [TOK] IDENTIFIER      'boom'
-[EXPR_VAR] boom 
-[EXPR_LOGICAL]  nil AND boom 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $boom 
+[EXPR_LOGICAL]  nil AND $boom 
 ==== Program [1 statements] ====
-$1  : [STMT_PRINT]  nil AND boom 
+@1  : [STMT_PRINT]  nil AND $boom 
 =================
-$1  : [STMT_PRINT] nil nil AND boom 
+@1  : [STMT_PRINT] nil nil AND $boom 
 [RESULT] : nil;
 [PASS]
 
-SOURCE: for (var i = 0; i < 3; i = i + 1) print i;
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 =================
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $1  : [STMT_VAR] i = 0
-   $1  : [STMT_FOR]
+@1  : [STMT_BLOCK]
+   @1  : [STMT_VAR] i = 0
+   @1  : [STMT_FOR]
       condition:
-          ( i < 3)
+          ($i < 3)
       increment:
-         i =  ( i + 1)
+         i =  ($i + 1)
       body:
-         $2  : [STMT_PRINT] i 
+         @2  : [STMT_BLOCK]
+            @3  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 0
-$2  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 1
-$2  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 2
-$2  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i < 3)
+BLOCK
+         define i = 0
+@1  : [STMT_VAR] i = 0
+   FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 0
+@3  : [STMT_PRINT] $i 0
+         [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 1
+@3  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 2
+@3  : [STMT_PRINT] $i 2
+         [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
 [PASS]
 
-SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) print i;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '4'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_ASSIGN] i = 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 4
-[EXPR_BINARY]  ( i < 4)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 4)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_BLOCK]
-   $2  : [STMT_EXPR] i = 1
-   $2  : [STMT_FOR]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_BLOCK]
+   @2  : [STMT_EXPR] i = 1
+   @2  : [STMT_FOR]
       condition:
-          ( i < 4)
+          ($i < 4)
       increment:
-         i =  ( i + 1)
+         i =  ($i + 1)
       body:
-         $3  : [STMT_PRINT] i 
+         @3  : [STMT_BLOCK]
+            @4  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 0
-   [EVAL_ASSIGN] i = 11
-$2  : [STMT_EXPR] i = 11
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 4)
-   [EVAL_VAR] i 1
-$3  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 4)
-   [EVAL_VAR] i 2
-$3  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] true ( i < 4)
-   [EVAL_VAR] i 3
-$3  : [STMT_PRINT] i 3
-         [EVAL_VAR] i 3
-      [EVAL_BINARY] 4 ( i + 1)
-   [EVAL_ASSIGN] i = 4 ( i + 1)
-      [EVAL_VAR] i 4
-   [EVAL_BINARY] false ( i < 4)
+   define i = 0
+@1  : [STMT_VAR] i = 0
+BLOCK
+      [EVAL_ASSIGN] i = 11
+@2  : [STMT_EXPR] i = 11
+   FOR
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+            [EVAL_VAR] $i 1
+@4  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+            [EVAL_VAR] $i 2
+@4  : [STMT_PRINT] $i 2
+         [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+            [EVAL_VAR] $i 3
+@4  : [STMT_PRINT] $i 3
+         [EVAL_VAR] $i 3
+      [EVAL_BINARY] 4 ($i + 1)
+   [EVAL_ASSIGN] i = 4 ($i + 1)
+      [EVAL_VAR] $i 4
+   [EVAL_BINARY] false ($i < 4)
 [RESULT] : 1;2;3;
 [PASS]
 
-SOURCE: var i = 0; for (; i < 3; i = i + 1) print i;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_FOR]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_FOR]
    condition:
-       ( i < 3)
+       ($i < 3)
    increment:
-      i =  ( i + 1)
+      i =  ($i + 1)
    body:
-      $2  : [STMT_PRINT] i 
+      @2  : [STMT_BLOCK]
+         @3  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 0
-$2  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 1
-$2  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 2
-$2  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i < 3)
+   define i = 0
+@1  : [STMT_VAR] i = 0
+FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 0
+@3  : [STMT_PRINT] $i 0
+         [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 1
+@3  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+         [EVAL_VAR] $i 2
+@3  : [STMT_PRINT] $i 2
+         [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
 [PASS]
 
 SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $1  : [STMT_VAR] i = 0
-   $1  : [STMT_FOR]
+@1  : [STMT_BLOCK]
+   @1  : [STMT_VAR] i = 0
+   @1  : [STMT_FOR]
       condition:
-          ( i < 3)
+          ($i < 3)
       increment:
          (none)
       body:
-         $2  : [STMT_BLOCK]
-            $3  : [STMT_PRINT] i 
-            $4  : [STMT_EXPR] i =  ( i + 1)
+         @2  : [STMT_BLOCK]
+            @3  : [STMT_PRINT] $i 
+            @4  : [STMT_EXPR] i =  ($i + 1)
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 0
-$3  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$4  : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 1
-$3  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$4  : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 3)
-   [EVAL_VAR] i 2
-$3  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-$4  : [STMT_EXPR] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i < 3)
+BLOCK
+         define i = 0
+@1  : [STMT_VAR] i = 0
+   FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 0
+@3  : [STMT_PRINT] $i 0
+                  [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@4  : [STMT_EXPR] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 1
+@3  : [STMT_PRINT] $i 1
+                  [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@4  : [STMT_EXPR] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 3)
+      BLOCK
+            [EVAL_VAR] $i 2
+@3  : [STMT_PRINT] $i 2
+                  [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+@4  : [STMT_EXPR] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
 [PASS]
 
-SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) print i; print i;
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '100'
-[TOK] SEMICOLON       ';'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '100'
 [EXPR_LITERAL] 100
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i < 2)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 2)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] i = 100
-$2  : [STMT_BLOCK]
-   $2  : [STMT_VAR] i = 0
-   $2  : [STMT_FOR]
+@1  : [STMT_VAR] i = 100
+@2  : [STMT_BLOCK]
+   @2  : [STMT_VAR] i = 0
+   @2  : [STMT_FOR]
       condition:
-          ( i < 2)
+          ($i < 2)
       increment:
-         i =  ( i + 1)
+         i =  ($i + 1)
       body:
-         $3  : [STMT_PRINT] i 
-$4  : [STMT_PRINT] i 
+         @3  : [STMT_BLOCK]
+            @4  : [STMT_PRINT] $i 
+@5  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 100
-$2  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_VAR] i 0
-$3  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_VAR] i 1
-$3  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] false ( i < 2)
-   [EVAL_VAR] i 100
-$4  : [STMT_PRINT] i 100
+   define i = 100
+@1  : [STMT_VAR] i = 100
+BLOCK
+         define i = 0
+@2  : [STMT_VAR] i = 0
+   FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 2)
+      BLOCK
+            [EVAL_VAR] $i 0
+@4  : [STMT_PRINT] $i 0
+         [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 2)
+      BLOCK
+            [EVAL_VAR] $i 1
+@4  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] false ($i < 2)
+   [EVAL_VAR] $i 100
+@5  : [STMT_PRINT] $i 100
 [RESULT] : 0;1;100;
 [PASS]
 
-SOURCE: for (var i = 0; i < 2; i = i + 1) for (var j = 0; j < 2; j = j + 1) print i + j;
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'j'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'j'
-[TOK] <               '<'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'j'
-[TOK] =               '='
-[TOK] IDENTIFIER      'j'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] IDENTIFIER      'j'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {print i + j;}}
 =================
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i < 2)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 2)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'j'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'j'
-[EXPR_VAR] j 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $j 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( j < 2)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'j'
-[EXPR_VAR] j 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'j'
-[EXPR_VAR] j 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($j < 2)
+[EXPR_VAR] $j 
+[EXPR_VAR] $j 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( j + 1)
-[EXPR_ASSIGN] j =  ( j + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] IDENTIFIER      'j'
-[EXPR_VAR] j 
-[EXPR_BINARY]  ( i + j )
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($j + 1)
+[EXPR_ASSIGN] j =  ($j + 1)
+[EXPR_VAR] $i 
+[EXPR_VAR] $j 
+[EXPR_BINARY]  ($i + $j )
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $1  : [STMT_VAR] i = 0
-   $1  : [STMT_FOR]
+@1  : [STMT_BLOCK]
+   @1  : [STMT_VAR] i = 0
+   @1  : [STMT_FOR]
       condition:
-          ( i < 2)
+          ($i < 2)
       increment:
-         i =  ( i + 1)
+         i =  ($i + 1)
       body:
-         $2  : [STMT_BLOCK]
-            $2  : [STMT_VAR] j = 0
-            $2  : [STMT_FOR]
-               condition:
-                   ( j < 2)
-               increment:
-                  j =  ( j + 1)
-               body:
-                  $3  : [STMT_PRINT]  ( i + j )
+         @2  : [STMT_BLOCK]
+            @3  : [STMT_BLOCK]
+               @3  : [STMT_VAR] j = 0
+               @3  : [STMT_FOR]
+                  condition:
+                      ($j < 2)
+                  increment:
+                     j =  ($j + 1)
+                  body:
+                     @4  : [STMT_BLOCK]
+                        @5  : [STMT_PRINT]  ($i + $j )
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 2)
-$2  : [STMT_VAR] j = 0
-      [EVAL_VAR] j 0
-   [EVAL_BINARY] true ( j < 2)
-      [EVAL_VAR] i 0
-      [EVAL_VAR] j 0
-   [EVAL_BINARY] 0 ( i + j )
-$3  : [STMT_PRINT] 0 ( i + j )
-         [EVAL_VAR] j 0
-      [EVAL_BINARY] 1 ( j + 1)
-   [EVAL_ASSIGN] j = 1 ( j + 1)
-      [EVAL_VAR] j 1
-   [EVAL_BINARY] true ( j < 2)
-      [EVAL_VAR] i 0
-      [EVAL_VAR] j 1
-   [EVAL_BINARY] 1 ( i + j )
-$3  : [STMT_PRINT] 1 ( i + j )
-         [EVAL_VAR] j 1
-      [EVAL_BINARY] 2 ( j + 1)
-   [EVAL_ASSIGN] j = 2 ( j + 1)
-      [EVAL_VAR] j 2
-   [EVAL_BINARY] false ( j < 2)
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 2)
-$2  : [STMT_VAR] j = 0
-      [EVAL_VAR] j 0
-   [EVAL_BINARY] true ( j < 2)
-      [EVAL_VAR] i 1
-      [EVAL_VAR] j 0
-   [EVAL_BINARY] 1 ( i + j )
-$3  : [STMT_PRINT] 1 ( i + j )
-         [EVAL_VAR] j 0
-      [EVAL_BINARY] 1 ( j + 1)
-   [EVAL_ASSIGN] j = 1 ( j + 1)
-      [EVAL_VAR] j 1
-   [EVAL_BINARY] true ( j < 2)
-      [EVAL_VAR] i 1
-      [EVAL_VAR] j 1
-   [EVAL_BINARY] 2 ( i + j )
-$3  : [STMT_PRINT] 2 ( i + j )
-         [EVAL_VAR] j 1
-      [EVAL_BINARY] 2 ( j + 1)
-   [EVAL_ASSIGN] j = 2 ( j + 1)
-      [EVAL_VAR] j 2
-   [EVAL_BINARY] false ( j < 2)
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] false ( i < 2)
+BLOCK
+         define i = 0
+@1  : [STMT_VAR] i = 0
+   FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 2)
+      BLOCK
+         BLOCK
+                           define j = 0
+@3  : [STMT_VAR] j = 0
+            FOR
+      [EVAL_VAR] $j 0
+   [EVAL_BINARY] true ($j < 2)
+               BLOCK
+                        [EVAL_VAR] $i 0
+      [EVAL_VAR] $j 0
+   [EVAL_BINARY] 0 ($i + $j )
+@5  : [STMT_PRINT] 0 ($i + $j )
+         [EVAL_VAR] $j 0
+      [EVAL_BINARY] 1 ($j + 1)
+   [EVAL_ASSIGN] j = 1 ($j + 1)
+      [EVAL_VAR] $j 1
+   [EVAL_BINARY] true ($j < 2)
+               BLOCK
+                        [EVAL_VAR] $i 0
+      [EVAL_VAR] $j 1
+   [EVAL_BINARY] 1 ($i + $j )
+@5  : [STMT_PRINT] 1 ($i + $j )
+         [EVAL_VAR] $j 1
+      [EVAL_BINARY] 2 ($j + 1)
+   [EVAL_ASSIGN] j = 2 ($j + 1)
+      [EVAL_VAR] $j 2
+   [EVAL_BINARY] false ($j < 2)
+         [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 2)
+      BLOCK
+         BLOCK
+                           define j = 0
+@3  : [STMT_VAR] j = 0
+            FOR
+      [EVAL_VAR] $j 0
+   [EVAL_BINARY] true ($j < 2)
+               BLOCK
+                        [EVAL_VAR] $i 1
+      [EVAL_VAR] $j 0
+   [EVAL_BINARY] 1 ($i + $j )
+@5  : [STMT_PRINT] 1 ($i + $j )
+         [EVAL_VAR] $j 0
+      [EVAL_BINARY] 1 ($j + 1)
+   [EVAL_ASSIGN] j = 1 ($j + 1)
+      [EVAL_VAR] $j 1
+   [EVAL_BINARY] true ($j < 2)
+               BLOCK
+                        [EVAL_VAR] $i 1
+      [EVAL_VAR] $j 1
+   [EVAL_BINARY] 2 ($i + $j )
+@5  : [STMT_PRINT] 2 ($i + $j )
+         [EVAL_VAR] $j 1
+      [EVAL_BINARY] 2 ($j + 1)
+   [EVAL_ASSIGN] j = 2 ($j + 1)
+      [EVAL_VAR] $j 2
+   [EVAL_BINARY] false ($j < 2)
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;1;2;
 [PASS]
 
 SOURCE: for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '10'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '10'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[line 1] Error at 'i': Expect '{' after while condition.
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 10
-[EXPR_BINARY]  ( i + 10)
-[EXPR_ASSIGN] i =  ( i + 10)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-==== Program [2 statements] ====
-$1  : [STMT_BLOCK]
-   $1  : [STMT_VAR] i = 0
-   $1  : [STMT_FOR]
-      condition:
-          ( i < 3)
-      increment:
-         i =  ( i + 1)
-      body:
-         $2  : [STMT_EXPR] i =  ( i + 10)
-$3  : [STMT_PRINT] i 
+[EXPR_BINARY]  ($i + 10)
+[EXPR_ASSIGN] i =  ($i + 10)
+### SYNCHRONIZE ###
+[line 1] Error at EOF: Expect '}' after block.
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+[NULL_STMT]
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 10 ( i + 10)
-   [EVAL_ASSIGN] i = 10 ( i + 10)
-$2  : [STMT_EXPR] i = 10 ( i + 10)
-         [EVAL_VAR] i 10
-      [EVAL_BINARY] 11 ( i + 1)
-   [EVAL_ASSIGN] i = 11 ( i + 1)
-      [EVAL_VAR] i 11
-   [EVAL_BINARY] false ( i < 3)
-[line 1] RuntimeError at 'i': Undefined variable.
-$3  : [STMT_PRINT] i Error: Undefined variable.
-
-[RESULT] : Error: Undefined variable.;;
+Resolve error. No execution
+[RESULT] : 
 [PassError]
 
-SOURCE: { for (var i = 0; i < 2; i = i + 1) print i; }
-[TOK] LEFT_BRACE      '{'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
+SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 =================
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i < 2)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 2)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $2  : [STMT_BLOCK]
-      $2  : [STMT_VAR] i = 0
-      $2  : [STMT_FOR]
+@1  : [STMT_BLOCK]
+   @2  : [STMT_BLOCK]
+      @2  : [STMT_VAR] i = 0
+      @2  : [STMT_FOR]
          condition:
-             ( i < 2)
+             ($i < 2)
          increment:
-            i =  ( i + 1)
+            i =  ($i + 1)
          body:
-            $3  : [STMT_PRINT] i 
+            @3  : [STMT_BLOCK]
+               @4  : [STMT_PRINT] $i 
 =================
-$2  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_VAR] i 0
-$3  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_VAR] i 1
-$3  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] false ( i < 2)
+BLOCK
+   BLOCK
+               define i = 0
+@2  : [STMT_VAR] i = 0
+      FOR
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 2)
+         BLOCK
+               [EVAL_VAR] $i 0
+@4  : [STMT_PRINT] $i 0
+         [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 2)
+         BLOCK
+               [EVAL_VAR] $i 1
+@4  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;
 [PASS]
 
-SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] SEMICOLON       ';'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] ==              '=='
-[TOK] NUMBER          '3'
-[TOK] RIGHT_PAREN     ')'
-[TOK] BREAK           'break'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
+SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] SEMICOLON       ';'
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i == 3)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] BREAK           'break'
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i == 3)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_FOR]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_FOR]
    condition:
       (none)
    increment:
       (none)
    body:
-      $2  : [STMT_BLOCK]
-         $3  : [STMT_PRINT] i 
-         $4  : [STMT_EXPR] i =  ( i + 1)
-         $5  : [STMT_IF]
+      @2  : [STMT_BLOCK]
+         @3  : [STMT_PRINT] $i 
+         @4  : [STMT_EXPR] i =  ($i + 1)
+         @5  : [STMT_IF]
             condition:
-                ( i == 3)
+                ($i == 3)
             then:
-               $6  : [STMT_BREAK]
+               @6  : [STMT_BLOCK]
+                  @7  : [STMT_BREAK]
 =================
-$1  : [STMT_VAR] i = 0
-   [EVAL_VAR] i 0
-$3  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$4  : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] false ( i == 3)
-   [EVAL_VAR] i 1
-$3  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$4  : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] false ( i == 3)
-   [EVAL_VAR] i 2
-$3  : [STMT_PRINT] i 2
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-$4  : [STMT_EXPR] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] true ( i == 3)
-[STMT_BREAK_EXEC]
+   define i = 0
+@1  : [STMT_VAR] i = 0
+FOR
+   BLOCK
+         [EVAL_VAR] $i 0
+@3  : [STMT_PRINT] $i 0
+               [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@4  : [STMT_EXPR] i = 1 ($i + 1)
+      IF
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] false ($i == 3)
+   BLOCK
+         [EVAL_VAR] $i 1
+@3  : [STMT_PRINT] $i 1
+               [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@4  : [STMT_EXPR] i = 2 ($i + 1)
+      IF
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] false ($i == 3)
+   BLOCK
+         [EVAL_VAR] $i 2
+@3  : [STMT_PRINT] $i 2
+               [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+@4  : [STMT_EXPR] i = 3 ($i + 1)
+      IF
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] true ($i == 3)
+         BLOCK
+            BREAK
 [RESULT] : 0;1;2;
 [PASS]
 
 SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     print i;     break;   }   i = i + 1; } 
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'j'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] WHILE           'while'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] IDENTIFIER      'j'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] WHILE           'while'
-[TOK] LEFT_PAREN      '('
-[TOK] TRUE            'true'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] BREAK           'break'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'j'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] WHILE           'while'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i < 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IDENTIFIER      'j'
-[EXPR_VAR] j 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
+[EXPR_BINARY]  ($i < 2)
+[EXPR_VAR] $j 
 [EXPR_LITERAL] 0
 [EXPR_ASSIGN] j = 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] WHILE           'while'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] BREAK           'break'
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
 ==== Program [3 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_VAR] j = 0
-$3  : [STMT_WHILE]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_VAR] j = 0
+@3  : [STMT_WHILE]
    condition:
-       ( i < 2)
+       ($i < 2)
    body:
-      $4  : [STMT_BLOCK]
-         $5  : [STMT_EXPR] j = 0
-         $6  : [STMT_WHILE]
+      @4  : [STMT_BLOCK]
+         @5  : [STMT_EXPR] j = 0
+         @6  : [STMT_WHILE]
             condition:
                true
             body:
-               $7  : [STMT_BLOCK]
-                  $8  : [STMT_PRINT] i 
-                  $9  : [STMT_BREAK]
-         $10 : [STMT_EXPR] i =  ( i + 1)
+               @7  : [STMT_BLOCK]
+                  @8  : [STMT_PRINT] $i 
+                  @9  : [STMT_BREAK]
+         @10 : [STMT_EXPR] i =  ($i + 1)
 =================
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_VAR] j = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_ASSIGN] j = 00
-$5  : [STMT_EXPR] j = 00
-   [EVAL_VAR] i 0
-$8  : [STMT_PRINT] i 0
-[STMT_BREAK_EXEC]
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$10 : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 2)
-   [EVAL_ASSIGN] j = 00
-$5  : [STMT_EXPR] j = 00
-   [EVAL_VAR] i 1
-$8  : [STMT_PRINT] i 1
-[STMT_BREAK_EXEC]
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$10 : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] false ( i < 2)
+   define i = 0
+@1  : [STMT_VAR] i = 0
+   define j = 0
+@2  : [STMT_VAR] j = 0
+WHILE
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 2)
+   BLOCK
+         [EVAL_ASSIGN] j = 00
+@5  : [STMT_EXPR] j = 00
+      WHILE
+         BLOCK
+               [EVAL_VAR] $i 0
+@8  : [STMT_PRINT] $i 0
+            BREAK
+               [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@10 : [STMT_EXPR] i = 1 ($i + 1)
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 2)
+   BLOCK
+         [EVAL_ASSIGN] j = 00
+@5  : [STMT_EXPR] j = 00
+      WHILE
+         BLOCK
+               [EVAL_VAR] $i 1
+@8  : [STMT_PRINT] $i 1
+            BREAK
+               [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@10 : [STMT_EXPR] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;
 [PASS]
 
-SOURCE: var i = 0; while (true) {   {     if (i == 2) break;   }   print i;   i = i + 1; } 
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] WHILE           'while'
-[TOK] LEFT_PAREN      '('
-[TOK] TRUE            'true'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] LEFT_BRACE      '{'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] ==              '=='
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] BREAK           'break'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
+SOURCE: var i = 0; while (true) {   {     if (i == 2) {break;}   }   print i;   i = i + 1; } 
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] WHILE           'while'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i == 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] BREAK           'break'
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i == 2)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_WHILE]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_WHILE]
    condition:
       true
    body:
-      $3  : [STMT_BLOCK]
-         $4  : [STMT_BLOCK]
-            $5  : [STMT_IF]
+      @3  : [STMT_BLOCK]
+         @4  : [STMT_BLOCK]
+            @5  : [STMT_IF]
                condition:
-                   ( i == 2)
+                   ($i == 2)
                then:
-                  $6  : [STMT_BREAK]
-         $7  : [STMT_PRINT] i 
-         $8  : [STMT_EXPR] i =  ( i + 1)
+                  @6  : [STMT_BLOCK]
+                     @7  : [STMT_BREAK]
+         @8  : [STMT_PRINT] $i 
+         @9  : [STMT_EXPR] i =  ($i + 1)
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 0
-$7  : [STMT_PRINT] i 0
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$8  : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 1
-$7  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$8  : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i == 2)
-[STMT_BREAK_EXEC]
+   define i = 0
+@1  : [STMT_VAR] i = 0
+WHILE
+   BLOCK
+      BLOCK
+         IF
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] false ($i == 2)
+         [EVAL_VAR] $i 0
+@8  : [STMT_PRINT] $i 0
+               [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@9  : [STMT_EXPR] i = 1 ($i + 1)
+   BLOCK
+      BLOCK
+         IF
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] false ($i == 2)
+         [EVAL_VAR] $i 1
+@8  : [STMT_PRINT] $i 1
+               [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@9  : [STMT_EXPR] i = 2 ($i + 1)
+   BLOCK
+      BLOCK
+         IF
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i == 2)
+            BLOCK
+               BREAK
 [RESULT] : 0;1;
 [PASS]
 
-SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) continue; print i; } }
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] WHILE           'while'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '3'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] LEFT_BRACE      '{'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] ==              '=='
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] CONTINUE        'continue'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
+SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i; } }
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] WHILE           'while'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '3'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( i < 3)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 3)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i == 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] CONTINUE        'continue'
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i == 2)
+[EXPR_VAR] $i 
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] i = 0
-$2  : [STMT_WHILE]
+@1  : [STMT_VAR] i = 0
+@2  : [STMT_WHILE]
    condition:
-       ( i < 3)
+       ($i < 3)
    body:
-      $3  : [STMT_BLOCK]
-         $4  : [STMT_BLOCK]
-            $5  : [STMT_EXPR] i =  ( i + 1)
-            $6  : [STMT_IF]
+      @3  : [STMT_BLOCK]
+         @4  : [STMT_BLOCK]
+            @5  : [STMT_EXPR] i =  ($i + 1)
+            @6  : [STMT_IF]
                condition:
-                   ( i == 2)
+                   ($i == 2)
                then:
-                  $7  : [STMT_CONTINUE]
-            $8  : [STMT_PRINT] i 
+                  @7  : [STMT_BLOCK]
+                     @8  : [STMT_CONTINUE]
+            @9  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 0
-      [EVAL_VAR] i 0
-   [EVAL_BINARY] true ( i < 3)
-         [EVAL_VAR] i 0
-      [EVAL_BINARY] 1 ( i + 1)
-   [EVAL_ASSIGN] i = 1 ( i + 1)
-$5  : [STMT_EXPR] i = 1 ( i + 1)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 1
-$8  : [STMT_PRINT] i 1
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 3)
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-$5  : [STMT_EXPR] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i == 2)
-[STMT_CONTINUE_EXEC]
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 3)
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-$5  : [STMT_EXPR] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 3
-$8  : [STMT_PRINT] i 3
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i < 3)
+   define i = 0
+@1  : [STMT_VAR] i = 0
+WHILE
+      [EVAL_VAR] $i 0
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+      BLOCK
+                  [EVAL_VAR] $i 0
+      [EVAL_BINARY] 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1 ($i + 1)
+@5  : [STMT_EXPR] i = 1 ($i + 1)
+         IF
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] false ($i == 2)
+            [EVAL_VAR] $i 1
+@9  : [STMT_PRINT] $i 1
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+      BLOCK
+                  [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+@5  : [STMT_EXPR] i = 2 ($i + 1)
+         IF
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i == 2)
+            BLOCK
+               CONTINUE
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 3)
+   BLOCK
+      BLOCK
+                  [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+@5  : [STMT_EXPR] i = 3 ($i + 1)
+         IF
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i == 2)
+            [EVAL_VAR] $i 3
+@9  : [STMT_PRINT] $i 3
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i < 3)
 [RESULT] : 1;3;
 [PASS]
 
-SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) continue; print i; }
-[TOK] FOR             'for'
-[TOK] LEFT_PAREN      '('
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] <               '<'
-[TOK] NUMBER          '4'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'i'
-[TOK] ==              '=='
-[TOK] NUMBER          '2'
-[TOK] RIGHT_PAREN     ')'
-[TOK] CONTINUE        'continue'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
+SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 =================
-[MatchAdv] [TOK] FOR             'for'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] <               '<'
-[MatchAdv] [TOK] NUMBER          '4'
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 4
-[EXPR_BINARY]  ( i < 4)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($i < 4)
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] ==              '=='
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 2
-[EXPR_BINARY]  ( i == 2)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] CONTINUE        'continue'
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_BINARY]  ($i == 2)
+[EXPR_VAR] $i 
 ==== Program [1 statements] ====
-$1  : [STMT_BLOCK]
-   $1  : [STMT_VAR] i = 1
-   $1  : [STMT_FOR]
+@1  : [STMT_BLOCK]
+   @1  : [STMT_VAR] i = 1
+   @1  : [STMT_FOR]
       condition:
-          ( i < 4)
+          ($i < 4)
       increment:
-         i =  ( i + 1)
+         i =  ($i + 1)
       body:
-         $2  : [STMT_BLOCK]
-            $3  : [STMT_IF]
+         @2  : [STMT_BLOCK]
+            @3  : [STMT_IF]
                condition:
-                   ( i == 2)
+                   ($i == 2)
                then:
-                  $4  : [STMT_CONTINUE]
-            $5  : [STMT_PRINT] i 
+                  @4  : [STMT_BLOCK]
+                     @5  : [STMT_CONTINUE]
+            @6  : [STMT_PRINT] $i 
 =================
-$1  : [STMT_VAR] i = 1
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] true ( i < 4)
-      [EVAL_VAR] i 1
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 1
-$5  : [STMT_PRINT] i 1
-         [EVAL_VAR] i 1
-      [EVAL_BINARY] 2 ( i + 1)
-   [EVAL_ASSIGN] i = 2 ( i + 1)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i < 4)
-      [EVAL_VAR] i 2
-   [EVAL_BINARY] true ( i == 2)
-[STMT_CONTINUE_EXEC]
-         [EVAL_VAR] i 2
-      [EVAL_BINARY] 3 ( i + 1)
-   [EVAL_ASSIGN] i = 3 ( i + 1)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] true ( i < 4)
-      [EVAL_VAR] i 3
-   [EVAL_BINARY] false ( i == 2)
-   [EVAL_VAR] i 3
-$5  : [STMT_PRINT] i 3
-         [EVAL_VAR] i 3
-      [EVAL_BINARY] 4 ( i + 1)
-   [EVAL_ASSIGN] i = 4 ( i + 1)
-      [EVAL_VAR] i 4
-   [EVAL_BINARY] false ( i < 4)
+BLOCK
+         define i = 1
+@1  : [STMT_VAR] i = 1
+   FOR
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+         IF
+      [EVAL_VAR] $i 1
+   [EVAL_BINARY] false ($i == 2)
+            [EVAL_VAR] $i 1
+@6  : [STMT_PRINT] $i 1
+         [EVAL_VAR] $i 1
+      [EVAL_BINARY] 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2 ($i + 1)
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+         IF
+      [EVAL_VAR] $i 2
+   [EVAL_BINARY] true ($i == 2)
+            BLOCK
+               CONTINUE
+         [EVAL_VAR] $i 2
+      [EVAL_BINARY] 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3 ($i + 1)
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] true ($i < 4)
+      BLOCK
+         IF
+      [EVAL_VAR] $i 3
+   [EVAL_BINARY] false ($i == 2)
+            [EVAL_VAR] $i 3
+@6  : [STMT_PRINT] $i 3
+         [EVAL_VAR] $i 3
+      [EVAL_BINARY] 4 ($i + 1)
+   [EVAL_ASSIGN] i = 4 ($i + 1)
+      [EVAL_VAR] $i 4
+   [EVAL_BINARY] false ($i < 4)
 [RESULT] : 1;3;
 [PASS]
 
 SOURCE: fun hello() { print 123; } hello();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'hello'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '123'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] IDENTIFIER      'hello'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'hello'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '123'
 [EXPR_LITERAL] 123
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] IDENTIFIER      'hello'
-[EXPR_VAR] hello 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] hello()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $hello 
+[EXPR_CALL] $hello ()
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] hello ()
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_PRINT] 123
-$3  : [STMT_EXPR] hello()
+@1  : [STMT_FUNCTION] hello ()
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_PRINT] 123
+@3  : [STMT_EXPR] $hello ()
 =================
-[ENV_DEFINE_FUNCTION]<fn hello>
-      [EVAL_VAR] hello <fn hello>
-$2  : [STMT_PRINT] 123
-$3  : [STMT_EXPR] hello()
+FUNCTION
+   define hello = <fn hello>
+      [EVAL_VAR] $hello <fn hello>
+   BLOCK
+      @2  : [STMT_PRINT] 123
+@3  : [STMT_EXPR] $hello ()
 [RESULT] : 123;
 [PASS]
 
 SOURCE: fun add(a, b) { print a + b; } add(2, 3);
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'add'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'a'
-[TOK] COMMA           ','
-[TOK] IDENTIFIER      'b'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] +               '+'
-[TOK] IDENTIFIER      'b'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] IDENTIFIER      'add'
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '2'
-[TOK] COMMA           ','
-[TOK] NUMBER          '3'
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'add'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] COMMA           ','
-[CONSUME][TOK] IDENTIFIER      'b'
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] IDENTIFIER      'b'
-[EXPR_VAR] b 
-[EXPR_BINARY]  ( a + b )
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] IDENTIFIER      'add'
-[EXPR_VAR] add 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '2'
+[EXPR_VAR] $a 
+[EXPR_VAR] $b 
+[EXPR_BINARY]  ($a + $b )
+[EXPR_VAR] $add 
 [EXPR_LITERAL] 2
-[MatchAdv] [TOK] COMMA           ','
-[MatchAdv] [TOK] NUMBER          '3'
 [EXPR_LITERAL] 3
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] add(2,3)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_CALL] $add (2,3)
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] add (a,b)
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_PRINT]  ( a + b )
-$3  : [STMT_EXPR] add(2,3)
+@1  : [STMT_FUNCTION] add (a,b)
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_PRINT]  ($a + $b )
+@3  : [STMT_EXPR] $add (2,3)
 =================
-[ENV_DEFINE_FUNCTION]<fn add>
-      [EVAL_VAR] add <fn add>
-         [EVAL_VAR] a 2
-         [EVAL_VAR] b 3
-      [EVAL_BINARY] 5 ( a + b )
-$2  : [STMT_PRINT] 5 ( a + b )
-$3  : [STMT_EXPR] add(2,3)
+FUNCTION
+   define add = <fn add>
+      [EVAL_VAR] $add <fn add>
+   define a = 2
+   define b = 3
+   BLOCK
+               [EVAL_VAR] $a 2
+         [EVAL_VAR] $b 3
+      [EVAL_BINARY] 5 ($a + $b )
+@2  : [STMT_PRINT] 5 ($a + $b )
+@3  : [STMT_EXPR] $add (2,3)
 [RESULT] : 5;
 [PASS]
 
 SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'outer'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'x'
-[TOK] =               '='
-[TOK] NUMBER          '10'
-[TOK] SEMICOLON       ';'
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'inner'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'x'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] IDENTIFIER      'inner'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] IDENTIFIER      'outer'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'outer'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'x'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '10'
 [EXPR_LITERAL] 10
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'inner'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'x'
-[EXPR_VAR] x 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] IDENTIFIER      'inner'
-[EXPR_VAR] inner 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] inner()
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] IDENTIFIER      'outer'
-[EXPR_VAR] outer 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] outer()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $x 
+[EXPR_VAR] $inner 
+[EXPR_CALL] $inner ()
+[EXPR_VAR] $outer 
+[EXPR_CALL] $outer ()
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] outer ()
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_VAR] x = 10
-         $1  : [STMT_FUNCTION] inner ()
-               $3  : [STMT_BLOCK]
-                  $4  : [STMT_PRINT] x 
-         $5  : [STMT_EXPR] inner()
-$6  : [STMT_EXPR] outer()
+@1  : [STMT_FUNCTION] outer ()
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_VAR] x = 10
+         @1  : [STMT_FUNCTION] inner ()
+               @3  : [STMT_BLOCK]
+                  @4  : [STMT_PRINT] $x 
+         @5  : [STMT_EXPR] $inner ()
+@6  : [STMT_EXPR] $outer ()
 =================
-[ENV_DEFINE_FUNCTION]<fn outer>
-      [EVAL_VAR] outer <fn outer>
-$2  : [STMT_VAR] x = 10
-[ENV_DEFINE_FUNCTION]<fn inner>
-         [EVAL_VAR] inner <fn inner>
-         [EVAL_VAR] x 10
-$4  : [STMT_PRINT] x 10
-$5  : [STMT_EXPR] inner()
-$6  : [STMT_EXPR] outer()
+FUNCTION
+   define outer = <fn outer>
+      [EVAL_VAR] $outer <fn outer>
+   BLOCK
+               define x = 10
+@2  : [STMT_VAR] x = 10
+      FUNCTION
+         define inner = <fn inner>
+               [EVAL_VAR] $inner <fn inner>
+         BLOCK
+                     [EVAL_VAR] $x 10
+@4  : [STMT_PRINT] $x 10
+@5  : [STMT_EXPR] $inner ()
+@6  : [STMT_EXPR] $outer ()
 [RESULT] : 10;
 [PASS]
 
 SOURCE: fun f() { return 123; print 0; } print f();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] RETURN          'return'
-[TOK] NUMBER          '123'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'f'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] NUMBER          '123'
 [EXPR_LITERAL] 123
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'f'
-[EXPR_VAR] f 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] f()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $f 
+[EXPR_CALL] $f ()
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] f ()
-      $1  : [STMT_BLOCK]
-         $1  : [STMT_RETURN]
-         $2  : [STMT_PRINT] 0
-$3  : [STMT_PRINT] f()
+@1  : [STMT_FUNCTION] f ()
+      @1  : [STMT_BLOCK]
+         @1  : [STMT_RETURN]
+         @2  : [STMT_PRINT] 0
+@3  : [STMT_PRINT] $f ()
 =================
-[ENV_DEFINE_FUNCTION]<fn f>
-      [EVAL_VAR] f <fn f>
-[STMT_RETURN_EXEC]123
-$3  : [STMT_PRINT] f()
+FUNCTION
+   define f = <fn f>
+      [EVAL_VAR] $f <fn f>
+   BLOCK
+      RETURN123
+@3  : [STMT_PRINT] $f ()
 [RESULT] : 123;
 [PASS]
 
 SOURCE: fun f() {} print f();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'f'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'f'
-[EXPR_VAR] f 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] f()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $f 
+[EXPR_CALL] $f ()
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] f ()
-      $1  : [STMT_BLOCK]
-$2  : [STMT_PRINT] f()
+@1  : [STMT_FUNCTION] f ()
+      @1  : [STMT_BLOCK]
+@2  : [STMT_PRINT] $f ()
 =================
-[ENV_DEFINE_FUNCTION]<fn f>
-      [EVAL_VAR] f <fn f>
-$2  : [STMT_PRINT] f()
+FUNCTION
+   define f = <fn f>
+      [EVAL_VAR] $f <fn f>
+   BLOCK
+@2  : [STMT_PRINT] $f ()
 [RESULT] : nil;
 [PASS]
 
-SOURCE: fun f() { if (true) return 1; return 2; } print f();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] TRUE            'true'
-[TOK] RIGHT_PAREN     ')'
-[TOK] RETURN          'return'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RETURN          'return'
-[TOK] NUMBER          '2'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'f'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: fun f() { if (true) {return 1;} return 2; } print f();
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'f'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] TRUE            'true'
 [EXPR_LITERAL] true
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] NUMBER          '1'
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] NUMBER          '2'
 [EXPR_LITERAL] 2
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'f'
-[EXPR_VAR] f 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] f()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $f 
+[EXPR_CALL] $f ()
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] f ()
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_IF]
+@1  : [STMT_FUNCTION] f ()
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_IF]
             condition:
                true
             then:
-               $1  : [STMT_RETURN]
-         $1  : [STMT_RETURN]
-$3  : [STMT_PRINT] f()
+               @3  : [STMT_BLOCK]
+                  @1  : [STMT_RETURN]
+         @1  : [STMT_RETURN]
+@4  : [STMT_PRINT] $f ()
 =================
-[ENV_DEFINE_FUNCTION]<fn f>
-      [EVAL_VAR] f <fn f>
-[STMT_RETURN_EXEC]1
-$3  : [STMT_PRINT] f()
+FUNCTION
+   define f = <fn f>
+      [EVAL_VAR] $f <fn f>
+   BLOCK
+      IF
+         BLOCK
+            RETURN1
+@4  : [STMT_PRINT] $f ()
 [RESULT] : 1;
 [PASS]
 
-SOURCE: fun fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print fact(5);
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'fact'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'n'
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] IF              'if'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'n'
-[TOK] <=              '<='
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] RETURN          'return'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RETURN          'return'
-[TOK] IDENTIFIER      'n'
-[TOK] *               '*'
-[TOK] IDENTIFIER      'fact'
-[TOK] LEFT_PAREN      '('
-[TOK] IDENTIFIER      'n'
-[TOK] -               '-'
-[TOK] NUMBER          '1'
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'fact'
-[TOK] LEFT_PAREN      '('
-[TOK] NUMBER          '5'
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
+SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fact(5);
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'fact'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] IDENTIFIER      'n'
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IF              'if'
-[CONSUME][TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'n'
-[EXPR_VAR] n 
-[MatchAdv] [TOK] <=              '<='
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $n 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( n <= 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_BINARY]  ($n <= 1)
 [EXPR_LITERAL] 1
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] IDENTIFIER      'n'
-[EXPR_VAR] n 
-[MatchAdv] [TOK] *               '*'
-[MatchAdv] [TOK] IDENTIFIER      'fact'
-[EXPR_VAR] fact 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] IDENTIFIER      'n'
-[EXPR_VAR] n 
-[MatchAdv] [TOK] -               '-'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $n 
+[EXPR_VAR] $fact 
+[EXPR_VAR] $n 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( n - 1)
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] fact( ( n - 1))
-[EXPR_BINARY]  ( n * fact( ( n - 1)))
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'fact'
-[EXPR_VAR] fact 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_BINARY]  ($n - 1)
+[EXPR_CALL] $fact ( ($n - 1))
+[EXPR_BINARY]  ($n * $fact ( ($n - 1)))
+[EXPR_VAR] $fact 
 [EXPR_LITERAL] 5
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] fact(5)
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_CALL] $fact (5)
 ==== Program [2 statements] ====
-$1  : [STMT_FUNCTION] fact (n)
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_IF]
+@1  : [STMT_FUNCTION] fact (n)
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_IF]
             condition:
-                ( n <= 1)
+                ($n <= 1)
             then:
-               $1  : [STMT_RETURN]
-         $1  : [STMT_RETURN]
-$3  : [STMT_PRINT] fact(5)
+               @3  : [STMT_BLOCK]
+                  @1  : [STMT_RETURN]
+         @1  : [STMT_RETURN]
+@4  : [STMT_PRINT] $fact (5)
 =================
-[ENV_DEFINE_FUNCTION]<fn fact>
-      [EVAL_VAR] fact <fn fact>
-         [EVAL_VAR] n 5
-      [EVAL_BINARY] false ( n <= 1)
-         [EVAL_VAR] n 5
-            [EVAL_VAR] fact <fn fact>
-               [EVAL_VAR] n 5
-            [EVAL_BINARY] 4 ( n - 1)
-               [EVAL_VAR] n 4
-            [EVAL_BINARY] false ( n <= 1)
-               [EVAL_VAR] n 4
-                  [EVAL_VAR] fact <fn fact>
-                     [EVAL_VAR] n 4
-                  [EVAL_BINARY] 3 ( n - 1)
-                     [EVAL_VAR] n 3
-                  [EVAL_BINARY] false ( n <= 1)
-                     [EVAL_VAR] n 3
-                        [EVAL_VAR] fact <fn fact>
-                           [EVAL_VAR] n 3
-                        [EVAL_BINARY] 2 ( n - 1)
-                           [EVAL_VAR] n 2
-                        [EVAL_BINARY] false ( n <= 1)
-                           [EVAL_VAR] n 2
-                              [EVAL_VAR] fact <fn fact>
-                                 [EVAL_VAR] n 2
-                              [EVAL_BINARY] 1 ( n - 1)
-                                 [EVAL_VAR] n 1
-                              [EVAL_BINARY] true ( n <= 1)
-[STMT_RETURN_EXEC]1
-                           [EVAL_BINARY] 2 ( n * fact( ( n - 1)))
-[STMT_RETURN_EXEC]2
-                        [EVAL_BINARY] 6 ( n * fact( ( n - 1)))
-[STMT_RETURN_EXEC]6
-                     [EVAL_BINARY] 24 ( n * fact( ( n - 1)))
-[STMT_RETURN_EXEC]24
-                  [EVAL_BINARY] 120 ( n * fact( ( n - 1)))
-[STMT_RETURN_EXEC]120
-$3  : [STMT_PRINT] fact(5)
+FUNCTION
+   define fact = <fn fact>
+      [EVAL_VAR] $fact <fn fact>
+   define n = 5
+   BLOCK
+      IF
+         [EVAL_VAR] $n 5
+      [EVAL_BINARY] false ($n <= 1)
+               [EVAL_VAR] $n 5
+            [EVAL_VAR] $fact <fn fact>
+               [EVAL_VAR] $n 5
+            [EVAL_BINARY] 4 ($n - 1)
+         define n = 4
+         BLOCK
+            IF
+               [EVAL_VAR] $n 4
+            [EVAL_BINARY] false ($n <= 1)
+                           [EVAL_VAR] $n 4
+                  [EVAL_VAR] $fact <fn fact>
+                     [EVAL_VAR] $n 4
+                  [EVAL_BINARY] 3 ($n - 1)
+               define n = 3
+               BLOCK
+                  IF
+                     [EVAL_VAR] $n 3
+                  [EVAL_BINARY] false ($n <= 1)
+                                       [EVAL_VAR] $n 3
+                        [EVAL_VAR] $fact <fn fact>
+                           [EVAL_VAR] $n 3
+                        [EVAL_BINARY] 2 ($n - 1)
+                     define n = 2
+                     BLOCK
+                        IF
+                           [EVAL_VAR] $n 2
+                        [EVAL_BINARY] false ($n <= 1)
+                                                   [EVAL_VAR] $n 2
+                              [EVAL_VAR] $fact <fn fact>
+                                 [EVAL_VAR] $n 2
+                              [EVAL_BINARY] 1 ($n - 1)
+                           define n = 1
+                           BLOCK
+                              IF
+                                 [EVAL_VAR] $n 1
+                              [EVAL_BINARY] true ($n <= 1)
+                                 BLOCK
+                                    RETURN1
+                           [EVAL_BINARY] 2 ($n * $fact ( ($n - 1)))
+RETURN2
+                        [EVAL_BINARY] 6 ($n * $fact ( ($n - 1)))
+RETURN6
+                     [EVAL_BINARY] 24 ($n * $fact ( ($n - 1)))
+RETURN24
+                  [EVAL_BINARY] 120 ($n * $fact ( ($n - 1)))
+RETURN120
+@4  : [STMT_PRINT] $fact (5)
 [RESULT] : 120;
 [PASS]
 
 SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } return count; } var c = makeCounter(); print c(); print c();
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'makeCounter'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] NUMBER          '0'
-[TOK] SEMICOLON       ';'
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'count'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] IDENTIFIER      'i'
-[TOK] =               '='
-[TOK] IDENTIFIER      'i'
-[TOK] +               '+'
-[TOK] NUMBER          '1'
-[TOK] SEMICOLON       ';'
-[TOK] RETURN          'return'
-[TOK] IDENTIFIER      'i'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] RETURN          'return'
-[TOK] IDENTIFIER      'count'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'c'
-[TOK] =               '='
-[TOK] IDENTIFIER      'makeCounter'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'c'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'c'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'makeCounter'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'i'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '0'
 [EXPR_LITERAL] 0
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'count'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[MatchAdv] [TOK] +               '+'
-[MatchAdv] [TOK] NUMBER          '1'
+[EXPR_VAR] $i 
+[EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  ( i + 1)
-[EXPR_ASSIGN] i =  ( i + 1)
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] IDENTIFIER      'i'
-[EXPR_VAR] i 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] RETURN          'return'
-[MatchAdv] [TOK] IDENTIFIER      'count'
-[EXPR_VAR] count 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'c'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] IDENTIFIER      'makeCounter'
-[EXPR_VAR] makeCounter 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] makeCounter()
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'c'
-[EXPR_VAR] c 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] c()
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'c'
-[EXPR_VAR] c 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] c()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_BINARY]  ($i + 1)
+[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_VAR] $i 
+[EXPR_VAR] $count 
+[EXPR_VAR] $makeCounter 
+[EXPR_CALL] $makeCounter ()
+[EXPR_VAR] $c 
+[EXPR_CALL] $c ()
+[EXPR_VAR] $c 
+[EXPR_CALL] $c ()
 ==== Program [4 statements] ====
-$1  : [STMT_FUNCTION] makeCounter ()
-      $1  : [STMT_BLOCK]
-         $2  : [STMT_VAR] i = 0
-         $1  : [STMT_FUNCTION] count ()
-               $3  : [STMT_BLOCK]
-                  $4  : [STMT_EXPR] i =  ( i + 1)
-                  $1  : [STMT_RETURN]
-         $1  : [STMT_RETURN]
-$5  : [STMT_VAR] c = makeCounter()
-$6  : [STMT_PRINT] c()
-$7  : [STMT_PRINT] c()
+@1  : [STMT_FUNCTION] makeCounter ()
+      @1  : [STMT_BLOCK]
+         @2  : [STMT_VAR] i = 0
+         @1  : [STMT_FUNCTION] count ()
+               @3  : [STMT_BLOCK]
+                  @4  : [STMT_EXPR] i =  ($i + 1)
+                  @1  : [STMT_RETURN]
+         @1  : [STMT_RETURN]
+@5  : [STMT_VAR] c = $makeCounter ()
+@6  : [STMT_PRINT] $c ()
+@7  : [STMT_PRINT] $c ()
 =================
-[ENV_DEFINE_FUNCTION]<fn makeCounter>
-      [EVAL_VAR] makeCounter <fn makeCounter>
-$2  : [STMT_VAR] i = 0
-[ENV_DEFINE_FUNCTION]<fn count>
-      [EVAL_VAR] count <fn count>
-[STMT_RETURN_EXEC]<fn count>
-$5  : [STMT_VAR] c = makeCounter()
-         [EVAL_VAR] c <fn count>
-               [EVAL_VAR] i 0
-            [EVAL_BINARY] 1 ( i + 1)
-         [EVAL_ASSIGN] i = 1 ( i + 1)
-$4  : [STMT_EXPR] i = 1 ( i + 1)
-         [EVAL_VAR] i 1
-[STMT_RETURN_EXEC]1
-$6  : [STMT_PRINT] c()
-            [EVAL_VAR] c <fn count>
-                  [EVAL_VAR] i 1
-               [EVAL_BINARY] 2 ( i + 1)
-            [EVAL_ASSIGN] i = 2 ( i + 1)
-$4  : [STMT_EXPR] i = 2 ( i + 1)
-            [EVAL_VAR] i 2
-[STMT_RETURN_EXEC]2
-$7  : [STMT_PRINT] c()
+FUNCTION
+   define makeCounter = <fn makeCounter>
+      [EVAL_VAR] $makeCounter <fn makeCounter>
+   BLOCK
+               define i = 0
+@2  : [STMT_VAR] i = 0
+      FUNCTION
+         define count = <fn count>
+            [EVAL_VAR] $count <fn count>
+RETURN<fn count>
+      define c = <fn count>
+@5  : [STMT_VAR] c = $makeCounter ()
+            [EVAL_VAR] $c <fn count>
+      BLOCK
+                        [EVAL_VAR] $i 0
+            [EVAL_BINARY] 1 ($i + 1)
+         [EVAL_ASSIGN] i = 1 ($i + 1)
+@4  : [STMT_EXPR] i = 1 ($i + 1)
+                  [EVAL_VAR] $i 1
+RETURN1
+@6  : [STMT_PRINT] $c ()
+                  [EVAL_VAR] $c <fn count>
+         BLOCK
+                              [EVAL_VAR] $i 1
+               [EVAL_BINARY] 2 ($i + 1)
+            [EVAL_ASSIGN] i = 2 ($i + 1)
+@4  : [STMT_EXPR] i = 2 ($i + 1)
+                        [EVAL_VAR] $i 2
+RETURN2
+@7  : [STMT_PRINT] $c ()
 [RESULT] : 1;2;
 [PASS]
 
 SOURCE: print clock();
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'clock'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'clock'
-[EXPR_VAR] clock 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] clock()
-[CONSUME][TOK] SEMICOLON       ';'
+[EXPR_VAR] $clock 
+[EXPR_CALL] $clock ()
 ==== Program [1 statements] ====
-$1  : [STMT_PRINT] clock()
+@1  : [STMT_PRINT] $clock ()
 =================
-      [EVAL_VAR] clock <native fn>
-$1  : [STMT_PRINT] clock()
-[RESULT] : 0.003389;
+      [EVAL_VAR] $clock <native fn>
+@1  : [STMT_PRINT] $clock ()
+[RESULT] : 0.003701;
 [INFO] no expected output
 
 SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '8'
-[TOK] SEMICOLON       ';'
-[TOK] LEFT_BRACE      '{'
-[TOK] FUN             'fun'
-[TOK] IDENTIFIER      'show'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] LEFT_BRACE      '{'
-[TOK] PRINT           'print'
-[TOK] IDENTIFIER      'a'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] VAR             'var'
-[TOK] IDENTIFIER      'a'
-[TOK] =               '='
-[TOK] NUMBER          '5'
-[TOK] SEMICOLON       ';'
-[TOK] IDENTIFIER      'show'
-[TOK] LEFT_PAREN      '('
-[TOK] RIGHT_PAREN     ')'
-[TOK] SEMICOLON       ';'
-[TOK] RIGHT_BRACE     '}'
-[TOK] EOF             ''
 =================
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '8'
 [EXPR_LITERAL] 8
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] FUN             'fun'
-[CONSUME][TOK] IDENTIFIER      'show'
-[CONSUME][TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[CONSUME][TOK] LEFT_BRACE      '{'
-[MatchAdv] [TOK] PRINT           'print'
-[MatchAdv] [TOK] IDENTIFIER      'a'
-[EXPR_VAR] a 
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
-[MatchAdv] [TOK] VAR             'var'
-[CONSUME][TOK] IDENTIFIER      'a'
-[MatchAdv] [TOK] =               '='
-[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_VAR] $a 
 [EXPR_LITERAL] 5
-[CONSUME][TOK] SEMICOLON       ';'
-[MatchAdv] [TOK] IDENTIFIER      'show'
-[EXPR_VAR] show 
-[MatchAdv] [TOK] LEFT_PAREN      '('
-[CONSUME][TOK] RIGHT_PAREN     ')'
-[EXPR_CALL] show()
-[CONSUME][TOK] SEMICOLON       ';'
-[CONSUME][TOK] RIGHT_BRACE     '}'
+[EXPR_VAR] $show 
+[EXPR_CALL] $show ()
 ==== Program [2 statements] ====
-$1  : [STMT_VAR] a = 8
-$2  : [STMT_BLOCK]
-   $1  : [STMT_FUNCTION] show ()
-         $3  : [STMT_BLOCK]
-            $4  : [STMT_PRINT] a 
-   $5  : [STMT_VAR] a = 5
-   $6  : [STMT_EXPR] show()
+@1  : [STMT_VAR] a = 8
+@2  : [STMT_BLOCK]
+   @1  : [STMT_FUNCTION] show ()
+         @3  : [STMT_BLOCK]
+            @4  : [STMT_PRINT] $a 
+   @5  : [STMT_VAR] a = 5
+   @6  : [STMT_EXPR] $show ()
 =================
-$1  : [STMT_VAR] a = 8
-[ENV_DEFINE_FUNCTION]<fn show>
-$5  : [STMT_VAR] a = 5
-      [EVAL_VAR] show <fn show>
-      [EVAL_VAR] a 8
-$4  : [STMT_PRINT] a 8
-$6  : [STMT_EXPR] show()
+   define a = 8
+@1  : [STMT_VAR] a = 8
+BLOCK
+   FUNCTION
+      define show = <fn show>
+         define a = 5
+@5  : [STMT_VAR] a = 5
+         [EVAL_VAR] $show <fn show>
+      BLOCK
+               [EVAL_VAR] $a 8
+@4  : [STMT_PRINT] $a 8
+@6  : [STMT_EXPR] $show ()
 [RESULT] : 8;
+[PASS]
+
+SOURCE: var a = a;
+=================
+[EXPR_VAR] $a 
+==== Program [1 statements] ====
+@1  : [STMT_VAR] a = $a 
+=================
+[line 1] RuntimeError at 'a': Undefined variable.
+   define a = Error: Undefined variable.
+
+@1  : [STMT_VAR] a = $a Error: Undefined variable.
+
+[RESULT] : 
+[PassError]
+
+SOURCE: return 123;
+=================
+[line 1] Error at 'return': Can't return from top-level code.
+[EXPR_LITERAL] 123
+==== Program [1 statements] ====
+@1  : [STMT_RETURN]
+=================
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: break;
+=================
+[line 1] Error at 'break': Can't use 'break' outside of a loop.
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+[NULL_STMT]
+=================
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: class Foo {} print Foo;
+=================
+[EXPR_VAR] $Foo 
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+)
+@1  : [STMT_PRINT] $Foo 
+=================
+CLASS
+   define Foo = <class Foo>
+   [EVAL_VAR] $Foo <class Foo>
+@1  : [STMT_PRINT] $Foo <class Foo>
+[RESULT] : <class Foo>;
+[PASS]
+
+SOURCE: class Foo {} var f = Foo(); print f;
+=================
+[EXPR_VAR] $Foo 
+[EXPR_CALL] $Foo ()
+[EXPR_VAR] $f 
+==== Program [3 statements] ====
+@1  : [STMT_CLASS] Foo 
+)
+@1  : [STMT_VAR] f = $Foo ()
+@2  : [STMT_PRINT] $f 
+=================
+CLASS
+   define Foo = <class Foo>
+      [EVAL_VAR] $Foo <class Foo>
+   define f = <instance Foo>
+@1  : [STMT_VAR] f = $Foo ()
+      [EVAL_VAR] $f <instance Foo>
+@2  : [STMT_PRINT] $f <instance Foo>
+[RESULT] : <instance Foo>;
+[PASS]
+
+SOURCE: class Foo { get() { return 123; } } print Foo().get();
+=================
+[EXPR_LITERAL] 123
+[EXPR_VAR] $Foo 
+[EXPR_CALL] $Foo ()
+[EXPR_CALL] $Foo ().get()
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+      @1  : [STMT_FUNCTION] get ()
+            @1  : [STMT_BLOCK]
+               @1  : [STMT_RETURN]
+)
+@2  : [STMT_PRINT] $Foo ().get()
+=================
+CLASS
+   define get = <fn get>
+   define Foo = <class Foo>
+            [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+   BLOCK
+      RETURN123
+@2  : [STMT_PRINT] $Foo ().get()
+[RESULT] : 123;
+[PASS]
+
+SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } }var f = Foo(42); print f.get();
+=================
+[EXPR_VAR] $x 
+[EXPR_VAR] $Foo 
+[EXPR_LITERAL] 42
+[EXPR_CALL] $Foo (42)
+[EXPR_VAR] $f 
+[EXPR_CALL] $f .get()
+==== Program [3 statements] ====
+@1  : [STMT_CLASS] Foo 
+      @1  : [STMT_FUNCTION] init (x)
+            @1  : [STMT_BLOCK]
+               @2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
+      @1  : [STMT_FUNCTION] get ()
+            @3  : [STMT_BLOCK]
+               @1  : [STMT_RETURN]
+)
+@4  : [STMT_VAR] f = $Foo (42)
+@5  : [STMT_PRINT] $f .get()
+=================
+CLASS
+   define init = <fn init>
+   define get = <fn get>
+   define Foo = <class Foo>
+      [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+   define x = 42
+   BLOCK
+                  [EVAL_VAR] $x 42
+         define x = 42
+         [EVAL_SET] [EXPR_SET] this.x = $x 
+@2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
+   define f = <instance Foo>
+@4  : [STMT_VAR] f = $Foo (42)
+                  [EVAL_VAR] $f <instance Foo>
+   define this = <instance Foo>
+   BLOCK
+      RETURN42
+@5  : [STMT_PRINT] $f .get()
+[RESULT] : 42;
 [PASS]
 

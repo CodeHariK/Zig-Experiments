@@ -197,7 +197,6 @@ void runVarTests(void) {
       // Inner assignment does not affect outer shadowed variable
       {"var a = 1; { var a = 2; a = 3; } print a;", "1\n", true},
 
-      {"if (true) print 1;", "1\n", true},
       {"if (false) {print 1;} else if (false) {print 2;} else {print 3;}",
        "3\n", true},
       {"var i = 0; while (i < 3) { print i; i = i + 1; }", "0\n1\n2\n", true},
@@ -209,29 +208,29 @@ void runVarTests(void) {
       {"print nil and boom;", "nil\n", true},
 
       // basic counting
-      {"for (var i = 0; i < 3; i = i + 1) print i;", "0;1;2;", true},
+      {"for (var i = 0; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
       // initializer without var
-      {"var i = 0; for (i = 1; i < 4; i = i + 1) print i;", "1;2;3;", true},
+      {"var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}", "1;2;3;", true},
       // empty initializer
-      {"var i = 0; for (; i < 3; i = i + 1) print i;", "0;1;2;", true},
+      {"var i = 0; for (; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
       // empty increment
       {"for (var i = 0; i < 3;) { print i; i = i + 1; }", "0;1;2;", true},
 
       // block scoping
-      {"var i = 100; for (var i = 0; i < 2; i = i + 1) print i; print i;",
+      {"var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;",
        "0;1;100;", true},
       // nested for
-      {"for (var i = 0; i < 2; i = i + 1) "
+      {"for (var i = 0; i < 2; i = i + 1) {"
        "for (var j = 0; j < 2; j = j + 1) "
-       "print i + j;",
+       "{print i + j;}}",
        "0;1;1;2;", true},
       // for with expression body
       {"for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;", "13;", false},
       // for inside block
-      {"{ for (var i = 0; i < 2; i = i + 1) print i; }", "0;1;", true},
+      {"{ for (var i = 0; i < 2; i = i + 1) {print i;} }", "0;1;", true},
 
       // empty condition (infinite loop with break simulation)
-      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) break; }",
+      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }",
        "0;1;2;", true},
       // break exits only the nearest loop
       {"var i = 0; var j = 0; "
@@ -249,7 +248,7 @@ void runVarTests(void) {
       {"var i = 0; "
        "while (true) { "
        "  { "
-       "    if (i == 2) break; "
+       "    if (i == 2) {break;} "
        "  } "
        "  print i; "
        "  i = i + 1; "
@@ -257,10 +256,10 @@ void runVarTests(void) {
        "0;1;", true},
 
       {"var i = 0; while (i < 3) { "
-       "{ i = i + 1; if (i == 2) continue; print i; } }",
+       "{ i = i + 1; if (i == 2) {continue;} print i; } }",
        "1;3;", true},
       {"for (var i = 1; i < 4; i = i + 1) { "
-       "if (i == 2) continue; print i; }",
+       "if (i == 2) {continue;} print i; }",
        "1;3;", true},
 
       {"fun hello() { print 123; } hello();", "123;", true},
@@ -270,8 +269,8 @@ void runVarTests(void) {
 
       {"fun f() { return 123; print 0; } print f();", "123;", true},
       {"fun f() {} print f();", "nil;", true},
-      {"fun f() { if (true) return 1; return 2; } print f();", "1;", true},
-      {"fun fact(n) { if (n <= 1) return 1; return n * fact(n - 1); } print "
+      {"fun f() { if (true) {return 1;} return 2; } print f();", "1;", true},
+      {"fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print "
        "fact(5);",
        "120;", true},
 
@@ -284,7 +283,17 @@ void runVarTests(void) {
       {"var a = 8; { fun show() { print a;  } var a = 5;  show(); }", "8\n",
        true},
 
-      //
+      {"var a = a;", "", false},
+      {"return 123;", "", false},
+      {"break;", "", false},
+
+      {"class Foo {} print Foo;", "<class Foo>;", true},
+      {"class Foo {} var f = Foo(); print f;", "<instance Foo>;", true},
+      {"class Foo { get() { return 123; } } print Foo().get();", "123;", true},
+      {"class Foo { init(x){ this.x = x; } get(){ return this.x; } }"
+       "var f = Foo(42); print f.get();",
+       "42;", true},
+
   };
 
   for (u32 i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

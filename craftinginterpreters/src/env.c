@@ -22,7 +22,7 @@ void envFree(Environment *env) {
   free(env);
 }
 
-void envDefine(Environment *env, const char *name, Value value) {
+void envDefine(Environment *env, Lox *lox, const char *name, Value value) {
   if (env->count >= env->capacity) {
     env->capacity *= 2;
     env->entries = realloc(env->entries, sizeof(EnvKV) * env->capacity);
@@ -34,6 +34,13 @@ void envDefine(Environment *env, const char *name, Value value) {
   };
 
   env->count++;
+
+  if (lox) {
+    indentPrint(lox->execDepth);
+    printf("define %s = ", name);
+    printValue(value);
+    printf("\n");
+  }
 }
 
 static Environment *envAncestor(Environment *env, int depth) {
@@ -47,7 +54,21 @@ static Environment *envAncestor(Environment *env, int depth) {
   return current;
 }
 
-static Value envGetAt(Environment *env, int depth, const char *name) {
+bool envGet(Environment *env, const char *name, Value *out) {
+  for (u32 i = 0; i < env->count; i++) {
+    if (strcmp(env->entries[i].key, name) == 0) {
+      *out = env->entries[i].value;
+      return true;
+    }
+  }
+  return false;
+}
+
+Value envGetAt(Environment *env, int depth, const char *name) {
+  if (depth < 0) {
+    return NIL_VALUE;
+  }
+
   Environment *target = envAncestor(env, depth);
   if (!target) {
     return NIL_VALUE;
@@ -117,18 +138,20 @@ static void resolveLocal(Resolver *r, Expr *expr, Token name) {
       if (strcmp(scope->vars[j].name, name.lexeme) == 0) {
         i32 depth = r->scopeCount - 1 - i;
 
-        if (expr->type == EXPR_VARIABLE)
+        if (expr->type == EXPR_VARIABLE) {
           expr->as.var.depth = depth;
-        else if (expr->type == EXPR_ASSIGN)
+        } else if (expr->type == EXPR_ASSIGN) {
           expr->as.assign.depth = depth;
-
+        } else if (expr->type == EXPR_THIS) {
+          expr->as.thisExpr.depth = depth;
+        }
         return;
       }
     }
   }
 }
 
-static void resolveExpr(Resolver *r, Expr *expr) {
+static void resolveExpr(Resolver *r, Lox *lox, Expr *expr) {
   if (!expr)
     return;
 
@@ -137,49 +160,73 @@ static void resolveExpr(Resolver *r, Expr *expr) {
   case EXPR_LITERAL:
     break;
 
-  case EXPR_GROUPING:
-    resolveExpr(r, expr->as.grouping.expression);
+  case EXPR_GROUPING: {
+    resolveExpr(r, lox, expr->as.grouping.expression);
     break;
+  }
 
-  case EXPR_UNARY:
-    resolveExpr(r, expr->as.unary.right);
+  case EXPR_UNARY: {
+    resolveExpr(r, lox, expr->as.unary.right);
     break;
+  }
 
-  case EXPR_BINARY:
-    resolveExpr(r, expr->as.binary.left);
-    resolveExpr(r, expr->as.binary.right);
+  case EXPR_BINARY: {
+    resolveExpr(r, lox, expr->as.binary.left);
+    resolveExpr(r, lox, expr->as.binary.right);
     break;
-
-  case EXPR_LOGICAL:
-    resolveExpr(r, expr->as.logical.left);
-    resolveExpr(r, expr->as.logical.right);
+  }
+  case EXPR_LOGICAL: {
+    resolveExpr(r, lox, expr->as.logical.left);
+    resolveExpr(r, lox, expr->as.logical.right);
     break;
+  }
 
-  case EXPR_VARIABLE:
+  case EXPR_VARIABLE: {
     if (r->scopeCount > 0) {
       ResolverScope *scope = &r->scopes[r->scopeCount - 1];
       for (i32 i = 0; i < scope->varCount; i++) {
         if (strcmp(scope->vars[i].name, expr->as.var.name.lexeme) == 0 &&
             !scope->vars[i].defined) {
-          // error: reading own initializer
+          reportError(lox, expr->as.var.name.line, "",
+                      "Can't read local variable in its own initializer.");
         }
       }
     }
 
     resolveLocal(r, expr, expr->as.var.name);
     break;
+  }
 
-  case EXPR_ASSIGN:
-    resolveExpr(r, expr->as.assign.value);
+  case EXPR_ASSIGN: {
+    resolveExpr(r, lox, expr->as.assign.value);
     resolveLocal(r, expr, expr->as.assign.name);
     break;
+  }
 
-  case EXPR_CALL:
-    resolveExpr(r, expr->as.call.callee);
+  case EXPR_CALL: {
+    resolveExpr(r, lox, expr->as.call.callee);
     for (i32 i = 0; i < expr->as.call.argCount; i++) {
-      resolveExpr(r, expr->as.call.arguments[i]);
+      resolveExpr(r, lox, expr->as.call.arguments[i]);
     }
     break;
+  }
+
+  case EXPR_GET:
+    resolveExpr(r, lox, expr->as.getExpr.object);
+    break;
+
+  case EXPR_SET:
+    resolveExpr(r, lox, expr->as.setExpr.object);
+    resolveExpr(r, lox, expr->as.setExpr.value);
+    break;
+  case EXPR_THIS: {
+    if (r->scopeCount == 0) {
+      // error: can't use 'this' outside class
+      return;
+    }
+    resolveLocal(r, expr, expr->as.thisExpr.keyword);
+    break;
+  }
   }
 }
 
@@ -203,11 +250,10 @@ static void declareVar(Resolver *r, Token name) {
     }
   }
 
-  scope->vars[scope->varCount] = (ResolverVar){
+  scope->vars[scope->varCount++] = (ResolverVar){
       .name = name.lexeme,
       .defined = false,
   };
-  scope->varCount++;
 }
 
 static void defineVar(Resolver *r) {
@@ -218,6 +264,17 @@ static void defineVar(Resolver *r) {
   scope->vars[scope->varCount - 1].defined = true;
 }
 
+static void declareThis(Resolver *r) {
+  if (r->scopeCount == 0)
+    return;
+
+  ResolverScope *scope = &r->scopes[r->scopeCount - 1];
+  scope->vars[scope->varCount++] = (ResolverVar){
+      .name = "this",
+      .defined = true,
+  };
+}
+
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
   if (!stmt)
     return;
@@ -225,18 +282,18 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
   switch (stmt->type) {
 
   case STMT_EXPR:
-    resolveExpr(r, stmt->as.expr);
+    resolveExpr(r, lox, stmt->as.expr);
     break;
 
   case STMT_PRINT:
-    resolveExpr(r, stmt->as.expr_print);
+    resolveExpr(r, lox, stmt->as.expr_print);
     break;
 
   case STMT_VAR:
     declareVar(r, stmt->as.var.name);
 
     if (stmt->as.var.initializer)
-      resolveExpr(r, stmt->as.var.initializer);
+      resolveExpr(r, lox, stmt->as.var.initializer);
 
     defineVar(r);
     break;
@@ -252,22 +309,22 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     break;
 
   case STMT_IF:
-    resolveExpr(r, stmt->as.ifStmt.condition);
+    resolveExpr(r, lox, stmt->as.ifStmt.condition);
     resolveStmt(r, lox, stmt->as.ifStmt.then_branch);
     if (stmt->as.ifStmt.else_branch)
       resolveStmt(r, lox, stmt->as.ifStmt.else_branch);
     break;
 
   case STMT_WHILE:
-    resolveExpr(r, stmt->as.whileStmt.condition);
+    resolveExpr(r, lox, stmt->as.whileStmt.condition);
     resolveStmt(r, lox, stmt->as.whileStmt.body);
     break;
 
   case STMT_FOR:
     if (stmt->as.forStmt.condition)
-      resolveExpr(r, stmt->as.forStmt.condition);
+      resolveExpr(r, lox, stmt->as.forStmt.condition);
     if (stmt->as.forStmt.increment)
-      resolveExpr(r, stmt->as.forStmt.increment);
+      resolveExpr(r, lox, stmt->as.forStmt.increment);
     resolveStmt(r, lox, stmt->as.forStmt.body);
     break;
 
@@ -289,6 +346,20 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     endScope(r);
     break;
 
+  case STMT_CLASS:
+    declareVar(r, stmt->as.classStmt.name);
+    defineVar(r);
+
+    beginScope(r);  // for methods
+    declareThis(r); // mark "this" valid
+
+    for (int i = 0; i < stmt->as.classStmt.methodCount; i++) {
+      resolveStmt(r, lox, stmt->as.classStmt.methods[i]);
+    }
+
+    endScope(r);
+    break;
+
   case STMT_RETURN:
     if (r->scopeCount == 0) {
       // return outside function → error (optional enforcement)
@@ -296,7 +367,7 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     }
 
     if (stmt->as.returnStmt.value)
-      resolveExpr(r, stmt->as.returnStmt.value);
+      resolveExpr(r, lox, stmt->as.returnStmt.value);
     break;
 
   case STMT_BREAK:
@@ -333,10 +404,49 @@ Value evalAssign(Lox *lox, Expr *expr) {
   } else {
     if (!envAssign(lox->env, expr->as.assign.name.lexeme, result)) {
       runtimeError(lox, expr->as.assign.name, "Undefined variable.");
-      result = errorValue("Undefined variable.");
+      return errorValue("Undefined variable.");
     }
   }
 
   printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_ASSIGN] ");
   return result;
+}
+
+Value evalGet(Lox *lox, Expr *expr) {
+  Value obj = evaluate(lox, expr->as.getExpr.object);
+
+  if (obj.type != VAL_INSTANCE) {
+    runtimeError(lox, expr->as.getExpr.name, "Only instances have properties.");
+    return errorValue("Invalid access");
+  }
+
+  LoxInstance *inst = obj.as.instance;
+
+  Value value;
+  if (envGet(inst->fields, expr->as.getExpr.name.lexeme, &value)) {
+    return value;
+  }
+
+  if (envGet(inst->class->methods, expr->as.getExpr.name.lexeme, &value)) {
+    return bindMethod(lox, value, inst);
+  }
+
+  runtimeError(lox, expr->as.getExpr.name, "Undefined property.");
+  return errorValue("Undefined property");
+}
+
+Value evalSet(Lox *lox, Expr *expr) {
+  Value obj = evaluate(lox, expr->as.setExpr.object);
+
+  if (obj.type != VAL_INSTANCE) {
+    runtimeError(lox, expr->as.setExpr.name, "Only instances have fields.");
+    return errorValue("Invalid set");
+  }
+
+  Value value = evaluate(lox, expr->as.setExpr.value);
+
+  envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
+
+  printExpr(lox, expr, value, lox->indent, false, true, "[EVAL_SET] ");
+  return value;
 }

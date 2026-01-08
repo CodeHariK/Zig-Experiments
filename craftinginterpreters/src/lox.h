@@ -84,7 +84,12 @@ typedef enum {
   VAL_STRING,
   VAL_FUNCTION,
   VAL_NATIVE,
+  VAL_CLASS,
+  VAL_INSTANCE,
+  VAL_METHOD,
 } ValueType;
+
+enum ClassType { CLASS_NONE, CLASS_CLASS };
 
 typedef struct Value Value;
 
@@ -98,6 +103,9 @@ struct Value {
     char *string;
     struct LoxFunction *function;
     NativeFn native;
+
+    struct LoxClass *klass;
+    struct LoxInstance *instance;
   } as;
 };
 
@@ -117,6 +125,10 @@ typedef enum {
   EXPR_ASSIGN,
   EXPR_LOGICAL,
   EXPR_CALL,
+
+  EXPR_GET,
+  EXPR_SET,
+  EXPR_THIS
 } ExprType;
 
 typedef struct Expr {
@@ -166,6 +178,20 @@ typedef struct Expr {
       struct Expr **arguments;
       u8 argCount;
     } call;
+
+    struct {
+      struct Expr *object;
+      Token name;
+    } getExpr;
+    struct {
+      struct Expr *object;
+      Token name;
+      struct Expr *value;
+    } setExpr;
+    struct {
+      Token keyword;
+      i32 depth;
+    } thisExpr;
   } as;
 } Expr;
 
@@ -181,6 +207,7 @@ typedef enum {
   STMT_FOR,
   STMT_FUNCTION,
   STMT_RETURN,
+  STMT_CLASS,
 } StmtType;
 
 typedef struct Stmt {
@@ -232,6 +259,11 @@ typedef struct Stmt {
       Expr *value;   // may be NULL
     } returnStmt;
 
+    struct {
+      Token name;
+      struct Stmt **methods;
+      int methodCount;
+    } classStmt;
   } as;
 } Stmt;
 
@@ -272,6 +304,16 @@ typedef struct LoxFunction {
   Stmt *body;
   Environment *closure;
 } LoxFunction;
+
+typedef struct LoxClass {
+  Token name;
+  Environment *methods;
+} LoxClass;
+
+typedef struct LoxInstance {
+  LoxClass *class;
+  Environment *fields; // field name -> value
+} LoxInstance;
 
 typedef struct {
   Stmt **statements;
@@ -326,8 +368,10 @@ typedef struct {
   char runtimeErrorMsg[512];
   char output[1024 * 10];
   u32 output_len;
-  u32 indent;
   bool debugPrint;
+
+  u32 indent;
+  int execDepth;
 
   struct {
     ControlSignalType type;
@@ -363,7 +407,14 @@ Token peekToken(Parser *parser);
 
 Expr *parseExpression(Lox *lox);
 
+Value stringValue(char *s);
+Value numberValue(double n);
+Value boolValue(bool b);
+Value literalValue(Expr *expr);
 bool isTruthy(Value v);
+bool isEqual(Value a, Value b);
+void checkNumberOperands(Lox *lox, Token op, Value left, Value right);
+
 Value evaluate(Lox *lox, Expr *expr);
 
 Stmt *parseStmt(Lox *lox);
@@ -371,17 +422,27 @@ Program *parseProgram(Lox *lox);
 void executeStmt(Lox *lox, Stmt *stmt);
 void executeProgram(Lox *lox, Program *prog);
 
+Value makeFunction(LoxFunction *fn);
+Value bindMethod(Lox *lox, Value method, LoxInstance *instance);
+
+void defineNativeFunctions(Lox *lox);
+
 Environment *envNew(Environment *enclosing);
 void envFree(Environment *env);
-void envDefine(Environment *env, const char *name, Value value);
+void envDefine(Environment *env, Lox *lox, const char *name, Value value);
+bool envGet(Environment *env, const char *name, Value *out);
+Value envGetAt(Environment *env, int depth, const char *name);
 Value evalVariable(Lox *lox, Expr *expr);
+Value evalGet(Lox *lox, Expr *expr);
+Value evalSet(Lox *lox, Expr *expr);
 Value evalAssign(Lox *lox, Expr *expr);
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
+void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
                bool newLine, char *msg);
 void printValue(Value value);
-void printToken(Lox *lox, const Token *token, u32 count, ...);
+void printToken(Lox *lox, const Token *token, char *msg);
 void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent);
 void printEnvironment(Lox *lox);
 void printProgram(Lox *lox, Program *prog);

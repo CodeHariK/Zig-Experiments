@@ -1,15 +1,6 @@
-// lox.c
 #include "lox.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <time.h>
-
-Value clockNative(int argCount, Value *args) {
-  (void)argCount;
-  (void)args;
-  return (Value){VAL_NUMBER, {.number = (double)clock() / CLOCKS_PER_SEC}};
-}
 
 void loxInit(Lox *lox, bool debugPrint) {
   *lox = (Lox){
@@ -28,8 +19,7 @@ void loxInit(Lox *lox, bool debugPrint) {
 
   arenaInit(&lox->astArena, 1024 * 1024); // 1 MB is plenty
 
-  // Define native functions
-  envDefine(lox->env, "clock", (Value){VAL_NATIVE, {.native = clockNative}});
+  defineNativeFunctions(lox);
 }
 
 void loxRun(Lox *lox, const char *source) {

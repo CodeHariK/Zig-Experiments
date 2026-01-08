@@ -5,9 +5,9 @@ CFLAGS_DEBUG = -std=c23 -Wall -Wextra -Wpedantic -Og -g \
 -fsanitize=address,undefined -fno-omit-frame-pointer
 
 TARGET  = build/lox
-SRC     = src/main.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c src/env.c
+SRC       = src/main.c src/arena.c src/lox.c src/helper.c src/debug.c src/native.c src/parser.c src/scanner.c src/stmt.c src/eval.c src/exec.c src/env.c
 TEST_TARGET = build/test
-TEST_SRC     = src/test.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c src/env.c
+TEST_SRC  = src/test.c src/arena.c src/lox.c src/helper.c src/debug.c src/native.c src/parser.c src/scanner.c src/stmt.c src/eval.c src/exec.c src/env.c
 
 .PHONY: all run clean test
 
@@ -32,3 +32,5 @@ $(TEST_TARGET): $(TEST_SRC)
 test: ${clean} $(TEST_TARGET)
 	@mkdir -p test
 	./$(TEST_TARGET) > test/test.txt || { echo "Tests failed!"; exit 1; }
+	grep -oiE '\b(passerror|pass|fail)\b' test/test.txt | sort | uniq -c
+	

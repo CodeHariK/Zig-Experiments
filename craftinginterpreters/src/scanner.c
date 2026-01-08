@@ -60,7 +60,7 @@ const char *tokenTypeToString(TokenType type) {
   case TOKEN_STAR:
     return "*";
   case TOKEN_NOT:
-    return "NOT";
+    return "!";
   case TOKEN_NOT_EQUAL:
     return "!=";
   case TOKEN_EQUAL:
@@ -155,7 +155,7 @@ void addTokenToArray(Lox *lox, Token token) {
   // Add the token
   scanner->tokens[scanner->count++] = token;
 
-  printToken(lox, &token, 0);
+  printToken(lox, &token, "");
 }
 
 static void addToken(Lox *lox, TokenType type, void *literal) {
