@@ -5,7 +5,7 @@
 
 const Value NO_VALUE = {VAL_NIL, {.boolean = true}};
 const Value NIL_VALUE = {VAL_NIL, {.boolean = false}};
-static inline Value errorValue(char *error) {
+inline Value errorValue(char *error) {
   return (Value){VAL_ERROR, {.string = error}};
 }
 static inline Value numberValue(double n) {
@@ -205,6 +205,7 @@ static Expr *parseVariableExpr(Lox *lox, Token token) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
+  expr->as.var.depth = -1;
   printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_VAR] ");
   return expr;
 }
@@ -214,6 +215,7 @@ static Expr *parseAssignExpr(Lox *lox, Token name, Expr *value) {
   expr->type = EXPR_ASSIGN;
   expr->as.assign.name = name;
   expr->as.assign.value = value;
+  expr->as.var.depth = -1;
   printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_ASSIGN] ");
   return expr;
 }
@@ -269,8 +271,8 @@ static Expr *parseFunctionCall(Lox *lox) {
   while (true) {
     if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_PAREN)) {
       Expr **args = NULL;
-      int argCount = 0;
-      int capacity = 0;
+      u32 argCount = 0;
+      u32 capacity = 0;
 
       if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
         do {
@@ -598,25 +600,12 @@ Value evaluate(Lox *lox, Expr *expr) {
     break;
 
   case EXPR_VARIABLE: {
-    if (!envGet(lox->env, expr->as.var.name.lexeme, &result)) {
-      runtimeError(lox, expr->as.var.name, "Undefined variable.");
-      result = errorValue("Undefined variable.");
-      break;
-    }
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_VAR] ");
+    result = evalVariable(lox, expr);
     break;
   }
 
   case EXPR_ASSIGN: {
-    result = evaluate(lox, expr->as.assign.value);
-
-    if (!envAssign(lox->env, expr->as.assign.name.lexeme, result)) {
-      runtimeError(lox, expr->as.assign.name, "Undefined variable.");
-      result = errorValue("Undefined variable.");
-      break;
-    }
-
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_ASSIGN] ");
+    result = evalAssign(lox, expr);
     break;
   }
 

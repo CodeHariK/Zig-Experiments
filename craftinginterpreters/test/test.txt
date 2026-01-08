@@ -148,7 +148,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.14586e-314-NOT-3
+      [EVAL_UNARY] -2.15774e-314-NOT-3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 NOT-NOT-3
@@ -3792,6 +3792,83 @@ $1  : [STMT_PRINT] clock()
 =================
       [EVAL_VAR] clock <native fn>
 $1  : [STMT_PRINT] clock()
-[RESULT] : 0.003176;
+[RESULT] : 0.003389;
 [INFO] no expected output
+
+SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] =               '='
+[TOK] NUMBER          '8'
+[TOK] SEMICOLON       ';'
+[TOK] LEFT_BRACE      '{'
+[TOK] FUN             'fun'
+[TOK] IDENTIFIER      'show'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] LEFT_BRACE      '{'
+[TOK] PRINT           'print'
+[TOK] IDENTIFIER      'a'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] VAR             'var'
+[TOK] IDENTIFIER      'a'
+[TOK] =               '='
+[TOK] NUMBER          '5'
+[TOK] SEMICOLON       ';'
+[TOK] IDENTIFIER      'show'
+[TOK] LEFT_PAREN      '('
+[TOK] RIGHT_PAREN     ')'
+[TOK] SEMICOLON       ';'
+[TOK] RIGHT_BRACE     '}'
+[TOK] EOF             ''
+=================
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv] [TOK] =               '='
+[MatchAdv] [TOK] NUMBER          '8'
+[EXPR_LITERAL] 8
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] FUN             'fun'
+[CONSUME][TOK] IDENTIFIER      'show'
+[CONSUME][TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[CONSUME][TOK] LEFT_BRACE      '{'
+[MatchAdv] [TOK] PRINT           'print'
+[MatchAdv] [TOK] IDENTIFIER      'a'
+[EXPR_VAR] a 
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+[MatchAdv] [TOK] VAR             'var'
+[CONSUME][TOK] IDENTIFIER      'a'
+[MatchAdv] [TOK] =               '='
+[MatchAdv] [TOK] NUMBER          '5'
+[EXPR_LITERAL] 5
+[CONSUME][TOK] SEMICOLON       ';'
+[MatchAdv] [TOK] IDENTIFIER      'show'
+[EXPR_VAR] show 
+[MatchAdv] [TOK] LEFT_PAREN      '('
+[CONSUME][TOK] RIGHT_PAREN     ')'
+[EXPR_CALL] show()
+[CONSUME][TOK] SEMICOLON       ';'
+[CONSUME][TOK] RIGHT_BRACE     '}'
+==== Program [2 statements] ====
+$1  : [STMT_VAR] a = 8
+$2  : [STMT_BLOCK]
+   $1  : [STMT_FUNCTION] show ()
+         $3  : [STMT_BLOCK]
+            $4  : [STMT_PRINT] a 
+   $5  : [STMT_VAR] a = 5
+   $6  : [STMT_EXPR] show()
+=================
+$1  : [STMT_VAR] a = 8
+[ENV_DEFINE_FUNCTION]<fn show>
+$5  : [STMT_VAR] a = 5
+      [EVAL_VAR] show <fn show>
+      [EVAL_VAR] a 8
+$4  : [STMT_PRINT] a 8
+$6  : [STMT_EXPR] show()
+[RESULT] : 8;
+[PASS]
 

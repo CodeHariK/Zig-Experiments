@@ -39,9 +39,7 @@ void loxRun(Lox *lox, const char *source) {
   initParser(lox);
 
   Program *prog = parseProgram(lox);
-  for (u32 i = 0; i < prog->count; i++) {
-    executeStmt(lox, prog->statements[i]);
-  }
+  executeProgram(lox, prog);
 }
 
 /* Reads entire file into memory and runs it */

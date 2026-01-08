@@ -234,7 +234,7 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
   }
   case STMT_BLOCK: {
     printf("[STMT_BLOCK]\n");
-    for (u32 i = 0; i < stmt->as.block.count; i++) {
+    for (i32 i = 0; i < stmt->as.block.count; i++) {
       printStmt(lox, stmt->as.block.statements[i], result, indent + 1);
     }
     break;

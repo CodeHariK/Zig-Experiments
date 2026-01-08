@@ -280,6 +280,10 @@ void runVarTests(void) {
        "1;2;", true},
 
       {"print clock();", "", true},
+
+      {"var a = 8; { fun show() { print a;  } var a = 5;  show(); }", "8\n",
+       true},
+
       //
   };
 

@@ -530,10 +530,18 @@ void executeProgram(Lox *lox, Program *prog) {
   if (!prog)
     return;
 
-  for (u8 i = 0; i < prog->count; i++) {
+  Resolver resolver = {0};
+
+  for (u32 i = 0; i < prog->count; i++) {
+    resolveStmt(&resolver, lox, prog->statements[i]);
+  }
+
+  // Now execute statements, not recurse
+  for (u32 i = 0; i < prog->count; i++) {
     executeStmt(lox, prog->statements[i]);
 
-    if (lox->hadRuntimeError || lox->hadError)
-      return; // stop on first error
+    if (lox->hadError || lox->hadRuntimeError) {
+      return;
+    }
   }
 }

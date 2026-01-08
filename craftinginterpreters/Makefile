@@ -5,9 +5,9 @@ CFLAGS_DEBUG = -std=c23 -Wall -Wextra -Wpedantic -Og -g \
 -fsanitize=address,undefined -fno-omit-frame-pointer
 
 TARGET  = build/lox
-SRC     = src/main.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c
+SRC     = src/main.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c src/env.c
 TEST_TARGET = build/test
-TEST_SRC     = src/test.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c
+TEST_SRC     = src/test.c src/arena.c src/lox.c src/debug.c src/parser.c src/scanner.c src/stmt.c src/env.c
 
 .PHONY: all run clean test
 

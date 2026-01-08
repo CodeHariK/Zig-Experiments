@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #define u32 uint32_t
+#define i32 int32_t
 #define u8 uint8_t
 
 typedef enum {
@@ -145,11 +146,13 @@ typedef struct Expr {
     struct {
       Token name;
       struct Expr *value;
+      int depth;
     } assign;
 
     struct {
       Token name;
       struct Expr *initializer;
+      int depth;
     } var;
 
     struct {
@@ -197,7 +200,7 @@ typedef struct Stmt {
 
     struct {
       struct Stmt **statements;
-      u32 count;
+      i32 count;
     } block;
 
     struct {
@@ -220,7 +223,7 @@ typedef struct Stmt {
     struct {
       Token name;
       Token *params;
-      u32 paramCount;
+      u8 paramCount;
       struct Stmt *body;
     } functionStmt;
 
@@ -231,6 +234,24 @@ typedef struct Stmt {
 
   } as;
 } Stmt;
+
+#define MAX_SCOPES 64
+#define MAX_SCOPE_VARS 256
+
+typedef struct {
+  const char *name;
+  bool defined;
+} ResolverVar;
+
+typedef struct {
+  ResolverVar vars[MAX_SCOPE_VARS];
+  i32 varCount;
+} ResolverScope;
+
+typedef struct {
+  ResolverScope scopes[MAX_SCOPES];
+  i32 scopeCount;
+} Resolver;
 
 typedef struct {
   const char *key;
@@ -262,6 +283,7 @@ const char *tokenTypeToString(TokenType type);
 
 extern const Value NIL_VALUE;
 extern const Value NO_VALUE;
+Value errorValue(char *error);
 
 void valueToString(Value value, char *buffer, u32 size);
 
@@ -351,9 +373,10 @@ void executeProgram(Lox *lox, Program *prog);
 
 Environment *envNew(Environment *enclosing);
 void envFree(Environment *env);
-bool envGet(Environment *env, const char *name, Value *out);
-bool envAssign(Environment *env, const char *name, Value value);
 void envDefine(Environment *env, const char *name, Value value);
+Value evalVariable(Lox *lox, Expr *expr);
+Value evalAssign(Lox *lox, Expr *expr);
+void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
                bool newLine, char *msg);
@@ -362,7 +385,6 @@ void printToken(Lox *lox, const Token *token, u32 count, ...);
 void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent);
 void printEnvironment(Lox *lox);
 void printProgram(Lox *lox, Program *prog);
-
 void loxAppendOutput(Lox *lox, const char *s);
 
 // Error handling
