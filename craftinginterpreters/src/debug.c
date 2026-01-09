@@ -30,10 +30,6 @@ void reportError(Lox *lox, u32 line, const char *where, const char *message) {
   lox->hadError = true;
 }
 
-void scanError(Lox *lox, u32 line, const char *message) {
-  reportError(lox, line, "", message);
-}
-
 void parseError(Lox *lox, const char *message) {
   Token token = peekToken(&lox->parser);
   if (token.type == TOKEN_EOF) {
@@ -46,29 +42,20 @@ void parseError(Lox *lox, const char *message) {
   }
 }
 
-void runtimeError(Lox *lox, Token token, const char *message) {
-  snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
-           "[line %d] RuntimeError at '%.*s': %s\n", token.line,
-           (int)(token.length), token.lexeme, message);
+void runtimeError(Lox *lox, Token *token, Expr *expr, const char *message) {
+  if (token) {
+    snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
+             "[line %d] RuntimeError at '%.*s': %s\n", token->line,
+             (int)(token->length), token->lexeme, message);
+  }
+  if (expr) {
+    snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
+             "[line %d] RuntimeError: %s\n", expr->line, message);
+  }
+
+  indentPrint(lox->execDepth + 1);
   printf("%s", lox->runtimeErrorMsg);
   lox->hadRuntimeError = true;
-}
-
-void runtimeErrorAt(Lox *lox, u32 line, const char *message) {
-  snprintf(lox->runtimeErrorMsg, sizeof(lox->runtimeErrorMsg),
-           "[line %d] RuntimeError: %s\n", line, message);
-  printf("%s", lox->runtimeErrorMsg);
-  lox->hadRuntimeError = true;
-}
-
-void printError(Lox *lox) {
-  if (lox->hadError) {
-    printf("%s", lox->errorMsg);
-  }
-  if (lox->hadRuntimeError) {
-    printf("%s", lox->runtimeErrorMsg);
-  }
-  printf("\n");
 }
 
 void indentPrint(int indent) {

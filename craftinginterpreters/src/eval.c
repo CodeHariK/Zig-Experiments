@@ -2,65 +2,67 @@
 #include <stdlib.h>
 
 static Value evalUnary(Lox *lox, Expr *expr) {
-  Value right = evaluate(lox, expr->as.unary.right);
+  auto unary = expr->as.unary;
+  Value right = evaluate(lox, unary.right);
 
-  switch (expr->as.unary.op.type) {
+  switch (unary.op.type) {
   case TOKEN_MINUS:
     if (right.type != VAL_NUMBER) {
-      runtimeError(lox, expr->as.unary.op, "Operand must be a number.");
+      runtimeError(lox, &unary.op, NULL, "Operand must be a number.");
     }
     return numberValue(-right.as.number);
 
   case TOKEN_NOT:
     if (right.type != VAL_BOOL) {
-      runtimeError(lox, expr->as.unary.op, "Operand must be a boolean.");
-      return errorValue("Operand must be a boolean.");
+      return errorValue(lox, &unary.op, NULL, "Operand must be a boolean.",
+                        true);
     }
     return boolValue(!isTruthy(right));
 
   default:
-    runtimeError(lox, expr->as.unary.op, "Invalid unary operator.");
+    runtimeError(lox, &unary.op, NULL, "Invalid unary operator.");
     exit(1);
   }
 }
 
 static Value evalBinary(Lox *lox, Expr *expr) {
-  Value left = evaluate(lox, expr->as.binary.left);
-  Value right = evaluate(lox, expr->as.binary.right);
+  auto binary = expr->as.binary;
+  Value left = evaluate(lox, binary.left);
+  Value right = evaluate(lox, binary.right);
 
-  switch (expr->as.binary.op.type) {
+  switch (binary.op.type) {
   // Comparisons
   case TOKEN_GREATER:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return boolValue(left.as.number > right.as.number);
 
   case TOKEN_GREATER_EQUAL:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return boolValue(left.as.number >= right.as.number);
 
   case TOKEN_LESS:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return boolValue(left.as.number < right.as.number);
 
   case TOKEN_LESS_EQUAL:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return boolValue(left.as.number <= right.as.number);
 
   // Arithmetic
   case TOKEN_MINUS:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return numberValue(left.as.number - right.as.number);
 
   case TOKEN_SLASH:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return numberValue(left.as.number / right.as.number);
 
   case TOKEN_STAR:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return numberValue(left.as.number * right.as.number);
 
   case TOKEN_PLUS:
-    checkNumberOperands(lox, expr->as.binary.op, left, right);
+    checkNumberOperands(lox, &binary.op, left, right);
     return numberValue(left.as.number + right.as.number);
 
   // Equality (next section)
@@ -71,7 +73,7 @@ static Value evalBinary(Lox *lox, Expr *expr) {
     return boolValue(!isEqual(left, right));
 
   default:
-    runtimeError(lox, expr->as.binary.op, "Invalid binary operator.");
+    runtimeError(lox, &binary.op, NULL, "Invalid binary operator.");
     exit(1);
   }
 }
@@ -82,8 +84,8 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
   if (callee.type != VAL_FUNCTION && callee.type != VAL_NATIVE &&
       callee.type != VAL_CLASS) {
-    runtimeErrorAt(lox, expr->line, "Can only call functions and classes.");
-    return NIL_VALUE;
+    return errorValue(lox, NULL, expr, "Can only call functions and classes.",
+                      true);
   }
 
   if (callee.type == VAL_NATIVE) {
@@ -114,7 +116,6 @@ static Value evalCall(Lox *lox, Expr *expr) {
     // Call init if exists
     Value init;
     if (envGet(klass->methods, "init", &init)) {
-      // callBoundMethod(lox, init, instance, expr);
       Value bound = bindMethod(lox, init, instance);
 
       Expr fakeCall = *expr;
@@ -122,7 +123,15 @@ static Value evalCall(Lox *lox, Expr *expr) {
       fakeCall.as.call.callee->type = EXPR_LITERAL;
       fakeCall.as.call.callee->as.literal.value = bound;
 
-      evalCall(lox, &fakeCall);
+      Value initResult = evalCall(lox, &fakeCall);
+
+      // if init failed, abort instance creation
+      if (initResult.type == VAL_ERROR || lox->hadRuntimeError) {
+        return initResult; // or errorValue(...)
+      }
+
+      // initializer return value is ignored by design
+      lox->signal.type = SIGNAL_NONE;
     }
 
     Value result;
@@ -137,8 +146,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
     char msg[100];
     snprintf(msg, sizeof(msg), "Expected %d arguments but got %d.",
              fn->paramCount, expr->as.call.argCount);
-    runtimeErrorAt(lox, expr->line, msg);
-    return NIL_VALUE;
+    return errorValue(lox, NULL, expr, msg, true);
   }
 
   // 1. Evaluate arguments in CURRENT environment
@@ -177,10 +185,11 @@ static Value evalCall(Lox *lox, Expr *expr) {
 }
 
 Value evaluate(Lox *lox, Expr *expr) {
-  Value result = errorValue("No evaluation");
+  Value result = errorValue(lox, NULL, NULL, "No evaluation", false);
 
-  if (!expr || lox->hadRuntimeError || lox->hadError)
+  if (!expr || lox->hadRuntimeError || lox->hadError) {
     return result;
+  }
 
   lox->indent++;
 

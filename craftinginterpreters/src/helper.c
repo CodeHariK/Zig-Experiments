@@ -3,7 +3,11 @@
 
 const Value NO_VALUE = {VAL_NIL, {.boolean = true}};
 const Value NIL_VALUE = {VAL_NIL, {.boolean = false}};
-inline Value errorValue(char *error) {
+inline Value errorValue(Lox *lox, Token *token, Expr *expr, char *error,
+                        bool runtime) {
+  if (runtime) {
+    runtimeError(lox, token, expr, error);
+  }
   return (Value){VAL_ERROR, {.string = error}};
 }
 inline Value numberValue(double n) {
@@ -61,11 +65,102 @@ void valueToString(Value value, char *buffer, u32 size) {
   }
 }
 
-void checkNumberOperands(Lox *lox, Token op, Value left, Value right) {
+const char *tokenTypeToString(TokenType type) {
+  switch (type) {
+  case TOKEN_LEFT_PAREN:
+    return "LEFT_PAREN";
+  case TOKEN_RIGHT_PAREN:
+    return "RIGHT_PAREN";
+  case TOKEN_LEFT_BRACE:
+    return "LEFT_BRACE";
+  case TOKEN_RIGHT_BRACE:
+    return "RIGHT_BRACE";
+  case TOKEN_COMMA:
+    return "COMMA";
+  case TOKEN_DOT:
+    return "DOT";
+  case TOKEN_MINUS:
+    return "-";
+  case TOKEN_PLUS:
+    return "+";
+  case TOKEN_SEMICOLON:
+    return "SEMICOLON";
+  case TOKEN_SLASH:
+    return "/";
+  case TOKEN_STAR:
+    return "*";
+  case TOKEN_NOT:
+    return "!";
+  case TOKEN_NOT_EQUAL:
+    return "!=";
+  case TOKEN_EQUAL:
+    return "=";
+  case TOKEN_EQUAL_EQUAL:
+    return "==";
+  case TOKEN_GREATER:
+    return ">";
+  case TOKEN_GREATER_EQUAL:
+    return ">=";
+  case TOKEN_LESS:
+    return "<";
+  case TOKEN_LESS_EQUAL:
+    return "<=";
+  case TOKEN_IDENTIFIER:
+    return "IDENTIFIER";
+  case TOKEN_STRING:
+    return "STRING";
+  case TOKEN_NUMBER:
+    return "NUMBER";
+  case TOKEN_AND:
+    return "AND";
+  case TOKEN_CLASS:
+    return "CLASS";
+  case TOKEN_ELSE:
+    return "ELSE";
+  case TOKEN_FALSE:
+    return "FALSE";
+  case TOKEN_FUN:
+    return "FUN";
+  case TOKEN_NIL:
+    return "NIL";
+  case TOKEN_OR:
+    return "OR";
+  case TOKEN_PRINT:
+    return "PRINT";
+  case TOKEN_RETURN:
+    return "RETURN";
+  case TOKEN_SUPER:
+    return "SUPER";
+  case TOKEN_THIS:
+    return "THIS";
+  case TOKEN_TRUE:
+    return "TRUE";
+  case TOKEN_VAR:
+    return "VAR";
+
+  case TOKEN_IF:
+    return "IF";
+  case TOKEN_WHILE:
+    return "WHILE";
+  case TOKEN_FOR:
+    return "FOR";
+  case TOKEN_BREAK:
+    return "BREAK";
+  case TOKEN_CONTINUE:
+    return "CONTINUE";
+
+  case TOKEN_EOF:
+    return "EOF";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+void checkNumberOperands(Lox *lox, Token *op, Value left, Value right) {
   if (left.type == VAL_NUMBER && right.type == VAL_NUMBER)
     return;
 
-  runtimeError(lox, op, "Operands must be numbers.");
+  runtimeError(lox, op, NULL, "Operands must be numbers.");
 }
 
 bool isTruthy(Value v) {

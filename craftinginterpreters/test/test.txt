@@ -87,12 +87,12 @@ SOURCE: !-!-3
 [EXPR_UNARY] ! - ! - 3
 =================
             [EVAL_UNARY] -3- 3
-[line 1] RuntimeError at '!': Operand must be a boolean.
+   [line 1] RuntimeError at '!': Operand must be a boolean.
          [EVAL_UNARY] Error: Operand must be a boolean.
 ! - 3
-[line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.15852e-314- ! - 3
-[line 1] RuntimeError at '!': Operand must be a boolean.
+   [line 1] RuntimeError at '-': Operand must be a number.
+      [EVAL_UNARY] -2.12966e-314- ! - 3
+   [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 ! - ! - 3
 [RESULT] : Error: Operand must be a boolean.;
@@ -1867,7 +1867,7 @@ SOURCE: print clock();
 =================
       [EVAL_VAR] $clock <native fn>
 @1  : print $clock ()
-[RESULT] : 0.002975;
+[RESULT] : 0.003146;
 [INFO] no expected output
 
 SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
@@ -1902,7 +1902,7 @@ SOURCE: var a = a;
 ==== Program [1 statements] ====
 @1  : [STMT_VAR] a = $a 
 =================
-[line 1] RuntimeError at 'a': Undefined variable.
+      [line 1] RuntimeError at 'a': Undefined variable.
    define a = Error: Undefined variable.
 
 @1  : [STMT_VAR] a = $a Error: Undefined variable.
@@ -2045,9 +2045,9 @@ Class Foo
    define Foo = <class Foo>
       [EVAL_VAR] $Foo <class Foo>
    define this = <instance Foo>
-         [line 1] RuntimeError at 'return': Can't return a value from an initializer.
+                     [line 1] RuntimeError at 'return': Can't return a value from an initializer.
 @2  : print $Foo ()
-[RESULT] : <instance Foo>;
+[RESULT] : nil;
 [PassError]
 
 SOURCE: fun init() { return 123; } print init();
@@ -2108,4 +2108,82 @@ RETURN 43
 @5  : print $Foo (42).inc()
 [RESULT] : 43;
 [PASS]
+
+SOURCE: class Foo {} print Foo.x;
+=================
+[EXPR_VAR] $Foo 
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+@1  : print $Foo .x
+=================
+Class Foo
+   define Foo = <class Foo>
+      [EVAL_VAR] $Foo <class Foo>
+      [line 1] RuntimeError at 'x': Only instances have properties, Invalid access
+@1  : print $Foo .x
+[RESULT] : Error: Only instances have properties, Invalid access;;
+[PassError]
+
+SOURCE: class Foo {} print Foo().x;
+=================
+[EXPR_VAR] $Foo 
+[EXPR_CALL] $Foo ()
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+@1  : print $Foo ().x
+=================
+Class Foo
+   define Foo = <class Foo>
+         [EVAL_VAR] $Foo <class Foo>
+      [line 1] RuntimeError at 'x': Undefined property.
+@1  : print $Foo ().x
+[RESULT] : Error: Undefined property.;;
+[PassError]
+
+SOURCE: class Foo { init() { this.x = 123; } } print Foo().x();
+=================
+[EXPR_LITERAL] 123
+[EXPR_VAR] $Foo 
+[EXPR_CALL] $Foo ()
+[EXPR_CALL] $Foo ().x()
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+   @1  : [STMT_FUNCTION] init ()
+         @2  : [STMT_EXPR] [EXPR_SET] this.x = 123
+@3  : print $Foo ().x()
+=================
+Class Foo
+   define init = <fn init>
+   define Foo = <class Foo>
+            [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+                  define x = 123
+               [EVAL_SET] [EXPR_SET] this.x = 123
+@2  : [STMT_EXPR] [EXPR_SET] this.x = 123
+               [EVAL_GET] $Foo ().x
+      [line 1] RuntimeError: Can only call functions and classes.
+@3  : print $Foo ().x()
+[RESULT] : Error: Can only call functions and classes.;;
+[PassError]
+
+SOURCE: class Foo { init(a) { } } print Foo(3,4);
+=================
+[EXPR_VAR] $Foo 
+[EXPR_LITERAL] 3
+[EXPR_LITERAL] 4
+[EXPR_CALL] $Foo (3,4)
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+   @1  : [STMT_FUNCTION] init (a)
+@2  : print $Foo (3,4)
+=================
+Class Foo
+   define init = <fn init>
+   define Foo = <class Foo>
+      [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+      [line 1] RuntimeError: Expected 1 arguments but got 2.
+@2  : print $Foo (3,4)
+[RESULT] : Error: Expected 1 arguments but got 2.;;
+[PassError]
 

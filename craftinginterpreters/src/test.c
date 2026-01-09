@@ -300,6 +300,11 @@ void runVarTests(void) {
        "this.x; } } print "
        "Foo(42).inc();",
        "43;", true},
+      {"class Foo {} print Foo.x;", "", false},
+      {"class Foo {} print Foo().x;", "", false},
+      {"class Foo { init() { this.x = 123; } } print Foo().x();", "", false},
+      {"class Foo { init(a) { } } print Foo(3,4);", "", false},
+      //
   };
 
   for (u32 i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

@@ -399,8 +399,8 @@ Value evalVariable(Lox *lox, Expr *expr) {
   } else {
     // Global
     if (!envGetGlobal(lox->env, expr->as.var.name.lexeme, &result)) {
-      runtimeError(lox, expr->as.var.name, "Undefined variable.");
-      return errorValue("Undefined variable.");
+      return errorValue(lox, &expr->as.var.name, NULL, "Undefined variable.",
+                        true);
     }
   }
 
@@ -416,8 +416,8 @@ Value evalAssign(Lox *lox, Expr *expr) {
                 result);
   } else {
     if (!envAssign(lox, lox->env, expr->as.assign.name.lexeme, result)) {
-      runtimeError(lox, expr->as.assign.name, "Undefined variable.");
-      return errorValue("Undefined variable.");
+      return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable.",
+                        true);
     }
   }
 
@@ -429,8 +429,8 @@ Value evalGet(Lox *lox, Expr *expr) {
   Value obj = evaluate(lox, expr->as.getExpr.object);
 
   if (obj.type != VAL_INSTANCE) {
-    runtimeError(lox, expr->as.getExpr.name, "Only instances have properties.");
-    return errorValue("Invalid access");
+    return errorValue(lox, &expr->as.getExpr.name, NULL,
+                      "Only instances have properties, Invalid access", true);
   }
 
   LoxInstance *inst = obj.as.instance;
@@ -449,16 +449,16 @@ Value evalGet(Lox *lox, Expr *expr) {
     return bound_method;
   }
 
-  runtimeError(lox, expr->as.getExpr.name, "Undefined property.");
-  return errorValue("Undefined property");
+  return errorValue(lox, &expr->as.getExpr.name, NULL, "Undefined property.",
+                    true);
 }
 
 Value evalSet(Lox *lox, Expr *expr) {
   Value obj = evaluate(lox, expr->as.setExpr.object);
 
   if (obj.type != VAL_INSTANCE) {
-    runtimeError(lox, expr->as.setExpr.name, "Only instances have fields.");
-    return errorValue("Invalid set");
+    return errorValue(lox, &expr->as.setExpr.name, NULL,
+                      "Only instances have fields, Invalid set", true);
   }
 
   Value value = evaluate(lox, expr->as.setExpr.value);

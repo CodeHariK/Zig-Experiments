@@ -35,97 +35,6 @@ static TokenType checkKeyword(const char *text, u8 length) {
   return TOKEN_IDENTIFIER; // default
 }
 
-const char *tokenTypeToString(TokenType type) {
-  switch (type) {
-  case TOKEN_LEFT_PAREN:
-    return "LEFT_PAREN";
-  case TOKEN_RIGHT_PAREN:
-    return "RIGHT_PAREN";
-  case TOKEN_LEFT_BRACE:
-    return "LEFT_BRACE";
-  case TOKEN_RIGHT_BRACE:
-    return "RIGHT_BRACE";
-  case TOKEN_COMMA:
-    return "COMMA";
-  case TOKEN_DOT:
-    return "DOT";
-  case TOKEN_MINUS:
-    return "-";
-  case TOKEN_PLUS:
-    return "+";
-  case TOKEN_SEMICOLON:
-    return "SEMICOLON";
-  case TOKEN_SLASH:
-    return "/";
-  case TOKEN_STAR:
-    return "*";
-  case TOKEN_NOT:
-    return "!";
-  case TOKEN_NOT_EQUAL:
-    return "!=";
-  case TOKEN_EQUAL:
-    return "=";
-  case TOKEN_EQUAL_EQUAL:
-    return "==";
-  case TOKEN_GREATER:
-    return ">";
-  case TOKEN_GREATER_EQUAL:
-    return ">=";
-  case TOKEN_LESS:
-    return "<";
-  case TOKEN_LESS_EQUAL:
-    return "<=";
-  case TOKEN_IDENTIFIER:
-    return "IDENTIFIER";
-  case TOKEN_STRING:
-    return "STRING";
-  case TOKEN_NUMBER:
-    return "NUMBER";
-  case TOKEN_AND:
-    return "AND";
-  case TOKEN_CLASS:
-    return "CLASS";
-  case TOKEN_ELSE:
-    return "ELSE";
-  case TOKEN_FALSE:
-    return "FALSE";
-  case TOKEN_FUN:
-    return "FUN";
-  case TOKEN_NIL:
-    return "NIL";
-  case TOKEN_OR:
-    return "OR";
-  case TOKEN_PRINT:
-    return "PRINT";
-  case TOKEN_RETURN:
-    return "RETURN";
-  case TOKEN_SUPER:
-    return "SUPER";
-  case TOKEN_THIS:
-    return "THIS";
-  case TOKEN_TRUE:
-    return "TRUE";
-  case TOKEN_VAR:
-    return "VAR";
-
-  case TOKEN_IF:
-    return "IF";
-  case TOKEN_WHILE:
-    return "WHILE";
-  case TOKEN_FOR:
-    return "FOR";
-  case TOKEN_BREAK:
-    return "BREAK";
-  case TOKEN_CONTINUE:
-    return "CONTINUE";
-
-  case TOKEN_EOF:
-    return "EOF";
-  default:
-    return "UNKNOWN";
-  }
-}
-
 void initScanner(Scanner *scanner, const char *source) {
   *scanner = (Scanner){
       .source = source,
@@ -288,7 +197,7 @@ static void scanToken(Lox *lox) {
     } else if (isAlpha(c)) {
       identifierScan(lox);
     } else {
-      scanError(lox, scanner->line, "Unexpected character.");
+      reportError(lox, scanner->line, "", "Unexpected character.");
     }
     break;
   }
@@ -323,7 +232,7 @@ static void multiLineStringScan(Lox *lox) {
   }
 
   if (isEOFchar(scanner)) {
-    scanError(lox, scanner->line, "Unterminated string.");
+    reportError(lox, scanner->line, "", "Unterminated string.");
     return;
   }
 

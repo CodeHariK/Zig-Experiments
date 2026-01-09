@@ -322,14 +322,6 @@ typedef struct {
   u32 capacity;
 } Program;
 
-const char *tokenTypeToString(TokenType type);
-
-extern const Value NIL_VALUE;
-extern const Value NO_VALUE;
-Value errorValue(char *error);
-
-void valueToString(Value value, char *buffer, u32 size);
-
 typedef struct {
   u8 *data;
   u32 capacity;
@@ -416,7 +408,7 @@ Value boolValue(bool b);
 Value literalValue(Expr *expr);
 bool isTruthy(Value v);
 bool isEqual(Value a, Value b);
-void checkNumberOperands(Lox *lox, Token op, Value left, Value right);
+void checkNumberOperands(Lox *lox, Token *op, Value left, Value right);
 
 Value evaluate(Lox *lox, Expr *expr);
 
@@ -441,6 +433,13 @@ Value evalSet(Lox *lox, Expr *expr);
 Value evalAssign(Lox *lox, Expr *expr);
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
+const char *tokenTypeToString(TokenType type);
+
+extern const Value NIL_VALUE;
+extern const Value NO_VALUE;
+
+void valueToString(Value value, char *buffer, u32 size);
+
 void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
                bool newLine, char *msg);
@@ -453,12 +452,10 @@ void printProgram(Lox *lox, Program *prog);
 void loxAppendOutput(Lox *lox, const char *s);
 
 // Error handling
+Value errorValue(Lox *lox, Token *token, Expr *expr, char *error, bool runtime);
 void reportError(Lox *lox, u32 line, const char *where, const char *message);
-void scanError(Lox *lox, u32 line, const char *message);
 void parseError(Lox *lox, const char *message);
-void runtimeError(Lox *lox, Token token, const char *message);
-void runtimeErrorAt(Lox *lox, u32 line, const char *message);
-void printError(Lox *lox);
+void runtimeError(Lox *lox, Token *token, Expr *expr, const char *message);
 void synchronize(Lox *lox);
 
 #endif

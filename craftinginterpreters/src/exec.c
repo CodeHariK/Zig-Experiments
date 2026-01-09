@@ -25,10 +25,6 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
   switch (stmt->type) {
   case STMT_PRINT: {
-    if (!stmt->as.expr_print) {
-      runtimeErrorAt(lox, 0, "Null expression in print statement.");
-      return;
-    }
     Value result = evaluate(lox, stmt->as.expr_print);
 
     char buf[64];
@@ -176,7 +172,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
       value = evaluate(lox, stmt->as.returnStmt.value);
 
       if (lox->currentFunction && lox->currentFunction->isInitializer) {
-        runtimeError(lox, stmt->as.returnStmt.keyword,
+        runtimeError(lox, &stmt->as.returnStmt.keyword, NULL,
                      "Can't return a value from an initializer.");
         return;
       }
