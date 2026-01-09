@@ -411,7 +411,7 @@ Token prevToken(Parser *parser);
 Token peekToken(Parser *parser);
 
 Expr *parseExpression(Lox *lox);
-Expr *parseVariableExpr(Lox *lox, Token token);
+Expr *newVariableExpr(Lox *lox, Token token);
 
 Value stringValue(char *s);
 Value numberValue(double n);
@@ -446,12 +446,12 @@ Value evalAssign(Lox *lox, Expr *expr);
 Value evalSuper(Lox *lox, Expr *expr);
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
-const char *tokenTypeToString(TokenType type);
-
 extern const Value NIL_VALUE;
 extern const Value NO_VALUE;
 
 void valueToString(Value value, char *buffer, u32 size);
+const char *tokenTypeToString(TokenType type);
+char *exprTypeToString(ExprType type);
 
 void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,

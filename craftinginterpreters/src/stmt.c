@@ -133,7 +133,7 @@ static Stmt *parseClassStmt(Lox *lox) {
   if (matchAnyTokenAdvance(lox, 1, TOKEN_LESS)) {
     Token superClassToken =
         consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass name.");
-    superclass = parseVariableExpr(lox, superClassToken);
+    superclass = newVariableExpr(lox, superClassToken);
   }
 
   consumeToken(lox, TOKEN_LEFT_BRACE, "Expect '{' before class body.");

@@ -70,7 +70,9 @@ Token consumeToken(Lox *lox, TokenType type, const char *message) {
   return tok; // error recovery will improve later
 }
 
-static Expr *parseBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
+// ====================== New Expr ======================
+
+static Expr *newBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_BINARY;
   expr->as.binary.left = left;
@@ -80,7 +82,7 @@ static Expr *parseBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   return expr;
 }
 
-static Expr *parseUnaryExpr(Lox *lox, Token op, Expr *right) {
+static Expr *newUnaryExpr(Lox *lox, Token op, Expr *right) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_UNARY;
   expr->as.unary.op = op;
@@ -89,7 +91,7 @@ static Expr *parseUnaryExpr(Lox *lox, Token op, Expr *right) {
   return expr;
 }
 
-static Expr *parseLiteralExpr(Lox *lox, Value value) {
+static Expr *newLiteralExpr(Lox *lox, Value value) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_LITERAL;
   expr->as.literal.value = value;
@@ -97,7 +99,7 @@ static Expr *parseLiteralExpr(Lox *lox, Value value) {
   return expr;
 }
 
-static Expr *parseGroupingExpr(Lox *lox, Expr *expression) {
+static Expr *newGroupingExpr(Lox *lox, Expr *expression) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_GROUPING;
   expr->as.grouping.expression = expression;
@@ -105,7 +107,7 @@ static Expr *parseGroupingExpr(Lox *lox, Expr *expression) {
   return expr;
 }
 
-Expr *parseVariableExpr(Lox *lox, Token token) {
+Expr *newVariableExpr(Lox *lox, Token token) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
@@ -114,7 +116,7 @@ Expr *parseVariableExpr(Lox *lox, Token token) {
   return expr;
 }
 
-static Expr *parseAssignExpr(Lox *lox, Token name, Expr *value) {
+static Expr *newAssignExpr(Lox *lox, Token name, Expr *value) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_ASSIGN;
   expr->as.assign.name = name;
@@ -124,7 +126,7 @@ static Expr *parseAssignExpr(Lox *lox, Token name, Expr *value) {
   return expr;
 }
 
-static Expr *parseLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
+static Expr *newLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_LOGICAL;
   expr->as.logical.left = left;
@@ -134,63 +136,136 @@ static Expr *parseLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   return expr;
 }
 
-static Expr *makeSuperExpr(Lox *lox, Token keyword, Token method) {
-  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
-  expr->type = EXPR_SUPER;
-  expr->as.superExpr.keyword = keyword;
-  expr->as.superExpr.method = method;
-  expr->as.superExpr.depth = -1;
-  return expr;
+static Expr *newCallExpr(Lox *lox, Expr *callee, Expr **args, u8 argCount,
+                         u32 line) {
+  Expr *callExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  callExpr->type = EXPR_CALL;
+  callExpr->as.call.callee = callee;
+  callExpr->as.call.arguments = args;
+  callExpr->as.call.argCount = argCount;
+  callExpr->line = line;
+  printExpr(lox, callExpr, NO_VALUE, 0, true, "");
+  return callExpr;
 }
+
+static Expr *newGetExpr(Lox *lox, Expr *callee, Token methodIdentifier) {
+  Expr *getExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  getExpr->type = EXPR_GET;
+  getExpr->as.getExpr.object = callee;
+  getExpr->as.getExpr.name = methodIdentifier;
+  printExpr(lox, getExpr, NO_VALUE, 0, true, "");
+  return getExpr;
+}
+
+static Expr *newSetExpr(Lox *lox, Expr *expr, Expr *value) {
+  Expr *setExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  setExpr->type = EXPR_SET;
+  setExpr->as.setExpr.object = expr->as.getExpr.object;
+  setExpr->as.setExpr.name = expr->as.getExpr.name;
+  setExpr->as.setExpr.value = value;
+  setExpr->line = expr->line;
+  printExpr(lox, setExpr, NO_VALUE, 0, true, "");
+  return setExpr;
+}
+
+static Expr *newThisExpr(Lox *lox) {
+  Expr *thisExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  thisExpr->type = EXPR_THIS;
+  thisExpr->as.thisExpr.keyword = prevToken(&lox->parser);
+  thisExpr->as.thisExpr.depth = -1;
+  printExpr(lox, thisExpr, NO_VALUE, 0, true, "");
+  return thisExpr;
+}
+
+static Expr *newSuperExpr(Lox *lox, Token keyword, Token method) {
+  Expr *superExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  superExpr->type = EXPR_SUPER;
+  superExpr->as.superExpr.keyword = keyword;
+  superExpr->as.superExpr.method = method;
+  superExpr->as.superExpr.depth = -1;
+  printExpr(lox, superExpr, NO_VALUE, 0, true, "");
+  return superExpr;
+}
+
+// ====================== Parser ======================
 
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;
 static Expr *parsePrimary(Lox *lox) {
   Parser *parser = &lox->parser;
   if (matchAnyTokenAdvance(lox, 1, TOKEN_FALSE)) {
-    return parseLiteralExpr(lox, boolValue(false));
+    return newLiteralExpr(lox, boolValue(false));
   }
   if (matchAnyTokenAdvance(lox, 1, TOKEN_TRUE)) {
-    return parseLiteralExpr(lox, boolValue(true));
+    return newLiteralExpr(lox, boolValue(true));
   }
   if (matchAnyTokenAdvance(lox, 1, TOKEN_NIL)) {
-    return parseLiteralExpr(lox, NIL_VALUE);
+    return newLiteralExpr(lox, NIL_VALUE);
   }
   if (matchAnyTokenAdvance(lox, 1, TOKEN_NUMBER)) {
-    return parseLiteralExpr(lox,
-                            numberValue(*(double *)prevToken(parser).literal));
+    return newLiteralExpr(lox,
+                          numberValue(*(double *)prevToken(parser).literal));
   }
   if (matchAnyTokenAdvance(lox, 1, TOKEN_STRING)) {
-    return parseLiteralExpr(lox,
-                            stringValue((char *)prevToken(parser).literal));
+    return newLiteralExpr(lox, stringValue((char *)prevToken(parser).literal));
   }
   if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_PAREN)) {
     Expr *expr = parseExpression(lox);
     consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
-    return parseGroupingExpr(lox, expr);
+    return newGroupingExpr(lox, expr);
   }
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_THIS)) {
-    Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
-    expr->type = EXPR_THIS;
-    expr->as.thisExpr.keyword = prevToken(&lox->parser);
-    expr->as.thisExpr.depth = -1;
-    return expr;
+    return newThisExpr(lox);
   }
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_SUPER)) {
     Token keyword = prevToken(&lox->parser);
     consumeToken(lox, TOKEN_DOT, "Expect '.' after 'super'.");
     consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass method name.");
-    return makeSuperExpr(lox, keyword, prevToken(&lox->parser));
+    return newSuperExpr(lox, keyword, prevToken(&lox->parser));
   }
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_IDENTIFIER)) {
-    return parseVariableExpr(lox, prevToken(parser));
+    return newVariableExpr(lox, prevToken(parser));
   }
 
   parseError(lox, "Expect expression.");
   return NULL;
+}
+
+typedef struct {
+  Expr **args;
+  u8 argCount;
+} CallArgs;
+
+static CallArgs parseCallArgs(Lox *lox) {
+  Expr **args = NULL;
+  u32 argCount = 0;
+  u32 capacity = 0;
+
+  if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
+    do {
+      if (argCount >= 255) {
+        parseError(lox, "Can't have more than 255 arguments.");
+      }
+
+      if (argCount + 1 > capacity) {
+        capacity = capacity < 8 ? 8 : capacity * 2;
+        Expr **newArgs = arenaAlloc(&lox->astArena, sizeof(Expr *) * capacity);
+        if (args) {
+          memcpy(newArgs, args, sizeof(Expr *) * argCount);
+        }
+        args = newArgs;
+      }
+
+      args[argCount++] = parseExpression(lox);
+    } while (matchAnyTokenAdvance(lox, 1, TOKEN_COMMA));
+  }
+  return (CallArgs){
+      .args = args,
+      .argCount = argCount,
+  };
 }
 
 static Expr *parseCall(Lox *lox) {
@@ -198,54 +273,21 @@ static Expr *parseCall(Lox *lox) {
 
   while (true) {
     if (matchAnyTokenAdvance(lox, 1, TOKEN_LEFT_PAREN)) {
-      Expr **args = NULL;
-      u32 argCount = 0;
-      u32 capacity = 0;
 
-      if (!checkToken(&lox->parser, TOKEN_RIGHT_PAREN)) {
-        do {
-          if (argCount >= 255) {
-            parseError(lox, "Can't have more than 255 arguments.");
-          }
-
-          if (argCount + 1 > capacity) {
-            capacity = capacity < 8 ? 8 : capacity * 2;
-            Expr **newArgs =
-                arenaAlloc(&lox->astArena, sizeof(Expr *) * capacity);
-            if (args)
-              memcpy(newArgs, args, sizeof(Expr *) * argCount);
-            args = newArgs;
-          }
-
-          args[argCount++] = parseExpression(lox);
-        } while (matchAnyTokenAdvance(lox, 1, TOKEN_COMMA));
-      }
+      CallArgs callArgs = parseCallArgs(lox);
 
       Token paren =
           consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
 
-      Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
-      expr->type = EXPR_CALL;
-      expr->as.call.callee = callee;
-      expr->as.call.arguments = args;
-      expr->as.call.argCount = argCount;
-      expr->line = paren.line;
-
-      callee = expr;
-
-      printExpr(lox, callee, NO_VALUE, 0, true, "[EXPR_CALL] ");
+      callee = newCallExpr(lox, callee, callArgs.args, callArgs.argCount,
+                           paren.line);
     }
     //
     else if (matchAnyTokenAdvance(lox, 1, TOKEN_DOT)) {
-      Token name =
+      Token methodIdentifier =
           consumeToken(lox, TOKEN_IDENTIFIER, "Expect property name after '.'");
 
-      Expr *get = arenaAlloc(&lox->astArena, sizeof(Expr));
-      get->type = EXPR_GET;
-      get->as.getExpr.object = callee;
-      get->as.getExpr.name = name;
-
-      callee = get;
+      callee = newGetExpr(lox, callee, methodIdentifier);
     }
     //
     else {
@@ -262,7 +304,7 @@ static Expr *parseUnary(Lox *lox) {
   if (matchAnyTokenAdvance(lox, 2, TOKEN_NOT, TOKEN_MINUS)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseUnary(lox);
-    return parseUnaryExpr(lox, op, right);
+    return newUnaryExpr(lox, op, right);
   }
 
   return parseCall(lox);
@@ -275,7 +317,7 @@ static Expr *parseFactor(Lox *lox) {
   while (matchAnyTokenAdvance(lox, 2, TOKEN_STAR, TOKEN_SLASH)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseUnary(lox);
-    expr = parseBinaryExpr(lox, expr, op, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -288,7 +330,7 @@ static Expr *parseTerm(Lox *lox) {
   while (matchAnyTokenAdvance(lox, 2, TOKEN_PLUS, TOKEN_MINUS)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseFactor(lox);
-    expr = parseBinaryExpr(lox, expr, op, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -302,7 +344,7 @@ static Expr *parseComparison(Lox *lox) {
                               TOKEN_LESS, TOKEN_LESS_EQUAL)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseTerm(lox);
-    expr = parseBinaryExpr(lox, expr, op, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -315,7 +357,7 @@ static Expr *parseEquality(Lox *lox) {
   while (matchAnyTokenAdvance(lox, 2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseComparison(lox);
-    expr = parseBinaryExpr(lox, expr, op, right);
+    expr = newBinaryExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -327,7 +369,7 @@ static Expr *parseLogicAnd(Lox *lox) {
   while (matchAnyTokenAdvance(lox, 1, TOKEN_AND)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseEquality(lox);
-    expr = parseLogicalExpr(lox, expr, op, right);
+    expr = newLogicalExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -339,7 +381,7 @@ static Expr *parseLogicOr(Lox *lox) {
   while (matchAnyTokenAdvance(lox, 1, TOKEN_OR)) {
     Token op = prevToken(&lox->parser);
     Expr *right = parseLogicAnd(lox);
-    expr = parseLogicalExpr(lox, expr, op, right);
+    expr = newLogicalExpr(lox, expr, op, right);
   }
 
   return expr;
@@ -359,16 +401,10 @@ static Expr *parseAssignment(Lox *lox) {
 
     if (expr->type == EXPR_VARIABLE) {
       Token name = expr->as.var.name;
-      return parseAssignExpr(lox, name, value); // existing variable assignment
+      return newAssignExpr(lox, name, value); // existing variable assignment
     } else if (expr->type == EXPR_GET) {
       // Convert EXPR_GET into EXPR_SET
-      Expr *setExpr = arenaAlloc(&lox->astArena, sizeof(Expr));
-      setExpr->type = EXPR_SET;
-      setExpr->as.setExpr.object = expr->as.getExpr.object;
-      setExpr->as.setExpr.name = expr->as.getExpr.name;
-      setExpr->as.setExpr.value = value;
-      setExpr->line = expr->line;
-      return setExpr;
+      return newSetExpr(lox, expr, value);
     } else {
       parseError(lox, "Invalid assignment target.");
     }

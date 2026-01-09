@@ -152,7 +152,38 @@ const char *tokenTypeToString(TokenType type) {
   case TOKEN_EOF:
     return "EOF";
   default:
-    return "UNKNOWN";
+    return "UNKNOWN_TOKEN";
+  }
+}
+
+char *exprTypeToString(ExprType type) {
+  switch (type) {
+  case EXPR_BINARY:
+    return "EXPR_BINARY";
+  case EXPR_UNARY:
+    return "EXPR_UNARY";
+  case EXPR_LITERAL:
+    return "EXPR_LITERAL";
+  case EXPR_GROUPING:
+    return "EXPR_GROUPING";
+  case EXPR_VARIABLE:
+    return "EXPR_VARIABLE";
+  case EXPR_ASSIGN:
+    return "EXPR_ASSIGN";
+  case EXPR_LOGICAL:
+    return "EXPR_LOGICAL";
+  case EXPR_CALL:
+    return "EXPR_CALL ";
+  case EXPR_GET:
+    return "EXPR_GET ";
+  case EXPR_SET:
+    return "EXPR_SET ";
+  case EXPR_THIS:
+    return "EXPR_THIS ";
+  case EXPR_SUPER:
+    return "EXPR_SUPER ";
+  default:
+    return "UNKNOWN_EXPR_TYPE";
   }
 }
 

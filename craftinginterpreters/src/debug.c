@@ -164,6 +164,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_CALL: {
+    printf("[EXPR_CALL] ");
     printExpr(lox, expr->as.call.callee, NO_VALUE, 0, false, "");
     printf("(");
     for (u8 i = 0; i < expr->as.call.argCount; i++) {
@@ -176,6 +177,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_GET: {
+    printf("[EXPR_GET] ");
     printExpr(lox, expr->as.getExpr.object, NO_VALUE, 0, false, "");
     printf(".%s", expr->as.getExpr.name.lexeme);
 
@@ -193,7 +195,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_SUPER: {
-    printf("[EXPR_SUPER]");
+    printf("[EXPR_SUPER] ");
     printToken(lox, &expr->as.superExpr.keyword, "");
     printToken(lox, &expr->as.superExpr.method, " ");
     break;

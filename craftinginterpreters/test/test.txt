@@ -91,7 +91,7 @@ SOURCE: !-!-3
 |   |   |   [EVAL_UNARY] Error: Operand must be a boolean.
  ! -3
 |   |   |   [line 1] RuntimeError at '-': Operand must be a number.
-|   |   [EVAL_UNARY] -2.16136e-314 - ! -3
+|   |   [EVAL_UNARY] -2.15791e-314 - ! -3
 |   |   [line 1] RuntimeError at '!': Operand must be a boolean.
 |   [EVAL_UNARY] Error: Operand must be a boolean.
  ! - ! -3
@@ -1573,14 +1573,14 @@ SOURCE: fun hello() { print 123; } hello();
 ==== Program [2 statements] ====
 @1: FN hello ()
 |   |   @2: print 123
-@3: [STMT_EXPR] $hello ()
+@3: [STMT_EXPR] [EXPR_CALL] $hello ()
 =================
 |   define hello = <fn hello>
 |   @1 Fn hello
 |   |   [EVAL_VAR] $hello <fn hello>
-|   [EVAL_CALL] $hello ()
+|   [EVAL_CALL] [EXPR_CALL] $hello ()
 @2: print 123
-@3: [STMT_EXPR] $hello ()
+@3: [STMT_EXPR] [EXPR_CALL] $hello ()
 [RESULT] : 123;
 [PASS]
 
@@ -1596,19 +1596,19 @@ SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 ==== Program [2 statements] ====
 @1: FN add (a,b)
 |   |   @2: print  ($a  + $b )
-@3: [STMT_EXPR] $add (2,3)
+@3: [STMT_EXPR] [EXPR_CALL] $add (2,3)
 =================
 |   define add = <fn add>
 |   @1 Fn add
 |   |   [EVAL_VAR] $add <fn add>
-|   [EVAL_CALL] $add (2,3)
+|   [EVAL_CALL] [EXPR_CALL] $add (2,3)
 |   define a = 2
 |   define b = 3
 |   |   |   [EVAL_VAR] $a 2
 |   |   |   [EVAL_VAR] $b 3
 |   |   [EVAL_BINARY] 5 ($a  + $b )
 @2: print 5 ($a  + $b )
-@3: [STMT_EXPR] $add (2,3)
+@3: [STMT_EXPR] [EXPR_CALL] $add (2,3)
 [RESULT] : 5;
 [PASS]
 
@@ -1625,23 +1625,23 @@ SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
 |   |   @2: VAR x = 10
 |   |   @1: FN inner ()
 |   |   |   |   @4: print $x 
-|   |   @5: [STMT_EXPR] $inner ()
-@6: [STMT_EXPR] $outer ()
+|   |   @5: [STMT_EXPR] [EXPR_CALL] $inner ()
+@6: [STMT_EXPR] [EXPR_CALL] $outer ()
 =================
 |   define outer = <fn outer>
 |   @1 Fn outer
 |   |   [EVAL_VAR] $outer <fn outer>
-|   [EVAL_CALL] $outer ()
+|   [EVAL_CALL] [EXPR_CALL] $outer ()
 |   |   @2: VAR x = 10
 |   |   define x = 10
 |   |   define inner = <fn inner>
 |   |   @1 Fn inner
 |   |   |   [EVAL_VAR] $inner <fn inner>
-|   |   [EVAL_CALL] $inner ()
+|   |   [EVAL_CALL] [EXPR_CALL] $inner ()
 |   |   |   [EVAL_VAR] $x 10
 @4: print $x 10
-@5: [STMT_EXPR] $inner ()
-@6: [STMT_EXPR] $outer ()
+@5: [STMT_EXPR] [EXPR_CALL] $inner ()
+@6: [STMT_EXPR] [EXPR_CALL] $outer ()
 [RESULT] : 10;
 [PASS]
 
@@ -1655,14 +1655,14 @@ SOURCE: fun f() { return 123; print 0; } print f();
 @1: FN f ()
 |   |   @1: RETURN 
 |   |   @2: print 0
-@3: print $f ()
+@3: print [EXPR_CALL] $f ()
 =================
 |   define f = <fn f>
 |   @1 Fn f
 |   |   [EVAL_VAR] $f <fn f>
-|   [EVAL_CALL] $f ()
+|   [EVAL_CALL] [EXPR_CALL] $f ()
 |   |   @1: RETURN 123
-@3: print $f ()
+@3: print [EXPR_CALL] $f ()
 [RESULT] : 123;
 [PASS]
 
@@ -1672,13 +1672,13 @@ SOURCE: fun f() {} print f();
 [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1: FN f ()
-@2: print $f ()
+@2: print [EXPR_CALL] $f ()
 =================
 |   define f = <fn f>
 |   @1 Fn f
 |   |   [EVAL_VAR] $f <fn f>
-|   [EVAL_CALL] $f ()
-@2: print $f ()
+|   [EVAL_CALL] [EXPR_CALL] $f ()
+@2: print [EXPR_CALL] $f ()
 [RESULT] : nil;
 [PASS]
 
@@ -1696,15 +1696,15 @@ SOURCE: fun f() { if (true) {return 1;} return 2; } print f();
 |   |   |   then:
 |   |   |   |   @1: RETURN 
 |   |   @1: RETURN 
-@4: print $f ()
+@4: print [EXPR_CALL] $f ()
 =================
 |   define f = <fn f>
 |   @1 Fn f
 |   |   [EVAL_VAR] $f <fn f>
-|   [EVAL_CALL] $f ()
+|   [EVAL_CALL] [EXPR_CALL] $f ()
 |   |   IF
 |   |   |   @1: RETURN 1
-@4: print $f ()
+@4: print [EXPR_CALL] $f ()
 [RESULT] : 1;
 [PASS]
 
@@ -1720,7 +1720,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($n  - 1)
 [EXPR_CALL] $fact ( ($n  - 1))
-[EXPR_BINARY]  ($n  * $fact ( ($n  - 1)))
+[EXPR_BINARY]  ($n  * [EXPR_CALL] $fact ( ($n  - 1)))
 [EXPR_VAR] $fact 
 [EXPR_LITERAL] 5
 [EXPR_CALL] $fact (5)
@@ -1731,19 +1731,19 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 |   |   |   then:
 |   |   |   |   @1: RETURN 
 |   |   @1: RETURN 
-@4: print $fact (5)
+@4: print [EXPR_CALL] $fact (5)
 =================
 |   define fact = <fn fact>
 |   @1 Fn fact
 |   |   [EVAL_VAR] $fact <fn fact>
-|   [EVAL_CALL] $fact (5)
+|   [EVAL_CALL] [EXPR_CALL] $fact (5)
 |   define n = 5
 |   |   IF
 |   |   |   |   [EVAL_VAR] $n 5
 |   |   |   [EVAL_BINARY] false ($n  <= 1)
 |   |   |   |   [EVAL_VAR] $n 5
 |   |   |   |   |   [EVAL_VAR] $fact <fn fact>
-|   |   |   |   [EVAL_CALL] $fact ( ($n  - 1))
+|   |   |   |   [EVAL_CALL] [EXPR_CALL] $fact ( ($n  - 1))
 |   |   |   |   |   |   [EVAL_VAR] $n 5
 |   |   |   |   |   [EVAL_BINARY] 4 ($n  - 1)
 |   |   |   |   define n = 4
@@ -1752,7 +1752,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 |   |   |   |   |   |   [EVAL_BINARY] false ($n  <= 1)
 |   |   |   |   |   |   |   [EVAL_VAR] $n 4
 |   |   |   |   |   |   |   |   [EVAL_VAR] $fact <fn fact>
-|   |   |   |   |   |   |   [EVAL_CALL] $fact ( ($n  - 1))
+|   |   |   |   |   |   |   [EVAL_CALL] [EXPR_CALL] $fact ( ($n  - 1))
 |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 4
 |   |   |   |   |   |   |   |   [EVAL_BINARY] 3 ($n  - 1)
 |   |   |   |   |   |   |   define n = 3
@@ -1761,7 +1761,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 |   |   |   |   |   |   |   |   |   [EVAL_BINARY] false ($n  <= 1)
 |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 3
 |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $fact <fn fact>
-|   |   |   |   |   |   |   |   |   |   [EVAL_CALL] $fact ( ($n  - 1))
+|   |   |   |   |   |   |   |   |   |   [EVAL_CALL] [EXPR_CALL] $fact ( ($n  - 1))
 |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 3
 |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] 2 ($n  - 1)
 |   |   |   |   |   |   |   |   |   |   define n = 2
@@ -1770,7 +1770,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] false ($n  <= 1)
 |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 2
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $fact <fn fact>
-|   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_CALL] $fact ( ($n  - 1))
+|   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_CALL] [EXPR_CALL] $fact ( ($n  - 1))
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 2
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] 1 ($n  - 1)
 |   |   |   |   |   |   |   |   |   |   |   |   |   define n = 1
@@ -1778,15 +1778,15 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_VAR] $n 1
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] true ($n  <= 1)
 |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   @1: RETURN 1
-|   |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] 2 ($n  * $fact ( ($n  - 1)))
+|   |   |   |   |   |   |   |   |   |   |   |   [EVAL_BINARY] 2 ($n  * [EXPR_CALL] $fact ( ($n  - 1)))
 |   |   |   |   |   |   |   |   |   |   |   @1: RETURN 2
-|   |   |   |   |   |   |   |   |   [EVAL_BINARY] 6 ($n  * $fact ( ($n  - 1)))
+|   |   |   |   |   |   |   |   |   [EVAL_BINARY] 6 ($n  * [EXPR_CALL] $fact ( ($n  - 1)))
 |   |   |   |   |   |   |   |   @1: RETURN 6
-|   |   |   |   |   |   [EVAL_BINARY] 24 ($n  * $fact ( ($n  - 1)))
+|   |   |   |   |   |   [EVAL_BINARY] 24 ($n  * [EXPR_CALL] $fact ( ($n  - 1)))
 |   |   |   |   |   @1: RETURN 24
-|   |   |   [EVAL_BINARY] 120 ($n  * $fact ( ($n  - 1)))
+|   |   |   [EVAL_BINARY] 120 ($n  * [EXPR_CALL] $fact ( ($n  - 1)))
 |   |   @1: RETURN 120
-@4: print $fact (5)
+@4: print [EXPR_CALL] $fact (5)
 [RESULT] : 120;
 [PASS]
 
@@ -1813,40 +1813,40 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 |   |   |   |   @4: [STMT_EXPR] i =  ($i  + 1)
 |   |   |   |   @1: RETURN 
 |   |   @1: RETURN 
-@5: VAR c = $makeCounter ()
-@6: print $c ()
-@7: print $c ()
+@5: VAR c = [EXPR_CALL] $makeCounter ()
+@6: print [EXPR_CALL] $c ()
+@7: print [EXPR_CALL] $c ()
 =================
 |   define makeCounter = <fn makeCounter>
 |   @1 Fn makeCounter
 |   |   |   [EVAL_VAR] $makeCounter <fn makeCounter>
-|   |   [EVAL_CALL] $makeCounter ()
+|   |   [EVAL_CALL] [EXPR_CALL] $makeCounter ()
 |   |   |   @2: VAR i = 0
 |   |   |   define i = 0
 |   |   |   define count = <fn count>
 |   |   |   @1 Fn count
 |   |   |   |   [EVAL_VAR] $count <fn count>
 |   |   |   @1: RETURN <fn count>
-|   @5: VAR c = $makeCounter ()
+|   @5: VAR c = [EXPR_CALL] $makeCounter ()
 |   define c = <fn count>
 |   |   [EVAL_VAR] $c <fn count>
-|   [EVAL_CALL] $c ()
+|   [EVAL_CALL] [EXPR_CALL] $c ()
 |   |   |   |   [EVAL_VAR] $i 0
 |   |   |   [EVAL_BINARY] 1 ($i  + 1)
 |   |   [EVAL_ASSIGN] i =  ($i  + 1)
 @4: [STMT_EXPR] i =  ($i  + 1)
 |   |   |   [EVAL_VAR] $i 1
 |   |   @1: RETURN 1
-@6: print $c ()
+@6: print [EXPR_CALL] $c ()
 |   |   [EVAL_VAR] $c <fn count>
-|   [EVAL_CALL] $c ()
+|   [EVAL_CALL] [EXPR_CALL] $c ()
 |   |   |   |   [EVAL_VAR] $i 1
 |   |   |   [EVAL_BINARY] 2 ($i  + 1)
 |   |   [EVAL_ASSIGN] i =  ($i  + 1)
 @4: [STMT_EXPR] i =  ($i  + 1)
 |   |   |   [EVAL_VAR] $i 2
 |   |   @1: RETURN 2
-@7: print $c ()
+@7: print [EXPR_CALL] $c ()
 [RESULT] : 1;2;
 [PASS]
 
@@ -1855,12 +1855,12 @@ SOURCE: print clock();
 [EXPR_VAR] $clock 
 [EXPR_CALL] $clock ()
 ==== Program [1 statements] ====
-@1: print $clock ()
+@1: print [EXPR_CALL] $clock ()
 =================
 |   |   [EVAL_VAR] $clock <native fn>
-|   [EVAL_CALL] $clock ()
-@1: print $clock ()
-[RESULT] : 0.003062;
+|   [EVAL_CALL] [EXPR_CALL] $clock ()
+@1: print [EXPR_CALL] $clock ()
+[RESULT] : 0.003341;
 [INFO] no expected output
 
 SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
@@ -1875,7 +1875,7 @@ SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
 |   @1: FN show ()
 |   |   |   @4: print $a 
 |   @5: VAR a = 5
-|   @6: [STMT_EXPR] $show ()
+|   @6: [STMT_EXPR] [EXPR_CALL] $show ()
 =================
 |   @1: VAR a = 8
 |   define a = 8
@@ -1884,10 +1884,10 @@ SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
 |   @5: VAR a = 5
 |   define a = 5
 |   |   [EVAL_VAR] $show <fn show>
-|   [EVAL_CALL] $show ()
+|   [EVAL_CALL] [EXPR_CALL] $show ()
 |   |   [EVAL_VAR] $a 8
 @4: print $a 8
-@6: [STMT_EXPR] $show ()
+@6: [STMT_EXPR] [EXPR_CALL] $show ()
 [RESULT] : 8;
 [PASS]
 
@@ -1949,15 +1949,15 @@ SOURCE: class Foo {} var f = Foo(); print f;
 [EXPR_VAR] $f 
 ==== Program [3 statements] ====
 @1: Class Foo 
-@1: VAR f = $Foo ()
+@1: VAR f = [EXPR_CALL] $Foo ()
 @2: print $f 
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   assign Foo = <class Foo>
 |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   [EVAL_CALL] $Foo ()
-|   @1: VAR f = $Foo ()
+|   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
+|   @1: VAR f = [EXPR_CALL] $Foo ()
 |   define f = <instance Foo>
 |   [EVAL_VAR] $f <instance Foo>
 @2: print $f <instance Foo>
@@ -1969,43 +1969,50 @@ SOURCE: class Foo { get() { return 123; } } print Foo().get();
 [EXPR_LITERAL] 123
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
-[EXPR_CALL] $Foo ().get()
+[EXPR_GET] [EXPR_CALL] $Foo ().get
+[EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN get ()
 |   |   |   @1: RETURN 
-@2: print $Foo ().get()
+@2: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   define get = <fn get>
 |   assign Foo = <class Foo>
 |   |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   |   [EVAL_CALL] $Foo ()
+|   |   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
 |   |   define this = <instance Foo>
-|   |   [EVAL_GET_M] $Foo ().get
-|   [EVAL_CALL] $Foo ().get()
+|   |   [EVAL_GET_M] [EXPR_GET] [EXPR_CALL] $Foo ().get
+|   [EVAL_CALL] [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
 |   |   @1: RETURN 123
-@2: print $Foo ().get()
+@2: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
 [RESULT] : 123;
 [PASS]
 
 SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } } var f = Foo(42); print f.get();
 =================
+this
+[EXPR_GET] this.x
 [EXPR_VAR] $x 
+[EXPR_SET] this.x = $x 
+this
+[EXPR_GET] this.x
 [EXPR_VAR] $Foo 
 [EXPR_LITERAL] 42
 [EXPR_CALL] $Foo (42)
 [EXPR_VAR] $f 
-[EXPR_CALL] $f .get()
+[EXPR_GET] $f .get
+[EXPR_CALL] [EXPR_GET] $f .get()
 ==== Program [3 statements] ====
 @1: Class Foo 
 |   @1: FN init (x)
 |   |   |   @2: [STMT_EXPR] [EXPR_SET] this.x = $x 
 |   @1: FN get ()
 |   |   |   @1: RETURN 
-@4: VAR f = $Foo (42)
-@5: print $f .get()
+@4: VAR f = [EXPR_CALL] $Foo (42)
+@5: print [EXPR_CALL] [EXPR_GET] $f .get()
 =================
 |   @1: Class Foo
 |   define Foo = nil
@@ -2013,23 +2020,23 @@ SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } } var f = Foo
 |   define get = <fn get>
 |   assign Foo = <class Foo>
 |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   [EVAL_CALL] $Foo (42)
+|   |   [EVAL_CALL] [EXPR_CALL] $Foo (42)
 |   |   define this = <instance Foo>
-|   |   [EVAL_CALL] <fn init>(42)
+|   |   [EVAL_CALL] [EXPR_CALL] <fn init>(42)
 |   |   define x = 42
 |   |   |   |   [EVAL_VAR] $x 42
 |   |   |   define x = 42
 |   |   |   [EVAL_SET] [EXPR_SET] this.x = $x 
 @2: [STMT_EXPR] [EXPR_SET] this.x = $x 
-|   @4: VAR f = $Foo (42)
+|   @4: VAR f = [EXPR_CALL] $Foo (42)
 |   define f = <instance Foo>
 |   |   |   [EVAL_VAR] $f <instance Foo>
 |   |   define this = <instance Foo>
-|   |   [EVAL_GET_M] $f .get
-|   [EVAL_CALL] $f .get()
-|   |   |   [EVAL_GET] this.x
+|   |   [EVAL_GET_M] [EXPR_GET] $f .get
+|   [EVAL_CALL] [EXPR_CALL] [EXPR_GET] $f .get()
+|   |   |   [EVAL_GET] [EXPR_GET] this.x
 |   |   @1: RETURN 42
-@5: print $f .get()
+@5: print [EXPR_CALL] [EXPR_GET] $f .get()
 [RESULT] : 42;
 [PASS]
 
@@ -2042,18 +2049,18 @@ SOURCE: class Foo { init() { return 123; } } print Foo();
 @1: Class Foo 
 |   @1: FN init ()
 |   |   |   @1: RETURN 
-@2: print $Foo ()
+@2: print [EXPR_CALL] $Foo ()
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 |   |   [EVAL_VAR] $Foo <class Foo>
-|   [EVAL_CALL] $Foo ()
+|   [EVAL_CALL] [EXPR_CALL] $Foo ()
 |   define this = <instance Foo>
-|   [EVAL_CALL] <fn init>()
+|   [EVAL_CALL] [EXPR_CALL] <fn init>()
 |   |   |   [line 1] RuntimeError at 'return': Can't return a value from an initializer.
-@2: print $Foo ()
+@2: print [EXPR_CALL] $Foo ()
 [RESULT] : nil;
 [PassError]
 
@@ -2065,34 +2072,45 @@ SOURCE: fun init() { return 123; } print init();
 ==== Program [2 statements] ====
 @1: FN init ()
 |   |   @1: RETURN 
-@2: print $init ()
+@2: print [EXPR_CALL] $init ()
 =================
 |   define init = <fn init>
 |   @1 Fn init
 |   |   [EVAL_VAR] $init <fn init>
-|   [EVAL_CALL] $init ()
+|   [EVAL_CALL] [EXPR_CALL] $init ()
 |   |   @1: RETURN 123
-@2: print $init ()
+@2: print [EXPR_CALL] $init ()
 [RESULT] : 123;
 [PASS]
 
 SOURCE: class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return this.x; } } print Foo(42).inc();
 =================
+this
+[EXPR_GET] this.x
 [EXPR_VAR] $x 
+[EXPR_SET] this.x = $x 
+this
+[EXPR_GET] this.x
+this
+[EXPR_GET] this.x
 [EXPR_LITERAL] 1
-[EXPR_BINARY]  (this.x + 1)
+[EXPR_BINARY]  ([EXPR_GET] this.x + 1)
+[EXPR_SET] this.x =  ([EXPR_GET] this.x + 1)
+this
+[EXPR_GET] this.x
 [EXPR_VAR] $Foo 
 [EXPR_LITERAL] 42
 [EXPR_CALL] $Foo (42)
-[EXPR_CALL] $Foo (42).inc()
+[EXPR_GET] [EXPR_CALL] $Foo (42).inc
+[EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init (x)
 |   |   |   @2: [STMT_EXPR] [EXPR_SET] this.x = $x 
 |   @1: FN inc ()
-|   |   |   @4: [STMT_EXPR] [EXPR_SET] this.x =  (this.x + 1)
+|   |   |   @4: [STMT_EXPR] [EXPR_SET] this.x =  ([EXPR_GET] this.x + 1)
 |   |   |   @1: RETURN 
-@5: print $Foo (42).inc()
+@5: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
 =================
 |   @1: Class Foo
 |   define Foo = nil
@@ -2100,41 +2118,42 @@ SOURCE: class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return th
 |   define inc = <fn inc>
 |   assign Foo = <class Foo>
 |   |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   |   [EVAL_CALL] $Foo (42)
+|   |   |   [EVAL_CALL] [EXPR_CALL] $Foo (42)
 |   |   |   define this = <instance Foo>
-|   |   |   [EVAL_CALL] <fn init>(42)
+|   |   |   [EVAL_CALL] [EXPR_CALL] <fn init>(42)
 |   |   |   define x = 42
 |   |   |   |   |   [EVAL_VAR] $x 42
 |   |   |   |   define x = 42
 |   |   |   |   [EVAL_SET] [EXPR_SET] this.x = $x 
 @2: [STMT_EXPR] [EXPR_SET] this.x = $x 
 |   |   define this = <instance Foo>
-|   |   [EVAL_GET_M] $Foo (42).inc
-|   [EVAL_CALL] $Foo (42).inc()
-|   |   |   |   [EVAL_GET] this.x
-|   |   |   [EVAL_BINARY] 43 (this.x + 1)
+|   |   [EVAL_GET_M] [EXPR_GET] [EXPR_CALL] $Foo (42).inc
+|   [EVAL_CALL] [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
+|   |   |   |   [EVAL_GET] [EXPR_GET] this.x
+|   |   |   [EVAL_BINARY] 43 ([EXPR_GET] this.x + 1)
 |   |   overwrite x = 43
-|   |   [EVAL_SET] [EXPR_SET] this.x =  (this.x + 1)
-@4: [STMT_EXPR] [EXPR_SET] this.x =  (this.x + 1)
-|   |   |   [EVAL_GET] this.x
+|   |   [EVAL_SET] [EXPR_SET] this.x =  ([EXPR_GET] this.x + 1)
+@4: [STMT_EXPR] [EXPR_SET] this.x =  ([EXPR_GET] this.x + 1)
+|   |   |   [EVAL_GET] [EXPR_GET] this.x
 |   |   @1: RETURN 43
-@5: print $Foo (42).inc()
+@5: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
 [RESULT] : 43;
 [PASS]
 
 SOURCE: class Foo {} print Foo.x;
 =================
 [EXPR_VAR] $Foo 
+[EXPR_GET] $Foo .x
 ==== Program [2 statements] ====
 @1: Class Foo 
-@1: print $Foo .x
+@1: print [EXPR_GET] $Foo .x
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   assign Foo = <class Foo>
 |   |   [EVAL_VAR] $Foo <class Foo>
 |   |   [line 1] RuntimeError at 'x': Only instances have properties, Invalid access
-@1: print $Foo .x
+@1: print [EXPR_GET] $Foo .x
 [RESULT] : Error: Only instances have properties, Invalid access;;
 [PassError]
 
@@ -2142,46 +2161,51 @@ SOURCE: class Foo {} print Foo().x;
 =================
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
+[EXPR_GET] [EXPR_CALL] $Foo ().x
 ==== Program [2 statements] ====
 @1: Class Foo 
-@1: print $Foo ().x
+@1: print [EXPR_GET] [EXPR_CALL] $Foo ().x
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   assign Foo = <class Foo>
 |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   [EVAL_CALL] $Foo ()
+|   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
 |   |   [line 1] RuntimeError at 'x': Undefined property.
-@1: print $Foo ().x
+@1: print [EXPR_GET] [EXPR_CALL] $Foo ().x
 [RESULT] : Error: Undefined property.;;
 [PassError]
 
 SOURCE: class Foo { init() { this.x = 123; } } print Foo().x();
 =================
+this
+[EXPR_GET] this.x
 [EXPR_LITERAL] 123
+[EXPR_SET] this.x = 123
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
-[EXPR_CALL] $Foo ().x()
+[EXPR_GET] [EXPR_CALL] $Foo ().x
+[EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init ()
 |   |   |   @2: [STMT_EXPR] [EXPR_SET] this.x = 123
-@3: print $Foo ().x()
+@3: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 |   |   |   |   [EVAL_VAR] $Foo <class Foo>
-|   |   |   [EVAL_CALL] $Foo ()
+|   |   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
 |   |   |   define this = <instance Foo>
-|   |   |   [EVAL_CALL] <fn init>()
+|   |   |   [EVAL_CALL] [EXPR_CALL] <fn init>()
 |   |   |   |   define x = 123
 |   |   |   |   [EVAL_SET] [EXPR_SET] this.x = 123
 @2: [STMT_EXPR] [EXPR_SET] this.x = 123
-|   |   [EVAL_GET] $Foo ().x
+|   |   [EVAL_GET] [EXPR_GET] [EXPR_CALL] $Foo ().x
 |   |   [line 1] RuntimeError: Can only call functions and classes.
-@3: print $Foo ().x()
+@3: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
 [RESULT] : Error: Can only call functions and classes.;;
 [PassError]
 
@@ -2194,27 +2218,28 @@ SOURCE: class Foo { init(a) { } } print Foo(3,4);
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init (a)
-@2: print $Foo (3,4)
+@2: print [EXPR_CALL] $Foo (3,4)
 =================
 |   @1: Class Foo
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 |   |   [EVAL_VAR] $Foo <class Foo>
-|   [EVAL_CALL] $Foo (3,4)
+|   [EVAL_CALL] [EXPR_CALL] $Foo (3,4)
 |   define this = <instance Foo>
-|   [EVAL_CALL] <fn init>(3,4)
+|   [EVAL_CALL] [EXPR_CALL] <fn init>(3,4)
 |   |   [line 1] RuntimeError: Expected 1 arguments but got 2.
-@2: print $Foo (3,4)
+@2: print [EXPR_CALL] $Foo (3,4)
 [RESULT] : Error: Expected 1 arguments but got 2.;;
 [PassError]
 
 SOURCE: class A {} super.foo();
 =================
-[EXPR_CALL] [EXPR_SUPER]()
+[EXPR_SUPER] 
+[EXPR_CALL] [EXPR_SUPER] ()
 ==== Program [2 statements] ====
 @1: Class A 
-@1: [STMT_EXPR] [EXPR_SUPER]()
+@1: [STMT_EXPR] [EXPR_CALL] [EXPR_SUPER] ()
 =================
 [line 1] Error: Can't use 'super' outside of a class.
 Resolve error. No execution
@@ -2225,18 +2250,20 @@ SOURCE: class A { foo() { print "Hello world";} } class B < A { bar() { super.fo
 =================
 [EXPR_LITERAL] Hello world
 [EXPR_VAR] $A 
-[EXPR_CALL] [EXPR_SUPER]()
+[EXPR_SUPER] 
+[EXPR_CALL] [EXPR_SUPER] ()
 [EXPR_VAR] $B 
 [EXPR_CALL] $B ()
-[EXPR_CALL] $B ().bar()
+[EXPR_GET] [EXPR_CALL] $B ().bar
+[EXPR_CALL] [EXPR_GET] [EXPR_CALL] $B ().bar()
 ==== Program [3 statements] ====
 @1: Class A 
 |   @1: FN foo ()
 |   |   |   @2: print Hello world
 @1: Class B 
 |   @1: FN bar ()
-|   |   |   @4: [STMT_EXPR] [EXPR_SUPER]()
-@5: [STMT_EXPR] $B ().bar()
+|   |   |   @4: [STMT_EXPR] [EXPR_CALL] [EXPR_SUPER] ()
+@5: [STMT_EXPR] [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $B ().bar()
 =================
 |   @1: Class A
 |   define A = nil
@@ -2249,16 +2276,16 @@ SOURCE: class A { foo() { print "Hello world";} } class B < A { bar() { super.fo
 |   define bar = <fn bar>
 |   assign B = <class B>
 |   |   |   |   [EVAL_VAR] $B <class B>
-|   |   |   [EVAL_CALL] $B ()
+|   |   |   [EVAL_CALL] [EXPR_CALL] $B ()
 |   |   define this = <instance B>
-|   |   [EVAL_GET_M] $B ().bar
-|   [EVAL_CALL] $B ().bar()
+|   |   [EVAL_GET_M] [EXPR_GET] [EXPR_CALL] $B ().bar
+|   [EVAL_CALL] [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $B ().bar()
 |   |   |   define this = <instance B>
-|   |   |   [EVAL_SUPER] [EXPR_SUPER]
-|   |   [EVAL_CALL] [EXPR_SUPER]()
+|   |   |   [EVAL_SUPER] [EXPR_SUPER] 
+|   |   [EVAL_CALL] [EXPR_CALL] [EXPR_SUPER] ()
 @2: print Hello world
-@4: [STMT_EXPR] [EXPR_SUPER]()
-@5: [STMT_EXPR] $B ().bar()
+@4: [STMT_EXPR] [EXPR_CALL] [EXPR_SUPER] ()
+@5: [STMT_EXPR] [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $B ().bar()
 [RESULT] : Hello world;
 [PASS]
 
