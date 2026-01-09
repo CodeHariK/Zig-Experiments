@@ -126,7 +126,15 @@ static Stmt *parseFunctionStmt(Lox *lox) {
 }
 
 static Stmt *parseClassStmt(Lox *lox) {
-  Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect class name.");
+  Token tok = consumeToken(lox, TOKEN_IDENTIFIER, "Expect class name.");
+
+  Expr *superclass = NULL;
+
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_LESS)) {
+    Token superClassToken =
+        consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass name.");
+    superclass = parseVariableExpr(lox, superClassToken);
+  }
 
   consumeToken(lox, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
 
@@ -150,10 +158,11 @@ static Stmt *parseClassStmt(Lox *lox) {
 
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_CLASS;
-  stmt->as.classStmt.name = name;
+  stmt->as.classStmt.name = tok;
   stmt->as.classStmt.methods = methods;
   stmt->as.classStmt.methodCount = count;
-  stmt->line = name.line;
+  stmt->line = tok.line;
+  stmt->as.classStmt.superclass = superclass;
 
   return stmt;
 }

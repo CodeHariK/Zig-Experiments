@@ -88,6 +88,8 @@ static Value evalCall(Lox *lox, Expr *expr) {
                       true);
   }
 
+  printExpr(lox, expr, callee, lox->indent, true, "[EVAL_CALL] ");
+
   if (callee.type == VAL_NATIVE) {
     NativeFn native = callee.as.native;
     // simple native call, assuming no arg check for now or handle it inside
@@ -200,18 +202,18 @@ Value evaluate(Lox *lox, Expr *expr) {
   }
   case EXPR_GROUPING: {
     result = evaluate(lox, expr->as.grouping.expression);
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_GROUP] ");
+    printExpr(lox, expr, result, lox->indent, true, "[EVAL_GROUP] ");
     break;
   }
   case EXPR_UNARY: {
     result = evalUnary(lox, expr);
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_UNARY] ");
+    printExpr(lox, expr, result, lox->indent, true, "[EVAL_UNARY] ");
     break;
   }
 
   case EXPR_BINARY: {
     result = evalBinary(lox, expr);
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_BINARY] ");
+    printExpr(lox, expr, result, lox->indent, true, "[EVAL_BINARY] ");
     break;
   }
 
@@ -219,16 +221,19 @@ Value evaluate(Lox *lox, Expr *expr) {
     Value left = evaluate(lox, expr->as.logical.left);
 
     if (expr->as.logical.op.type == TOKEN_OR) {
-      if (isTruthy(left))
-        return left;
+      if (isTruthy(left)) {
+        result = left;
+        break;
+      }
     } else {
-      if (!isTruthy(left))
-        return left;
+      if (!isTruthy(left)) {
+        result = left;
+        break;
+      }
     }
 
     result = evaluate(lox, expr->as.logical.right);
-
-    printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_LOGICAL] ");
+    printExpr(lox, expr, result, lox->indent, true, "[EVAL_LOGICAL] ");
     break;
   }
 
@@ -243,17 +248,26 @@ Value evaluate(Lox *lox, Expr *expr) {
   }
 
   case EXPR_CALL: {
-    return evalCall(lox, expr);
+    result = evalCall(lox, expr);
+    break;
   }
 
   case EXPR_GET: {
-    return evalGet(lox, expr);
+    result = evalGet(lox, expr);
+    break;
   }
   case EXPR_SET: {
-    return evalSet(lox, expr);
+    result = evalSet(lox, expr);
+    break;
   }
   case EXPR_THIS: {
-    return envGetAt(lox->env, expr->as.thisExpr.depth, "this");
+    result = envGetAt(lox->env, expr->as.thisExpr.depth, "this");
+    break;
+  }
+
+  case EXPR_SUPER: {
+    result = evalSuper(lox, expr);
+    break;
   }
   }
 

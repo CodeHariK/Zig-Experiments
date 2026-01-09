@@ -107,8 +107,7 @@ static bool envGetGlobal(Environment *env, const char *name, Value *out) {
   return false; // not found
 }
 
-static bool envAssign(Lox *lox, Environment *env, const char *name,
-                      Value value) {
+bool envAssign(Lox *lox, Environment *env, const char *name, Value value) {
   for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       env->entries[i].value = value;
@@ -154,6 +153,14 @@ static void resolveLocal(Resolver *r, Expr *expr, Token name) {
           expr->as.assign.depth = depth;
         } else if (expr->type == EXPR_THIS) {
           expr->as.thisExpr.depth = depth;
+        } else if (expr->type == EXPR_SUPER) {
+          /* For 'super', the depth we store should allow us to locate the
+             "this" binding at runtime. Because the bound method creates an
+             extra environment (that holds 'this') that will be one ancestor
+             above the environment that contains 'super', subtract 1 from
+             the computed depth here so envGetAt(..., depth, "this") will
+             find the instance. */
+          expr->as.superExpr.depth = depth - 1;
         }
         return;
       }
@@ -237,6 +244,19 @@ static void resolveExpr(Resolver *r, Lox *lox, Expr *expr) {
       return;
     }
     resolveLocal(r, expr, expr->as.thisExpr.keyword);
+    break;
+  }
+
+  case EXPR_SUPER: {
+    if (r->currentClass == CLASS_NONE) {
+      reportError(lox, expr->as.superExpr.keyword.line, "",
+                  "Can't use 'super' outside of a class.");
+    } else if (r->currentClass != CLASS_SUBCLASS) {
+      reportError(lox, expr->as.superExpr.keyword.line, "",
+                  "Can't use 'super' in a class with no superclass.");
+    }
+
+    resolveLocal(r, expr, expr->as.superExpr.keyword);
     break;
   }
   }
@@ -360,6 +380,21 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     break;
 
   case STMT_CLASS:
+    ClassType enclosingClass = r->currentClass;
+    r->currentClass = CLASS_CLASS;
+
+    if (stmt->as.classStmt.superclass) {
+      r->currentClass = CLASS_SUBCLASS;
+
+      resolveExpr(r, lox, stmt->as.classStmt.superclass);
+
+      beginScope(r);
+
+      ResolverScope *scope = &r->scopes[r->scopeCount - 1];
+      scope->vars[scope->varCount++] =
+          (ResolverVar){.name = "super", .defined = true};
+    }
+
     declareVar(r, lox, stmt->as.classStmt.name);
     defineVar(r);
 
@@ -371,6 +406,13 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     }
 
     endScope(r);
+
+    if (stmt->as.classStmt.superclass) {
+      endScope(r);
+    }
+
+    r->currentClass = enclosingClass;
+
     break;
 
   case STMT_RETURN:
@@ -404,12 +446,14 @@ Value evalVariable(Lox *lox, Expr *expr) {
     }
   }
 
-  printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_VAR] ");
+  printExpr(lox, expr, result, lox->indent, true, "[EVAL_VAR] ");
   return result;
 }
 
 Value evalAssign(Lox *lox, Expr *expr) {
   Value result = evaluate(lox, expr->as.assign.value);
+
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[EVAL_ASSIGN] ");
 
   if (expr->as.assign.depth != -1) {
     envAssignAt(lox->env, expr->as.assign.depth, expr->as.assign.name.lexeme,
@@ -421,7 +465,6 @@ Value evalAssign(Lox *lox, Expr *expr) {
     }
   }
 
-  printExpr(lox, expr, result, lox->indent, false, true, "[EVAL_ASSIGN] ");
   return result;
 }
 
@@ -437,15 +480,14 @@ Value evalGet(Lox *lox, Expr *expr) {
 
   Value value;
   if (envGet(inst->fields, expr->as.getExpr.name.lexeme, &value)) {
-    printExpr(lox, expr, value, lox->indent, false, true, "[EVAL_GET] ");
+    printExpr(lox, expr, value, lox->indent, true, "[EVAL_GET] ");
     return value;
   }
 
   if (envGet(inst->class->methods, expr->as.getExpr.name.lexeme, &value)) {
     Value bound_method = bindMethod(lox, value, inst);
 
-    printExpr(lox, expr, bound_method, lox->indent, false, true,
-              "[EVAL_GET_M] ");
+    printExpr(lox, expr, bound_method, lox->indent, true, "[EVAL_GET_M] ");
     return bound_method;
   }
 
@@ -465,6 +507,51 @@ Value evalSet(Lox *lox, Expr *expr) {
 
   envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
 
-  printExpr(lox, expr, value, lox->indent, false, true, "[EVAL_SET] ");
+  printExpr(lox, expr, value, lox->indent, true, "[EVAL_SET] ");
   return value;
+}
+
+Value evalSuper(Lox *lox, Expr *expr) {
+  // 1. Get `this`
+  Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
+
+  if (thisVal.type != VAL_INSTANCE) {
+    /* Debugging aid: print environment distances to 'this' to help
+       diagnose resolution mismatches. This is temporary and will be
+       removed once the resolver is verified to produce correct depths. */
+    printf("evalSuper: requested depth=%d\n", expr->as.superExpr.depth);
+    for (int d = expr->as.superExpr.depth - 2;
+         d <= expr->as.superExpr.depth + 2; d++) {
+      if (d < 0)
+        continue;
+      Value v = envGetAt(lox->env, d, "this");
+      printf("  depth %d -> type %d\n", d, v.type);
+    }
+
+    return errorValue(lox, &expr->as.superExpr.keyword, expr,
+                      "Invalid 'this' binding.", true);
+  }
+
+  LoxInstance *instance = thisVal.as.instance;
+
+  // 2. Get superclass from the class, NOT the environment
+  LoxClass *superclass = instance->class->superclass;
+
+  if (!superclass) {
+    return errorValue(lox, &expr->as.superExpr.keyword, expr,
+                      "Invalid superclass.", true);
+  }
+
+  // 3. Look up method on superclass
+  Value method;
+  if (!envGet(superclass->methods, expr->as.superExpr.method.lexeme, &method)) {
+    return errorValue(lox, &expr->as.superExpr.method, expr,
+                      "Undefined property.", true);
+  }
+
+  // 4. Bind to instance
+  Value bound = bindMethod(lox, method, instance);
+
+  printExpr(lox, expr, bound, lox->indent, true, "[EVAL_SUPER] ");
+  return bound;
 }

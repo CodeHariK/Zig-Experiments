@@ -304,6 +304,11 @@ void runVarTests(void) {
       {"class Foo {} print Foo().x;", "", false},
       {"class Foo { init() { this.x = 123; } } print Foo().x();", "", false},
       {"class Foo { init(a) { } } print Foo(3,4);", "", false},
+
+      {"class A {} super.foo();", "", false},
+      {"class A { foo() { print \"Hello world\";} } class B < A { bar() { "
+       "super.foo(); } } B().bar();",
+       "Hello world\n", true},
       //
   };
 

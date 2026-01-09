@@ -89,7 +89,7 @@ typedef enum {
   VAL_METHOD,
 } ValueType;
 
-enum ClassType { CLASS_NONE, CLASS_CLASS };
+typedef enum ClassType { CLASS_NONE, CLASS_CLASS, CLASS_SUBCLASS } ClassType;
 
 typedef struct Value Value;
 
@@ -128,7 +128,9 @@ typedef enum {
 
   EXPR_GET,
   EXPR_SET,
-  EXPR_THIS
+  EXPR_THIS,
+
+  EXPR_SUPER,
 } ExprType;
 
 typedef struct Expr {
@@ -192,6 +194,11 @@ typedef struct Expr {
       Token keyword;
       i32 depth;
     } thisExpr;
+    struct {
+      Token keyword; // 'super'
+      Token method;  // method name
+      int depth;
+    } superExpr;
   } as;
 } Expr;
 
@@ -261,6 +268,7 @@ typedef struct Stmt {
 
     struct {
       Token name;
+      Expr *superclass;
       struct Stmt **methods;
       int methodCount;
     } classStmt;
@@ -283,6 +291,8 @@ typedef struct {
 typedef struct {
   ResolverScope scopes[MAX_SCOPES];
   i32 scopeCount;
+
+  ClassType currentClass;
 } Resolver;
 
 typedef struct {
@@ -309,6 +319,7 @@ typedef struct LoxFunction {
 typedef struct LoxClass {
   Token name;
   Environment *methods;
+  struct LoxClass *superclass;
 } LoxClass;
 
 typedef struct LoxInstance {
@@ -364,7 +375,6 @@ typedef struct {
   bool debugPrint;
 
   u32 indent;
-  int execDepth;
 
   struct {
     ControlSignalType type;
@@ -401,6 +411,7 @@ Token prevToken(Parser *parser);
 Token peekToken(Parser *parser);
 
 Expr *parseExpression(Lox *lox);
+Expr *parseVariableExpr(Lox *lox, Token token);
 
 Value stringValue(char *s);
 Value numberValue(double n);
@@ -426,11 +437,13 @@ Environment *envNew(Environment *enclosing);
 void envFree(Environment *env);
 void envDefine(Environment *env, Lox *lox, const char *name, Value value);
 bool envGet(Environment *env, const char *name, Value *out);
+bool envAssign(Lox *lox, Environment *env, const char *name, Value value);
 Value envGetAt(Environment *env, int depth, const char *name);
 Value evalVariable(Lox *lox, Expr *expr);
 Value evalGet(Lox *lox, Expr *expr);
 Value evalSet(Lox *lox, Expr *expr);
 Value evalAssign(Lox *lox, Expr *expr);
+Value evalSuper(Lox *lox, Expr *expr);
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
 const char *tokenTypeToString(TokenType type);
@@ -441,8 +454,8 @@ extern const Value NO_VALUE;
 void valueToString(Value value, char *buffer, u32 size);
 
 void indentPrint(int indent);
-void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
-               bool newLine, char *msg);
+void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
+               char *msg);
 void printValue(Value value);
 void printEnv(Lox *lox, const char *name, Value value, char *msg);
 void printToken(Lox *lox, const Token *token, char *msg);

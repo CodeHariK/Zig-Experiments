@@ -76,7 +76,7 @@ static Expr *parseBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   expr->as.binary.left = left;
   expr->as.binary.op = op;
   expr->as.binary.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_BINARY] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_BINARY] ");
   return expr;
 }
 
@@ -85,7 +85,7 @@ static Expr *parseUnaryExpr(Lox *lox, Token op, Expr *right) {
   expr->type = EXPR_UNARY;
   expr->as.unary.op = op;
   expr->as.unary.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_UNARY] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_UNARY] ");
   return expr;
 }
 
@@ -93,7 +93,7 @@ static Expr *parseLiteralExpr(Lox *lox, Value value) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_LITERAL;
   expr->as.literal.value = value;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_LITERAL] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_LITERAL] ");
   return expr;
 }
 
@@ -101,16 +101,16 @@ static Expr *parseGroupingExpr(Lox *lox, Expr *expression) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_GROUPING;
   expr->as.grouping.expression = expression;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_GROUP] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_GROUP] ");
   return expr;
 }
 
-static Expr *parseVariableExpr(Lox *lox, Token token) {
+Expr *parseVariableExpr(Lox *lox, Token token) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
   expr->as.var.depth = -1;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_VAR] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_VAR] ");
   return expr;
 }
 
@@ -120,7 +120,7 @@ static Expr *parseAssignExpr(Lox *lox, Token name, Expr *value) {
   expr->as.assign.name = name;
   expr->as.assign.value = value;
   expr->as.var.depth = -1;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_ASSIGN] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_ASSIGN] ");
   return expr;
 }
 
@@ -130,7 +130,16 @@ static Expr *parseLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   expr->as.logical.left = left;
   expr->as.logical.op = op;
   expr->as.logical.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, true, "[EXPR_LOGICAL] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_LOGICAL] ");
+  return expr;
+}
+
+static Expr *makeSuperExpr(Lox *lox, Token keyword, Token method) {
+  Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
+  expr->type = EXPR_SUPER;
+  expr->as.superExpr.keyword = keyword;
+  expr->as.superExpr.method = method;
+  expr->as.superExpr.depth = -1;
   return expr;
 }
 
@@ -167,6 +176,13 @@ static Expr *parsePrimary(Lox *lox) {
     expr->as.thisExpr.keyword = prevToken(&lox->parser);
     expr->as.thisExpr.depth = -1;
     return expr;
+  }
+
+  if (matchAnyTokenAdvance(lox, 1, TOKEN_SUPER)) {
+    Token keyword = prevToken(&lox->parser);
+    consumeToken(lox, TOKEN_DOT, "Expect '.' after 'super'.");
+    consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass method name.");
+    return makeSuperExpr(lox, keyword, prevToken(&lox->parser));
   }
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_IDENTIFIER)) {
@@ -217,7 +233,7 @@ static Expr *parseCall(Lox *lox) {
 
       callee = expr;
 
-      printExpr(lox, callee, NO_VALUE, 0, true, true, "[EXPR_CALL] ");
+      printExpr(lox, callee, NO_VALUE, 0, true, "[EXPR_CALL] ");
     }
     //
     else if (matchAnyTokenAdvance(lox, 1, TOKEN_DOT)) {
