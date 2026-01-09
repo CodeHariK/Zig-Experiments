@@ -109,6 +109,15 @@ void printToken(Lox *lox, const Token *token, char *msg) {
          token->length, token->lexeme);
 }
 
+void printEnv(Lox *lox, const char *name, Value value, char *msg) {
+  if (lox) {
+    indentPrint(lox->execDepth);
+    printf("%s %s = ", msg, name);
+    printValue(value);
+    printf("\n");
+  }
+}
+
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
                bool newLine, char *msg) {
   if (!lox->debugPrint) {
@@ -163,7 +172,6 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
   case EXPR_ASSIGN: {
     printf("%s = ", expr->as.assign.name.lexeme);
     printValue(result);
-    printExpr(lox, expr->as.assign.value, NO_VALUE, 0, false, false, "");
     break;
   }
   case EXPR_LOGICAL: {
@@ -213,22 +221,18 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
   if (!lox->debugPrint)
     return;
 
-  indentPrint(indent);
-
   if (!stmt) {
     printf("[NULL_STMT]\n");
     return;
   }
-
-  char valueBuf[64];
-  valueToString(result, valueBuf, sizeof(valueBuf));
-
-  printf("@%-3d: ", stmt->line);
+  if (stmt->type != STMT_BLOCK) {
+    indentPrint(indent);
+    printf("@%-3d: ", stmt->line);
+  }
 
   switch (stmt->type) {
   case STMT_PRINT: {
-    printExpr(lox, stmt->as.expr_print, result, 0, false, true,
-              "[STMT_PRINT] ");
+    printExpr(lox, stmt->as.expr_print, result, 0, false, true, "print ");
     break;
   }
   case STMT_EXPR: {
@@ -241,7 +245,6 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
     break;
   }
   case STMT_BLOCK: {
-    printf("[STMT_BLOCK]\n");
     for (i32 i = 0; i < stmt->as.block.count; i++) {
       printStmt(lox, stmt->as.block.statements[i], result, indent + 1);
     }
@@ -253,17 +256,17 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
 
     indentPrint(indent + 1);
     printf("condition:\n");
-    printExpr(lox, stmt->as.ifStmt.condition, result, indent + 2, false, true,
+    printExpr(lox, stmt->as.ifStmt.condition, result, indent + 1, false, true,
               "");
 
     indentPrint(indent + 1);
     printf("then:\n");
-    printStmt(lox, stmt->as.ifStmt.then_branch, result, indent + 2);
+    printStmt(lox, stmt->as.ifStmt.then_branch, result, indent + 1);
 
     if (stmt->as.ifStmt.else_branch) {
       indentPrint(indent + 1);
       printf("else:\n");
-      printStmt(lox, stmt->as.ifStmt.else_branch, result, indent + 2);
+      printStmt(lox, stmt->as.ifStmt.else_branch, result, indent + 1);
     }
     break;
   }
@@ -273,12 +276,12 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
 
     indentPrint(indent + 1);
     printf("condition:\n");
-    printExpr(lox, stmt->as.whileStmt.condition, result, indent + 2, false,
+    printExpr(lox, stmt->as.whileStmt.condition, result, indent + 1, false,
               true, "");
 
     indentPrint(indent + 1);
     printf("body:\n");
-    printStmt(lox, stmt->as.whileStmt.body, result, indent + 2);
+    printStmt(lox, stmt->as.whileStmt.body, result, indent + 1);
     break;
   }
   case STMT_FOR: {
@@ -287,26 +290,26 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
     indentPrint(indent + 1);
     printf("condition:\n");
     if (stmt->as.forStmt.condition) {
-      printExpr(lox, stmt->as.forStmt.condition, result, indent + 2, false,
+      printExpr(lox, stmt->as.forStmt.condition, result, indent + 1, false,
                 true, "");
     } else {
-      indentPrint(indent + 2);
+      indentPrint(indent + 1);
       printf("(none)\n");
     }
 
     indentPrint(indent + 1);
     printf("increment:\n");
     if (stmt->as.forStmt.increment) {
-      printExpr(lox, stmt->as.forStmt.increment, result, indent + 2, false,
+      printExpr(lox, stmt->as.forStmt.increment, result, indent + 1, false,
                 true, "");
     } else {
-      indentPrint(indent + 2);
+      indentPrint(indent + 1);
       printf("(none)\n");
     }
 
     indentPrint(indent + 1);
     printf("body:\n");
-    printStmt(lox, stmt->as.forStmt.body, result, indent + 2);
+    printStmt(lox, stmt->as.forStmt.body, result, indent + 1);
     break;
   }
 
@@ -322,7 +325,7 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
     }
     printf(")\n");
 
-    printStmt(lox, stmt->as.functionStmt.body, result, indent + 2);
+    printStmt(lox, stmt->as.functionStmt.body, result, indent + 1);
 
     break;
   }
@@ -332,9 +335,8 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
 
     for (u8 i = 0; i < stmt->as.classStmt.methodCount; i++) {
       Stmt *t = stmt->as.classStmt.methods[i];
-      printStmt(lox, t, NO_VALUE, indent + 2);
+      printStmt(lox, t, NO_VALUE, indent + 1);
     }
-    printf(")\n");
 
     break;
   }

@@ -91,7 +91,7 @@ SOURCE: !-!-3
          [EVAL_UNARY] Error: Operand must be a boolean.
 ! - 3
 [line 1] RuntimeError at '-': Operand must be a number.
-      [EVAL_UNARY] -2.15641e-314- ! - 3
+      [EVAL_UNARY] -2.15852e-314- ! - 3
 [line 1] RuntimeError at '!': Operand must be a boolean.
    [EVAL_UNARY] Error: Operand must be a boolean.
 ! - ! - 3
@@ -307,7 +307,7 @@ SOURCE: print 1 + 2;
 [EXPR_BINARY]  (1+ 2)
 =================
    [EVAL_BINARY] 3 (1+ 2)
-@1  : [STMT_PRINT] 3 (1+ 2)
+@1  : print 3 (1+ 2)
 [RESULT] : 3;
 [PASS]
 
@@ -328,7 +328,7 @@ SOURCE: print !false;
 [EXPR_UNARY] ! false
 =================
    [EVAL_UNARY] true! false
-@1  : [STMT_PRINT] true! false
+@1  : print true! false
 [RESULT] : true;
 [PASS]
 
@@ -336,7 +336,7 @@ SOURCE: print "hello";
 =================
 [EXPR_LITERAL] hello
 =================
-@1  : [STMT_PRINT] hello
+@1  : print hello
 [RESULT] : hello;
 [PASS]
 
@@ -351,14 +351,14 @@ SOURCE: var a = 7 * 7; print a/7;
 [EXPR_BINARY]  ($a / 7)
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a =  (7* 7)
-@2  : [STMT_PRINT]  ($a / 7)
+@2  : print  ($a / 7)
 =================
    [EVAL_BINARY] 49 (7* 7)
    define a = 49
 @1  : [STMT_VAR] a = 49 (7* 7)
       [EVAL_VAR] $a 49
    [EVAL_BINARY] 7 ($a / 7)
-@2  : [STMT_PRINT] 7 ($a / 7)
+@2  : print 7 ($a / 7)
 [RESULT] : 7;
 [PASS]
 
@@ -368,12 +368,12 @@ SOURCE: var b = 3.14; print b;
 [EXPR_VAR] $b 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] b = 3.14
-@2  : [STMT_PRINT] $b 
+@2  : print $b 
 =================
    define b = 3.14
 @1  : [STMT_VAR] b = 3.14
    [EVAL_VAR] $b 3.14
-@2  : [STMT_PRINT] $b 3.14
+@2  : print $b 3.14
 [RESULT] : 3.14;
 [PASS]
 
@@ -383,12 +383,12 @@ SOURCE: var s = "hello"; print s;
 [EXPR_VAR] $s 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] s = hello
-@2  : [STMT_PRINT] $s 
+@2  : print $s 
 =================
    define s = hello
 @1  : [STMT_VAR] s = hello
    [EVAL_VAR] $s hello
-@2  : [STMT_PRINT] $s hello
+@2  : print $s hello
 [RESULT] : hello;
 [PASS]
 
@@ -396,11 +396,11 @@ SOURCE: var x; print x;
 =================
 [EXPR_VAR] $x 
 ==== Program [2 statements] ====
-@1  : [STMT_VAR] x = [NULL_EXPR]@2  : [STMT_PRINT] $x 
+@1  : [STMT_VAR] x = [NULL_EXPR]@2  : print $x 
 =================
    define x = nil
 @1  : [STMT_VAR] x = [NULL_EXPR]   [EVAL_VAR] $x nil
-@2  : [STMT_PRINT] $x nil
+@2  : print $x nil
 [RESULT] : nil;
 [PASS]
 
@@ -410,12 +410,12 @@ SOURCE: var y = true; print y;
 [EXPR_VAR] $y 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] y = true
-@2  : [STMT_PRINT] $y 
+@2  : print $y 
 =================
    define y = true
 @1  : [STMT_VAR] y = true
    [EVAL_VAR] $y true
-@2  : [STMT_PRINT] $y true
+@2  : print $y true
 [RESULT] : true;
 [PASS]
 
@@ -427,14 +427,14 @@ SOURCE: var c = 10; var d = 5; print c;
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] c = 10
 @2  : [STMT_VAR] d = 5
-@3  : [STMT_PRINT] $c 
+@3  : print $c 
 =================
    define c = 10
 @1  : [STMT_VAR] c = 10
    define d = 5
 @2  : [STMT_VAR] d = 5
    [EVAL_VAR] $c 10
-@3  : [STMT_PRINT] $c 10
+@3  : print $c 10
 [RESULT] : 10;
 [PASS]
 
@@ -443,19 +443,20 @@ SOURCE: var c = 10; c = 20; print c;
 [EXPR_LITERAL] 10
 [EXPR_VAR] $c 
 [EXPR_LITERAL] 20
-[EXPR_ASSIGN] c = 20
+[EXPR_ASSIGN] c = 
 [EXPR_VAR] $c 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] c = 10
-@2  : [STMT_EXPR] c = 20
-@3  : [STMT_PRINT] $c 
+@2  : [STMT_EXPR] c = 
+@3  : print $c 
 =================
    define c = 10
 @1  : [STMT_VAR] c = 10
-   [EVAL_ASSIGN] c = 2020
-@2  : [STMT_EXPR] c = 2020
+   assign c = 20
+   [EVAL_ASSIGN] c = 20
+@2  : [STMT_EXPR] c = 20
    [EVAL_VAR] $c 20
-@3  : [STMT_PRINT] $c 20
+@3  : print $c 20
 [RESULT] : 20;
 [PASS]
 
@@ -464,15 +465,16 @@ SOURCE: var a = 1; print a = 2;
 [EXPR_LITERAL] 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
-[EXPR_ASSIGN] a = 2
+[EXPR_ASSIGN] a = 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_PRINT] a = 2
+@2  : print a = 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-   [EVAL_ASSIGN] a = 22
-@2  : [STMT_PRINT] a = 22
+   assign a = 2
+   [EVAL_ASSIGN] a = 2
+@2  : print a = 2
 [RESULT] : 2;
 [PASS]
 
@@ -492,9 +494,7 @@ Resolve error. No execution
 SOURCE: {}
 =================
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
 =================
-BLOCK
 [RESULT] : 
 [INFO] no expected output
 
@@ -505,20 +505,22 @@ SOURCE: var a = 0; var b = 0; print a = b = 3;
 [EXPR_VAR] $a 
 [EXPR_VAR] $b 
 [EXPR_LITERAL] 3
-[EXPR_ASSIGN] b = 3
-[EXPR_ASSIGN] a = b = 3
+[EXPR_ASSIGN] b = 
+[EXPR_ASSIGN] a = 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] a = 0
 @2  : [STMT_VAR] b = 0
-@3  : [STMT_PRINT] a = b = 3
+@3  : print a = 
 =================
    define a = 0
 @1  : [STMT_VAR] a = 0
    define b = 0
 @2  : [STMT_VAR] b = 0
-      [EVAL_ASSIGN] b = 33
-   [EVAL_ASSIGN] a = 3b = 3
-@3  : [STMT_PRINT] a = 3b = 3
+   assign b = 3
+      [EVAL_ASSIGN] b = 3
+   assign a = 3
+   [EVAL_ASSIGN] a = 3
+@3  : print a = 3
 [RESULT] : 3;
 [PASS]
 
@@ -527,20 +529,21 @@ SOURCE: var a = 1; print (a = 2) + 3;
 [EXPR_LITERAL] 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
-[EXPR_ASSIGN] a = 2
-[EXPR_GROUP]  (GROUPa = 2)
+[EXPR_ASSIGN] a = 
+[EXPR_GROUP]  (GROUPa = )
 [EXPR_LITERAL] 3
-[EXPR_BINARY]  ( (GROUPa = 2)+ 3)
+[EXPR_BINARY]  ( (GROUPa = )+ 3)
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_PRINT]  ( (GROUPa = 2)+ 3)
+@2  : print  ( (GROUPa = )+ 3)
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-         [EVAL_ASSIGN] a = 22
-      [EVAL_GROUP] 2 (GROUPa = 2)
-   [EVAL_BINARY] 5 ( (GROUPa = 2)+ 3)
-@2  : [STMT_PRINT] 5 ( (GROUPa = 2)+ 3)
+   assign a = 2
+         [EVAL_ASSIGN] a = 2
+      [EVAL_GROUP] 2 (GROUPa = )
+   [EVAL_BINARY] 5 ( (GROUPa = )+ 3)
+@2  : print 5 ( (GROUPa = )+ 3)
 [RESULT] : 5;
 [PASS]
 
@@ -551,16 +554,17 @@ SOURCE: var a = 1; print a = 2 == 2;
 [EXPR_LITERAL] 2
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  (2== 2)
-[EXPR_ASSIGN] a =  (2== 2)
+[EXPR_ASSIGN] a = 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_PRINT] a =  (2== 2)
+@2  : print a = 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
       [EVAL_BINARY] true (2== 2)
-   [EVAL_ASSIGN] a = true (2== 2)
-@2  : [STMT_PRINT] a = true (2== 2)
+   assign a = true
+   [EVAL_ASSIGN] a = true
+@2  : print a = true
 [RESULT] : true;
 [PASS]
 
@@ -569,15 +573,13 @@ SOURCE: { var a = 1; print a; }
 [EXPR_LITERAL] 1
 [EXPR_VAR] $a 
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
    @2  : [STMT_VAR] a = 1
-   @3  : [STMT_PRINT] $a 
+   @3  : print $a 
 =================
-BLOCK
          define a = 1
 @2  : [STMT_VAR] a = 1
       [EVAL_VAR] $a 1
-@3  : [STMT_PRINT] $a 1
+@3  : print $a 1
 [RESULT] : 1;
 [PASS]
 
@@ -587,14 +589,12 @@ SOURCE: var a = 1; { print a; }
 [EXPR_VAR] $a 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_BLOCK]
-   @3  : [STMT_PRINT] $a 
+   @3  : print $a 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-BLOCK
       [EVAL_VAR] $a 1
-@3  : [STMT_PRINT] $a 1
+@3  : print $a 1
 [RESULT] : 1;
 [PASS]
 
@@ -606,20 +606,18 @@ SOURCE: var a = 1; { var a = 2; print a; } print a;
 [EXPR_VAR] $a 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_BLOCK]
    @3  : [STMT_VAR] a = 2
-   @4  : [STMT_PRINT] $a 
-@5  : [STMT_PRINT] $a 
+   @4  : print $a 
+@5  : print $a 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-BLOCK
          define a = 2
 @3  : [STMT_VAR] a = 2
       [EVAL_VAR] $a 2
-@4  : [STMT_PRINT] $a 2
+@4  : print $a 2
    [EVAL_VAR] $a 1
-@5  : [STMT_PRINT] $a 1
+@5  : print $a 1
 [RESULT] : 2;1;
 [PASS]
 
@@ -628,21 +626,20 @@ SOURCE: var a = 1; { a = 2; } print a;
 [EXPR_LITERAL] 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
-[EXPR_ASSIGN] a = 2
+[EXPR_ASSIGN] a = 
 [EXPR_VAR] $a 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_BLOCK]
-   @3  : [STMT_EXPR] a = 2
-@4  : [STMT_PRINT] $a 
+   @3  : [STMT_EXPR] a = 
+@4  : print $a 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-BLOCK
-      [EVAL_ASSIGN] a = 22
-@3  : [STMT_EXPR] a = 22
+         assign a = 2
+   [EVAL_ASSIGN] a = 2
+@3  : [STMT_EXPR] a = 2
    [EVAL_VAR] $a 2
-@4  : [STMT_PRINT] $a 2
+@4  : print $a 2
 [RESULT] : 2;
 [PASS]
 
@@ -652,24 +649,22 @@ SOURCE: var a = 1; { var a = 2; a = 3; } print a;
 [EXPR_LITERAL] 2
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 3
-[EXPR_ASSIGN] a = 3
+[EXPR_ASSIGN] a = 
 [EXPR_VAR] $a 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] a = 1
-@2  : [STMT_BLOCK]
    @3  : [STMT_VAR] a = 2
-   @4  : [STMT_EXPR] a = 3
-@5  : [STMT_PRINT] $a 
+   @4  : [STMT_EXPR] a = 
+@5  : print $a 
 =================
    define a = 1
 @1  : [STMT_VAR] a = 1
-BLOCK
          define a = 2
 @3  : [STMT_VAR] a = 2
-      [EVAL_ASSIGN] a = 33
-@4  : [STMT_EXPR] a = 33
+      [EVAL_ASSIGN] a = 3
+@4  : [STMT_EXPR] a = 3
    [EVAL_VAR] $a 1
-@5  : [STMT_PRINT] $a 1
+@5  : print $a 1
 [RESULT] : 1;
 [PASS]
 
@@ -683,25 +678,21 @@ SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
 ==== Program [1 statements] ====
 @1  : [STMT_IF]
    condition:
-      false
+   false
    then:
-      @2  : [STMT_BLOCK]
-         @3  : [STMT_PRINT] 1
+      @3  : print 1
    else:
-      @4  : [STMT_IF]
-         condition:
-            false
-         then:
-            @5  : [STMT_BLOCK]
-               @6  : [STMT_PRINT] 2
-         else:
-            @7  : [STMT_BLOCK]
-               @8  : [STMT_PRINT] 3
+   @4  : [STMT_IF]
+      condition:
+      false
+      then:
+         @6  : print 2
+      else:
+         @8  : print 3
 =================
 IF
    IF
-      BLOCK
-         @8  : [STMT_PRINT] 3
+               @8  : print 3
 [RESULT] : 3;
 [PASS]
 
@@ -716,47 +707,46 @@ SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_WHILE]
    condition:
-       ($i < 3)
+    ($i < 3)
    body:
-      @3  : [STMT_BLOCK]
-         @4  : [STMT_PRINT] $i 
-         @5  : [STMT_EXPR] i =  ($i + 1)
+      @4  : print $i 
+      @5  : [STMT_EXPR] i = 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
 WHILE
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 0
-@4  : [STMT_PRINT] $i 0
+            [EVAL_VAR] $i 0
+@4  : print $i 0
                [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@5  : [STMT_EXPR] i = 1 ($i + 1)
+         assign i = 1
+   [EVAL_ASSIGN] i = 1
+@5  : [STMT_EXPR] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 1
-@4  : [STMT_PRINT] $i 1
+            [EVAL_VAR] $i 1
+@4  : print $i 1
                [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@5  : [STMT_EXPR] i = 2 ($i + 1)
+         assign i = 2
+   [EVAL_ASSIGN] i = 2
+@5  : [STMT_EXPR] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 2
-@4  : [STMT_PRINT] $i 2
+            [EVAL_VAR] $i 2
+@4  : print $i 2
                [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
-@5  : [STMT_EXPR] i = 3 ($i + 1)
+         assign i = 3
+   [EVAL_ASSIGN] i = 3
+@5  : [STMT_EXPR] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
@@ -768,9 +758,9 @@ SOURCE: print "hi" or 2;
 [EXPR_LITERAL] 2
 [EXPR_LOGICAL]  hi OR 2
 ==== Program [1 statements] ====
-@1  : [STMT_PRINT]  hi OR 2
+@1  : print  hi OR 2
 =================
-@1  : [STMT_PRINT] hi hi OR 2
+@1  : print hi hi OR 2
 [RESULT] : hi;
 [PASS]
 
@@ -780,10 +770,10 @@ SOURCE: print nil or "yes";
 [EXPR_LITERAL] yes
 [EXPR_LOGICAL]  nil OR yes
 ==== Program [1 statements] ====
-@1  : [STMT_PRINT]  nil OR yes
+@1  : print  nil OR yes
 =================
    [EVAL_LOGICAL] yes nil OR yes
-@1  : [STMT_PRINT] yes nil OR yes
+@1  : print yes nil OR yes
 [RESULT] : yes;
 [PASS]
 
@@ -806,11 +796,11 @@ SOURCE: print (true and 123);
 [EXPR_LOGICAL]  true AND 123
 [EXPR_GROUP]  (GROUP true AND 123)
 ==== Program [1 statements] ====
-@1  : [STMT_PRINT]  (GROUP true AND 123)
+@1  : print  (GROUP true AND 123)
 =================
       [EVAL_LOGICAL] 123 true AND 123
    [EVAL_GROUP] 123 (GROUP true AND 123)
-@1  : [STMT_PRINT] 123 (GROUP true AND 123)
+@1  : print 123 (GROUP true AND 123)
 [RESULT] : 123;
 [PASS]
 
@@ -820,9 +810,9 @@ SOURCE: print nil and boom;
 [EXPR_VAR] $boom 
 [EXPR_LOGICAL]  nil AND $boom 
 ==== Program [1 statements] ====
-@1  : [STMT_PRINT]  nil AND $boom 
+@1  : print  nil AND $boom 
 =================
-@1  : [STMT_PRINT] nil nil AND $boom 
+@1  : print nil nil AND $boom 
 [RESULT] : nil;
 [PASS]
 
@@ -836,48 +826,42 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
    @1  : [STMT_VAR] i = 0
    @1  : [STMT_FOR]
       condition:
-          ($i < 3)
+       ($i < 3)
       increment:
-         i =  ($i + 1)
+      i = 
       body:
-         @2  : [STMT_BLOCK]
-            @3  : [STMT_PRINT] $i 
+         @3  : print $i 
 =================
-BLOCK
          define i = 0
 @1  : [STMT_VAR] i = 0
    FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 0
-@3  : [STMT_PRINT] $i 0
+                  [EVAL_VAR] $i 0
+@3  : print $i 0
          [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 1
-@3  : [STMT_PRINT] $i 1
+                  [EVAL_VAR] $i 1
+@3  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 2
-@3  : [STMT_PRINT] $i 2
+                  [EVAL_VAR] $i 2
+@3  : print $i 2
          [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
@@ -888,7 +872,7 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 [EXPR_LITERAL] 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
-[EXPR_ASSIGN] i = 1
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 4
 [EXPR_BINARY]  ($i < 4)
@@ -896,51 +880,49 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] i = 0
-@2  : [STMT_BLOCK]
-   @2  : [STMT_EXPR] i = 1
+   @2  : [STMT_EXPR] i = 
    @2  : [STMT_FOR]
       condition:
-          ($i < 4)
+       ($i < 4)
       increment:
-         i =  ($i + 1)
+      i = 
       body:
-         @3  : [STMT_BLOCK]
-            @4  : [STMT_PRINT] $i 
+         @4  : print $i 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
-BLOCK
-      [EVAL_ASSIGN] i = 11
-@2  : [STMT_EXPR] i = 11
+         assign i = 1
+   [EVAL_ASSIGN] i = 1
+@2  : [STMT_EXPR] i = 1
    FOR
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-            [EVAL_VAR] $i 1
-@4  : [STMT_PRINT] $i 1
+                  [EVAL_VAR] $i 1
+@4  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+      assign i = 2
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-            [EVAL_VAR] $i 2
-@4  : [STMT_PRINT] $i 2
+                  [EVAL_VAR] $i 2
+@4  : print $i 2
          [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
+      assign i = 3
+   [EVAL_ASSIGN] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-            [EVAL_VAR] $i 3
-@4  : [STMT_PRINT] $i 3
+                  [EVAL_VAR] $i 3
+@4  : print $i 3
          [EVAL_VAR] $i 3
       [EVAL_BINARY] 4 ($i + 1)
-   [EVAL_ASSIGN] i = 4 ($i + 1)
+      assign i = 4
+   [EVAL_ASSIGN] i = 4
       [EVAL_VAR] $i 4
    [EVAL_BINARY] false ($i < 4)
 [RESULT] : 1;2;3;
@@ -956,46 +938,45 @@ SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_FOR]
    condition:
-       ($i < 3)
+    ($i < 3)
    increment:
-      i =  ($i + 1)
+   i = 
    body:
-      @2  : [STMT_BLOCK]
-         @3  : [STMT_PRINT] $i 
+      @3  : print $i 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
 FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 0
-@3  : [STMT_PRINT] $i 0
+            [EVAL_VAR] $i 0
+@3  : print $i 0
          [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
+   assign i = 1
+   [EVAL_ASSIGN] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 1
-@3  : [STMT_PRINT] $i 1
+            [EVAL_VAR] $i 1
+@3  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   assign i = 2
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-         [EVAL_VAR] $i 2
-@3  : [STMT_PRINT] $i 2
+            [EVAL_VAR] $i 2
+@3  : print $i 2
          [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
+   assign i = 3
+   [EVAL_ASSIGN] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
@@ -1012,51 +993,45 @@ SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
    @1  : [STMT_VAR] i = 0
    @1  : [STMT_FOR]
       condition:
-          ($i < 3)
+       ($i < 3)
       increment:
-         (none)
+      (none)
       body:
-         @2  : [STMT_BLOCK]
-            @3  : [STMT_PRINT] $i 
-            @4  : [STMT_EXPR] i =  ($i + 1)
+         @3  : print $i 
+         @4  : [STMT_EXPR] i = 
 =================
-BLOCK
          define i = 0
 @1  : [STMT_VAR] i = 0
    FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 0
-@3  : [STMT_PRINT] $i 0
+                  [EVAL_VAR] $i 0
+@3  : print $i 0
                   [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@4  : [STMT_EXPR] i = 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1
+@4  : [STMT_EXPR] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 1
-@3  : [STMT_PRINT] $i 1
+                  [EVAL_VAR] $i 1
+@3  : print $i 1
                   [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@4  : [STMT_EXPR] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
+@4  : [STMT_EXPR] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 3)
-      BLOCK
-            [EVAL_VAR] $i 2
-@3  : [STMT_PRINT] $i 2
+                  [EVAL_VAR] $i 2
+@3  : print $i 2
                   [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
-@4  : [STMT_EXPR] i = 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3
+@4  : [STMT_EXPR] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i < 3)
 [RESULT] : 0;1;2;
@@ -1073,49 +1048,44 @@ SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] i = 100
-@2  : [STMT_BLOCK]
    @2  : [STMT_VAR] i = 0
    @2  : [STMT_FOR]
       condition:
-          ($i < 2)
+       ($i < 2)
       increment:
-         i =  ($i + 1)
+      i = 
       body:
-         @3  : [STMT_BLOCK]
-            @4  : [STMT_PRINT] $i 
-@5  : [STMT_PRINT] $i 
+         @4  : print $i 
+@5  : print $i 
 =================
    define i = 100
 @1  : [STMT_VAR] i = 100
-BLOCK
          define i = 0
 @2  : [STMT_VAR] i = 0
    FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 2)
-      BLOCK
-            [EVAL_VAR] $i 0
-@4  : [STMT_PRINT] $i 0
+                  [EVAL_VAR] $i 0
+@4  : print $i 0
          [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 2)
-      BLOCK
-            [EVAL_VAR] $i 1
-@4  : [STMT_PRINT] $i 1
+                  [EVAL_VAR] $i 1
+@4  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] false ($i < 2)
    [EVAL_VAR] $i 100
-@5  : [STMT_PRINT] $i 100
+@5  : print $i 100
 [RESULT] : 0;1;100;
 [PASS]
 
@@ -1129,7 +1099,7 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_LITERAL] 0
 [EXPR_VAR] $j 
 [EXPR_LITERAL] 2
@@ -1138,99 +1108,86 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 [EXPR_VAR] $j 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($j + 1)
-[EXPR_ASSIGN] j =  ($j + 1)
+[EXPR_ASSIGN] j = 
 [EXPR_VAR] $i 
 [EXPR_VAR] $j 
 [EXPR_BINARY]  ($i + $j )
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
    @1  : [STMT_VAR] i = 0
    @1  : [STMT_FOR]
       condition:
-          ($i < 2)
+       ($i < 2)
       increment:
-         i =  ($i + 1)
+      i = 
       body:
-         @2  : [STMT_BLOCK]
-            @3  : [STMT_BLOCK]
-               @3  : [STMT_VAR] j = 0
-               @3  : [STMT_FOR]
-                  condition:
-                      ($j < 2)
-                  increment:
-                     j =  ($j + 1)
-                  body:
-                     @4  : [STMT_BLOCK]
-                        @5  : [STMT_PRINT]  ($i + $j )
+            @3  : [STMT_VAR] j = 0
+            @3  : [STMT_FOR]
+               condition:
+                ($j < 2)
+               increment:
+               j = 
+               body:
+                  @5  : print  ($i + $j )
 =================
-BLOCK
          define i = 0
 @1  : [STMT_VAR] i = 0
    FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 2)
-      BLOCK
-         BLOCK
-                           define j = 0
+                                          define j = 0
 @3  : [STMT_VAR] j = 0
             FOR
       [EVAL_VAR] $j 0
    [EVAL_BINARY] true ($j < 2)
-               BLOCK
-                        [EVAL_VAR] $i 0
+                                       [EVAL_VAR] $i 0
       [EVAL_VAR] $j 0
    [EVAL_BINARY] 0 ($i + $j )
-@5  : [STMT_PRINT] 0 ($i + $j )
+@5  : print 0 ($i + $j )
          [EVAL_VAR] $j 0
       [EVAL_BINARY] 1 ($j + 1)
-   [EVAL_ASSIGN] j = 1 ($j + 1)
+   [EVAL_ASSIGN] j = 1
       [EVAL_VAR] $j 1
    [EVAL_BINARY] true ($j < 2)
-               BLOCK
-                        [EVAL_VAR] $i 0
+                                       [EVAL_VAR] $i 0
       [EVAL_VAR] $j 1
    [EVAL_BINARY] 1 ($i + $j )
-@5  : [STMT_PRINT] 1 ($i + $j )
+@5  : print 1 ($i + $j )
          [EVAL_VAR] $j 1
       [EVAL_BINARY] 2 ($j + 1)
-   [EVAL_ASSIGN] j = 2 ($j + 1)
+   [EVAL_ASSIGN] j = 2
       [EVAL_VAR] $j 2
    [EVAL_BINARY] false ($j < 2)
          [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 2)
-      BLOCK
-         BLOCK
-                           define j = 0
+                                          define j = 0
 @3  : [STMT_VAR] j = 0
             FOR
       [EVAL_VAR] $j 0
    [EVAL_BINARY] true ($j < 2)
-               BLOCK
-                        [EVAL_VAR] $i 1
+                                       [EVAL_VAR] $i 1
       [EVAL_VAR] $j 0
    [EVAL_BINARY] 1 ($i + $j )
-@5  : [STMT_PRINT] 1 ($i + $j )
+@5  : print 1 ($i + $j )
          [EVAL_VAR] $j 0
       [EVAL_BINARY] 1 ($j + 1)
-   [EVAL_ASSIGN] j = 1 ($j + 1)
+   [EVAL_ASSIGN] j = 1
       [EVAL_VAR] $j 1
    [EVAL_BINARY] true ($j < 2)
-               BLOCK
-                        [EVAL_VAR] $i 1
+                                       [EVAL_VAR] $i 1
       [EVAL_VAR] $j 1
    [EVAL_BINARY] 2 ($i + $j )
-@5  : [STMT_PRINT] 2 ($i + $j )
+@5  : print 2 ($i + $j )
          [EVAL_VAR] $j 1
       [EVAL_BINARY] 2 ($j + 1)
-   [EVAL_ASSIGN] j = 2 ($j + 1)
+   [EVAL_ASSIGN] j = 2
       [EVAL_VAR] $j 2
    [EVAL_BINARY] false ($j < 2)
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;1;2;
@@ -1246,13 +1203,13 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [line 1] Error at 'i': Expect '{' after while condition.
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 10
 [EXPR_BINARY]  ($i + 10)
-[EXPR_ASSIGN] i =  ($i + 10)
+[EXPR_ASSIGN] i = 
 ### SYNCHRONIZE ###
 [line 1] Error at EOF: Expect '}' after block.
 ### SYNCHRONIZE ###
@@ -1273,42 +1230,35 @@ SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
-   @2  : [STMT_BLOCK]
       @2  : [STMT_VAR] i = 0
       @2  : [STMT_FOR]
          condition:
-             ($i < 2)
+          ($i < 2)
          increment:
-            i =  ($i + 1)
+         i = 
          body:
-            @3  : [STMT_BLOCK]
-               @4  : [STMT_PRINT] $i 
+            @4  : print $i 
 =================
-BLOCK
-   BLOCK
-               define i = 0
+                  define i = 0
 @2  : [STMT_VAR] i = 0
       FOR
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 2)
-         BLOCK
-               [EVAL_VAR] $i 0
-@4  : [STMT_PRINT] $i 0
+                        [EVAL_VAR] $i 0
+@4  : print $i 0
          [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
+   [EVAL_ASSIGN] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 2)
-         BLOCK
-               [EVAL_VAR] $i 1
-@4  : [STMT_PRINT] $i 1
+                        [EVAL_VAR] $i 1
+@4  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;
@@ -1322,7 +1272,7 @@ SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i == 3)
@@ -1330,55 +1280,52 @@ SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_FOR]
    condition:
-      (none)
+   (none)
    increment:
-      (none)
+   (none)
    body:
-      @2  : [STMT_BLOCK]
-         @3  : [STMT_PRINT] $i 
-         @4  : [STMT_EXPR] i =  ($i + 1)
-         @5  : [STMT_IF]
-            condition:
-                ($i == 3)
-            then:
-               @6  : [STMT_BLOCK]
-                  @7  : [STMT_BREAK]
+      @3  : print $i 
+      @4  : [STMT_EXPR] i = 
+      @5  : [STMT_IF]
+         condition:
+          ($i == 3)
+         then:
+            @7  : [STMT_BREAK]
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
 FOR
-   BLOCK
-         [EVAL_VAR] $i 0
-@3  : [STMT_PRINT] $i 0
+            [EVAL_VAR] $i 0
+@3  : print $i 0
                [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@4  : [STMT_EXPR] i = 1 ($i + 1)
+         assign i = 1
+   [EVAL_ASSIGN] i = 1
+@4  : [STMT_EXPR] i = 1
       IF
       [EVAL_VAR] $i 1
    [EVAL_BINARY] false ($i == 3)
-   BLOCK
-         [EVAL_VAR] $i 1
-@3  : [STMT_PRINT] $i 1
+            [EVAL_VAR] $i 1
+@3  : print $i 1
                [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@4  : [STMT_EXPR] i = 2 ($i + 1)
+         assign i = 2
+   [EVAL_ASSIGN] i = 2
+@4  : [STMT_EXPR] i = 2
       IF
       [EVAL_VAR] $i 2
    [EVAL_BINARY] false ($i == 3)
-   BLOCK
-         [EVAL_VAR] $i 2
-@3  : [STMT_PRINT] $i 2
+            [EVAL_VAR] $i 2
+@3  : print $i 2
                [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
-@4  : [STMT_EXPR] i = 3 ($i + 1)
+         assign i = 3
+   [EVAL_ASSIGN] i = 3
+@4  : [STMT_EXPR] i = 3
       IF
       [EVAL_VAR] $i 3
    [EVAL_BINARY] true ($i == 3)
-         BLOCK
-            BREAK
+                     BREAK
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -1391,31 +1338,29 @@ SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     prin
 [EXPR_BINARY]  ($i < 2)
 [EXPR_VAR] $j 
 [EXPR_LITERAL] 0
-[EXPR_ASSIGN] j = 0
+[EXPR_ASSIGN] j = 
 [EXPR_LITERAL] true
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 ==== Program [3 statements] ====
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_VAR] j = 0
 @3  : [STMT_WHILE]
    condition:
-       ($i < 2)
+    ($i < 2)
    body:
-      @4  : [STMT_BLOCK]
-         @5  : [STMT_EXPR] j = 0
-         @6  : [STMT_WHILE]
-            condition:
-               true
-            body:
-               @7  : [STMT_BLOCK]
-                  @8  : [STMT_PRINT] $i 
-                  @9  : [STMT_BREAK]
-         @10 : [STMT_EXPR] i =  ($i + 1)
+      @5  : [STMT_EXPR] j = 
+      @6  : [STMT_WHILE]
+         condition:
+         true
+         body:
+            @8  : print $i 
+            @9  : [STMT_BREAK]
+      @10 : [STMT_EXPR] i = 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
@@ -1424,32 +1369,32 @@ SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     prin
 WHILE
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 2)
-   BLOCK
-         [EVAL_ASSIGN] j = 00
-@5  : [STMT_EXPR] j = 00
+                  assign j = 0
+   [EVAL_ASSIGN] j = 0
+@5  : [STMT_EXPR] j = 0
       WHILE
-         BLOCK
-               [EVAL_VAR] $i 0
-@8  : [STMT_PRINT] $i 0
+                        [EVAL_VAR] $i 0
+@8  : print $i 0
             BREAK
                [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@10 : [STMT_EXPR] i = 1 ($i + 1)
+         assign i = 1
+   [EVAL_ASSIGN] i = 1
+@10 : [STMT_EXPR] i = 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 2)
-   BLOCK
-         [EVAL_ASSIGN] j = 00
-@5  : [STMT_EXPR] j = 00
+                  assign j = 0
+   [EVAL_ASSIGN] j = 0
+@5  : [STMT_EXPR] j = 0
       WHILE
-         BLOCK
-               [EVAL_VAR] $i 1
-@8  : [STMT_PRINT] $i 1
+                        [EVAL_VAR] $i 1
+@8  : print $i 1
             BREAK
                [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@10 : [STMT_EXPR] i = 2 ($i + 1)
+         assign i = 2
+   [EVAL_ASSIGN] i = 2
+@10 : [STMT_EXPR] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] false ($i < 2)
 [RESULT] : 0;1;
@@ -1467,56 +1412,48 @@ SOURCE: var i = 0; while (true) {   {     if (i == 2) {break;}   }   print i;   
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_WHILE]
    condition:
-      true
+   true
    body:
-      @3  : [STMT_BLOCK]
-         @4  : [STMT_BLOCK]
-            @5  : [STMT_IF]
-               condition:
-                   ($i == 2)
-               then:
-                  @6  : [STMT_BLOCK]
-                     @7  : [STMT_BREAK]
-         @8  : [STMT_PRINT] $i 
-         @9  : [STMT_EXPR] i =  ($i + 1)
+         @5  : [STMT_IF]
+            condition:
+             ($i == 2)
+            then:
+               @7  : [STMT_BREAK]
+      @8  : print $i 
+      @9  : [STMT_EXPR] i = 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
 WHILE
-   BLOCK
-      BLOCK
-         IF
+                  IF
       [EVAL_VAR] $i 0
    [EVAL_BINARY] false ($i == 2)
          [EVAL_VAR] $i 0
-@8  : [STMT_PRINT] $i 0
+@8  : print $i 0
                [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@9  : [STMT_EXPR] i = 1 ($i + 1)
-   BLOCK
-      BLOCK
-         IF
+         assign i = 1
+   [EVAL_ASSIGN] i = 1
+@9  : [STMT_EXPR] i = 1
+                  IF
       [EVAL_VAR] $i 1
    [EVAL_BINARY] false ($i == 2)
          [EVAL_VAR] $i 1
-@8  : [STMT_PRINT] $i 1
+@8  : print $i 1
                [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@9  : [STMT_EXPR] i = 2 ($i + 1)
-   BLOCK
-      BLOCK
-         IF
+         assign i = 2
+   [EVAL_ASSIGN] i = 2
+@9  : [STMT_EXPR] i = 2
+                  IF
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i == 2)
-            BLOCK
-               BREAK
+                           BREAK
 [RESULT] : 0;1;
 [PASS]
 
@@ -1530,7 +1467,7 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i == 2)
@@ -1539,61 +1476,54 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 @1  : [STMT_VAR] i = 0
 @2  : [STMT_WHILE]
    condition:
-       ($i < 3)
+    ($i < 3)
    body:
-      @3  : [STMT_BLOCK]
-         @4  : [STMT_BLOCK]
-            @5  : [STMT_EXPR] i =  ($i + 1)
-            @6  : [STMT_IF]
-               condition:
-                   ($i == 2)
-               then:
-                  @7  : [STMT_BLOCK]
-                     @8  : [STMT_CONTINUE]
-            @9  : [STMT_PRINT] $i 
+         @5  : [STMT_EXPR] i = 
+         @6  : [STMT_IF]
+            condition:
+             ($i == 2)
+            then:
+               @8  : [STMT_CONTINUE]
+         @9  : print $i 
 =================
    define i = 0
 @1  : [STMT_VAR] i = 0
 WHILE
       [EVAL_VAR] $i 0
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-      BLOCK
-                  [EVAL_VAR] $i 0
+                           [EVAL_VAR] $i 0
       [EVAL_BINARY] 1 ($i + 1)
-   [EVAL_ASSIGN] i = 1 ($i + 1)
-@5  : [STMT_EXPR] i = 1 ($i + 1)
+            assign i = 1
+   [EVAL_ASSIGN] i = 1
+@5  : [STMT_EXPR] i = 1
          IF
       [EVAL_VAR] $i 1
    [EVAL_BINARY] false ($i == 2)
             [EVAL_VAR] $i 1
-@9  : [STMT_PRINT] $i 1
+@9  : print $i 1
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-      BLOCK
-                  [EVAL_VAR] $i 1
+                           [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
-@5  : [STMT_EXPR] i = 2 ($i + 1)
+            assign i = 2
+   [EVAL_ASSIGN] i = 2
+@5  : [STMT_EXPR] i = 2
          IF
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i == 2)
-            BLOCK
-               CONTINUE
+                           CONTINUE
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 3)
-   BLOCK
-      BLOCK
-                  [EVAL_VAR] $i 2
+                           [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
-@5  : [STMT_EXPR] i = 3 ($i + 1)
+            assign i = 3
+   [EVAL_ASSIGN] i = 3
+@5  : [STMT_EXPR] i = 3
          IF
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i == 2)
             [EVAL_VAR] $i 3
-@9  : [STMT_PRINT] $i 3
+@9  : print $i 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i < 3)
 [RESULT] : 1;3;
@@ -1609,66 +1539,58 @@ SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i == 2)
 [EXPR_VAR] $i 
 ==== Program [1 statements] ====
-@1  : [STMT_BLOCK]
    @1  : [STMT_VAR] i = 1
    @1  : [STMT_FOR]
       condition:
-          ($i < 4)
+       ($i < 4)
       increment:
-         i =  ($i + 1)
+      i = 
       body:
-         @2  : [STMT_BLOCK]
-            @3  : [STMT_IF]
-               condition:
-                   ($i == 2)
-               then:
-                  @4  : [STMT_BLOCK]
-                     @5  : [STMT_CONTINUE]
-            @6  : [STMT_PRINT] $i 
+         @3  : [STMT_IF]
+            condition:
+             ($i == 2)
+            then:
+               @5  : [STMT_CONTINUE]
+         @6  : print $i 
 =================
-BLOCK
          define i = 1
 @1  : [STMT_VAR] i = 1
    FOR
       [EVAL_VAR] $i 1
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-         IF
+               IF
       [EVAL_VAR] $i 1
    [EVAL_BINARY] false ($i == 2)
             [EVAL_VAR] $i 1
-@6  : [STMT_PRINT] $i 1
+@6  : print $i 1
          [EVAL_VAR] $i 1
       [EVAL_BINARY] 2 ($i + 1)
-   [EVAL_ASSIGN] i = 2 ($i + 1)
+   [EVAL_ASSIGN] i = 2
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-         IF
+               IF
       [EVAL_VAR] $i 2
    [EVAL_BINARY] true ($i == 2)
-            BLOCK
-               CONTINUE
+                           CONTINUE
          [EVAL_VAR] $i 2
       [EVAL_BINARY] 3 ($i + 1)
-   [EVAL_ASSIGN] i = 3 ($i + 1)
+   [EVAL_ASSIGN] i = 3
       [EVAL_VAR] $i 3
    [EVAL_BINARY] true ($i < 4)
-      BLOCK
-         IF
+               IF
       [EVAL_VAR] $i 3
    [EVAL_BINARY] false ($i == 2)
             [EVAL_VAR] $i 3
-@6  : [STMT_PRINT] $i 3
+@6  : print $i 3
          [EVAL_VAR] $i 3
       [EVAL_BINARY] 4 ($i + 1)
-   [EVAL_ASSIGN] i = 4 ($i + 1)
+   [EVAL_ASSIGN] i = 4
       [EVAL_VAR] $i 4
    [EVAL_BINARY] false ($i < 4)
 [RESULT] : 1;3;
@@ -1681,15 +1603,12 @@ SOURCE: fun hello() { print 123; } hello();
 [EXPR_CALL] $hello ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] hello ()
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_PRINT] 123
+      @2  : print 123
 @3  : [STMT_EXPR] $hello ()
 =================
-FUNCTION
    define hello = <fn hello>
       [EVAL_VAR] $hello <fn hello>
-   BLOCK
-      @2  : [STMT_PRINT] 123
+         @2  : print 123
 @3  : [STMT_EXPR] $hello ()
 [RESULT] : 123;
 [PASS]
@@ -1705,20 +1624,17 @@ SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 [EXPR_CALL] $add (2,3)
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] add (a,b)
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_PRINT]  ($a + $b )
+      @2  : print  ($a + $b )
 @3  : [STMT_EXPR] $add (2,3)
 =================
-FUNCTION
    define add = <fn add>
       [EVAL_VAR] $add <fn add>
    define a = 2
    define b = 3
-   BLOCK
-               [EVAL_VAR] $a 2
+                  [EVAL_VAR] $a 2
          [EVAL_VAR] $b 3
       [EVAL_BINARY] 5 ($a + $b )
-@2  : [STMT_PRINT] 5 ($a + $b )
+@2  : print 5 ($a + $b )
 @3  : [STMT_EXPR] $add (2,3)
 [RESULT] : 5;
 [PASS]
@@ -1733,26 +1649,20 @@ SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
 [EXPR_CALL] $outer ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] outer ()
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_VAR] x = 10
-         @1  : [STMT_FUNCTION] inner ()
-               @3  : [STMT_BLOCK]
-                  @4  : [STMT_PRINT] $x 
-         @5  : [STMT_EXPR] $inner ()
+      @2  : [STMT_VAR] x = 10
+      @1  : [STMT_FUNCTION] inner ()
+            @4  : print $x 
+      @5  : [STMT_EXPR] $inner ()
 @6  : [STMT_EXPR] $outer ()
 =================
-FUNCTION
    define outer = <fn outer>
       [EVAL_VAR] $outer <fn outer>
-   BLOCK
-               define x = 10
+                  define x = 10
 @2  : [STMT_VAR] x = 10
-      FUNCTION
-         define inner = <fn inner>
+               define inner = <fn inner>
                [EVAL_VAR] $inner <fn inner>
-         BLOCK
-                     [EVAL_VAR] $x 10
-@4  : [STMT_PRINT] $x 10
+                              [EVAL_VAR] $x 10
+@4  : print $x 10
 @5  : [STMT_EXPR] $inner ()
 @6  : [STMT_EXPR] $outer ()
 [RESULT] : 10;
@@ -1766,17 +1676,14 @@ SOURCE: fun f() { return 123; print 0; } print f();
 [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] f ()
-      @1  : [STMT_BLOCK]
-         @1  : [STMT_RETURN]
-         @2  : [STMT_PRINT] 0
-@3  : [STMT_PRINT] $f ()
+      @1  : [STMT_RETURN]
+      @2  : print 0
+@3  : print $f ()
 =================
-FUNCTION
    define f = <fn f>
       [EVAL_VAR] $f <fn f>
-   BLOCK
-      RETURN 123
-@3  : [STMT_PRINT] $f ()
+         RETURN 123
+@3  : print $f ()
 [RESULT] : 123;
 [PASS]
 
@@ -1786,14 +1693,11 @@ SOURCE: fun f() {} print f();
 [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] f ()
-      @1  : [STMT_BLOCK]
-@2  : [STMT_PRINT] $f ()
+@2  : print $f ()
 =================
-FUNCTION
    define f = <fn f>
       [EVAL_VAR] $f <fn f>
-   BLOCK
-@2  : [STMT_PRINT] $f ()
+   @2  : print $f ()
 [RESULT] : nil;
 [PASS]
 
@@ -1806,24 +1710,19 @@ SOURCE: fun f() { if (true) {return 1;} return 2; } print f();
 [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] f ()
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_IF]
-            condition:
-               true
-            then:
-               @3  : [STMT_BLOCK]
-                  @1  : [STMT_RETURN]
-         @1  : [STMT_RETURN]
-@4  : [STMT_PRINT] $f ()
+      @2  : [STMT_IF]
+         condition:
+         true
+         then:
+            @1  : [STMT_RETURN]
+      @1  : [STMT_RETURN]
+@4  : print $f ()
 =================
-FUNCTION
    define f = <fn f>
       [EVAL_VAR] $f <fn f>
-   BLOCK
-      IF
-         BLOCK
-            RETURN 1
-@4  : [STMT_PRINT] $f ()
+         IF
+                     RETURN 1
+@4  : print $f ()
 [RESULT] : 1;
 [PASS]
 
@@ -1845,22 +1744,18 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 [EXPR_CALL] $fact (5)
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] fact (n)
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_IF]
-            condition:
-                ($n <= 1)
-            then:
-               @3  : [STMT_BLOCK]
-                  @1  : [STMT_RETURN]
-         @1  : [STMT_RETURN]
-@4  : [STMT_PRINT] $fact (5)
+      @2  : [STMT_IF]
+         condition:
+          ($n <= 1)
+         then:
+            @1  : [STMT_RETURN]
+      @1  : [STMT_RETURN]
+@4  : print $fact (5)
 =================
-FUNCTION
    define fact = <fn fact>
       [EVAL_VAR] $fact <fn fact>
    define n = 5
-   BLOCK
-      IF
+         IF
          [EVAL_VAR] $n 5
       [EVAL_BINARY] false ($n <= 1)
                [EVAL_VAR] $n 5
@@ -1868,8 +1763,7 @@ FUNCTION
                [EVAL_VAR] $n 5
             [EVAL_BINARY] 4 ($n - 1)
          define n = 4
-         BLOCK
-            IF
+                     IF
                [EVAL_VAR] $n 4
             [EVAL_BINARY] false ($n <= 1)
                            [EVAL_VAR] $n 4
@@ -1877,8 +1771,7 @@ FUNCTION
                      [EVAL_VAR] $n 4
                   [EVAL_BINARY] 3 ($n - 1)
                define n = 3
-               BLOCK
-                  IF
+                                 IF
                      [EVAL_VAR] $n 3
                   [EVAL_BINARY] false ($n <= 1)
                                        [EVAL_VAR] $n 3
@@ -1886,8 +1779,7 @@ FUNCTION
                            [EVAL_VAR] $n 3
                         [EVAL_BINARY] 2 ($n - 1)
                      define n = 2
-                     BLOCK
-                        IF
+                                             IF
                            [EVAL_VAR] $n 2
                         [EVAL_BINARY] false ($n <= 1)
                                                    [EVAL_VAR] $n 2
@@ -1895,12 +1787,10 @@ FUNCTION
                                  [EVAL_VAR] $n 2
                               [EVAL_BINARY] 1 ($n - 1)
                            define n = 1
-                           BLOCK
-                              IF
+                                                         IF
                                  [EVAL_VAR] $n 1
                               [EVAL_BINARY] true ($n <= 1)
-                                 BLOCK
-                                    RETURN 1
+                                                                     RETURN 1
                            [EVAL_BINARY] 2 ($n * $fact ( ($n - 1)))
 RETURN 2
                         [EVAL_BINARY] 6 ($n * $fact ( ($n - 1)))
@@ -1909,7 +1799,7 @@ RETURN 6
 RETURN 24
                   [EVAL_BINARY] 120 ($n * $fact ( ($n - 1)))
 RETURN 120
-@4  : [STMT_PRINT] $fact (5)
+@4  : print $fact (5)
 [RESULT] : 120;
 [PASS]
 
@@ -1920,7 +1810,7 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_BINARY]  ($i + 1)
-[EXPR_ASSIGN] i =  ($i + 1)
+[EXPR_ASSIGN] i = 
 [EXPR_VAR] $i 
 [EXPR_VAR] $count 
 [EXPR_VAR] $makeCounter 
@@ -1931,47 +1821,40 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 [EXPR_CALL] $c ()
 ==== Program [4 statements] ====
 @1  : [STMT_FUNCTION] makeCounter ()
-      @1  : [STMT_BLOCK]
-         @2  : [STMT_VAR] i = 0
-         @1  : [STMT_FUNCTION] count ()
-               @3  : [STMT_BLOCK]
-                  @4  : [STMT_EXPR] i =  ($i + 1)
-                  @1  : [STMT_RETURN]
-         @1  : [STMT_RETURN]
+      @2  : [STMT_VAR] i = 0
+      @1  : [STMT_FUNCTION] count ()
+            @4  : [STMT_EXPR] i = 
+            @1  : [STMT_RETURN]
+      @1  : [STMT_RETURN]
 @5  : [STMT_VAR] c = $makeCounter ()
-@6  : [STMT_PRINT] $c ()
-@7  : [STMT_PRINT] $c ()
+@6  : print $c ()
+@7  : print $c ()
 =================
-FUNCTION
    define makeCounter = <fn makeCounter>
       [EVAL_VAR] $makeCounter <fn makeCounter>
-   BLOCK
-               define i = 0
+                  define i = 0
 @2  : [STMT_VAR] i = 0
-      FUNCTION
-         define count = <fn count>
+               define count = <fn count>
             [EVAL_VAR] $count <fn count>
 RETURN <fn count>
       define c = <fn count>
 @5  : [STMT_VAR] c = $makeCounter ()
             [EVAL_VAR] $c <fn count>
-      BLOCK
-                        [EVAL_VAR] $i 0
+                              [EVAL_VAR] $i 0
             [EVAL_BINARY] 1 ($i + 1)
-         [EVAL_ASSIGN] i = 1 ($i + 1)
-@4  : [STMT_EXPR] i = 1 ($i + 1)
+         [EVAL_ASSIGN] i = 1
+@4  : [STMT_EXPR] i = 1
                   [EVAL_VAR] $i 1
 RETURN 1
-@6  : [STMT_PRINT] $c ()
+@6  : print $c ()
                   [EVAL_VAR] $c <fn count>
-         BLOCK
-                              [EVAL_VAR] $i 1
+                                       [EVAL_VAR] $i 1
                [EVAL_BINARY] 2 ($i + 1)
-            [EVAL_ASSIGN] i = 2 ($i + 1)
-@4  : [STMT_EXPR] i = 2 ($i + 1)
+            [EVAL_ASSIGN] i = 2
+@4  : [STMT_EXPR] i = 2
                         [EVAL_VAR] $i 2
 RETURN 2
-@7  : [STMT_PRINT] $c ()
+@7  : print $c ()
 [RESULT] : 1;2;
 [PASS]
 
@@ -1980,11 +1863,11 @@ SOURCE: print clock();
 [EXPR_VAR] $clock 
 [EXPR_CALL] $clock ()
 ==== Program [1 statements] ====
-@1  : [STMT_PRINT] $clock ()
+@1  : print $clock ()
 =================
       [EVAL_VAR] $clock <native fn>
-@1  : [STMT_PRINT] $clock ()
-[RESULT] : 0.003428;
+@1  : print $clock ()
+[RESULT] : 0.002975;
 [INFO] no expected output
 
 SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
@@ -1996,24 +1879,19 @@ SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
 [EXPR_CALL] $show ()
 ==== Program [2 statements] ====
 @1  : [STMT_VAR] a = 8
-@2  : [STMT_BLOCK]
    @1  : [STMT_FUNCTION] show ()
-         @3  : [STMT_BLOCK]
-            @4  : [STMT_PRINT] $a 
+         @4  : print $a 
    @5  : [STMT_VAR] a = 5
    @6  : [STMT_EXPR] $show ()
 =================
    define a = 8
 @1  : [STMT_VAR] a = 8
-BLOCK
-   FUNCTION
-      define show = <fn show>
+         define show = <fn show>
          define a = 5
 @5  : [STMT_VAR] a = 5
          [EVAL_VAR] $show <fn show>
-      BLOCK
-               [EVAL_VAR] $a 8
-@4  : [STMT_PRINT] $a 8
+                     [EVAL_VAR] $a 8
+@4  : print $a 8
 @6  : [STMT_EXPR] $show ()
 [RESULT] : 8;
 [PASS]
@@ -2060,13 +1938,12 @@ SOURCE: class Foo {} print Foo;
 [EXPR_VAR] $Foo 
 ==== Program [2 statements] ====
 @1  : [STMT_CLASS] Foo 
-)
-@1  : [STMT_PRINT] $Foo 
+@1  : print $Foo 
 =================
-CLASS
+Class Foo
    define Foo = <class Foo>
    [EVAL_VAR] $Foo <class Foo>
-@1  : [STMT_PRINT] $Foo <class Foo>
+@1  : print $Foo <class Foo>
 [RESULT] : <class Foo>;
 [PASS]
 
@@ -2077,17 +1954,16 @@ SOURCE: class Foo {} var f = Foo(); print f;
 [EXPR_VAR] $f 
 ==== Program [3 statements] ====
 @1  : [STMT_CLASS] Foo 
-)
 @1  : [STMT_VAR] f = $Foo ()
-@2  : [STMT_PRINT] $f 
+@2  : print $f 
 =================
-CLASS
+Class Foo
    define Foo = <class Foo>
       [EVAL_VAR] $Foo <class Foo>
    define f = <instance Foo>
 @1  : [STMT_VAR] f = $Foo ()
       [EVAL_VAR] $f <instance Foo>
-@2  : [STMT_PRINT] $f <instance Foo>
+@2  : print $f <instance Foo>
 [RESULT] : <instance Foo>;
 [PASS]
 
@@ -2099,20 +1975,18 @@ SOURCE: class Foo { get() { return 123; } } print Foo().get();
 [EXPR_CALL] $Foo ().get()
 ==== Program [2 statements] ====
 @1  : [STMT_CLASS] Foo 
-      @1  : [STMT_FUNCTION] get ()
-            @1  : [STMT_BLOCK]
-               @1  : [STMT_RETURN]
-)
-@2  : [STMT_PRINT] $Foo ().get()
+   @1  : [STMT_FUNCTION] get ()
+         @1  : [STMT_RETURN]
+@2  : print $Foo ().get()
 =================
-CLASS
+Class Foo
    define get = <fn get>
    define Foo = <class Foo>
             [EVAL_VAR] $Foo <class Foo>
    define this = <instance Foo>
-   BLOCK
-      RETURN 123
-@2  : [STMT_PRINT] $Foo ().get()
+         [EVAL_GET_M] $Foo ().get
+         RETURN 123
+@2  : print $Foo ().get()
 [RESULT] : 123;
 [PASS]
 
@@ -2126,25 +2000,21 @@ SOURCE: class Foo { init(x){ this.x = x; } get(){ return this.x; } } var f = Foo
 [EXPR_CALL] $f .get()
 ==== Program [3 statements] ====
 @1  : [STMT_CLASS] Foo 
-      @1  : [STMT_FUNCTION] init (x)
-            @1  : [STMT_BLOCK]
-               @2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
-      @1  : [STMT_FUNCTION] get ()
-            @3  : [STMT_BLOCK]
-               @1  : [STMT_RETURN]
-)
+   @1  : [STMT_FUNCTION] init (x)
+         @2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
+   @1  : [STMT_FUNCTION] get ()
+         @1  : [STMT_RETURN]
 @4  : [STMT_VAR] f = $Foo (42)
-@5  : [STMT_PRINT] $f .get()
+@5  : print $f .get()
 =================
-CLASS
+Class Foo
    define init = <fn init>
    define get = <fn get>
    define Foo = <class Foo>
       [EVAL_VAR] $Foo <class Foo>
    define this = <instance Foo>
    define x = 42
-   BLOCK
-                  [EVAL_VAR] $x 42
+                     [EVAL_VAR] $x 42
          define x = 42
          [EVAL_SET] [EXPR_SET] this.x = $x 
 @2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
@@ -2152,9 +2022,10 @@ CLASS
 @4  : [STMT_VAR] f = $Foo (42)
                   [EVAL_VAR] $f <instance Foo>
    define this = <instance Foo>
-   BLOCK
-      RETURN 42
-@5  : [STMT_PRINT] $f .get()
+               [EVAL_GET_M] $f .get
+                              [EVAL_GET] this.x
+RETURN 42
+@5  : print $f .get()
 [RESULT] : 42;
 [PASS]
 
@@ -2165,20 +2036,17 @@ SOURCE: class Foo { init() { return 123; } } print Foo();
 [EXPR_CALL] $Foo ()
 ==== Program [2 statements] ====
 @1  : [STMT_CLASS] Foo 
-      @1  : [STMT_FUNCTION] init ()
-            @1  : [STMT_BLOCK]
-               @1  : [STMT_RETURN]
-)
-@2  : [STMT_PRINT] $Foo ()
+   @1  : [STMT_FUNCTION] init ()
+         @1  : [STMT_RETURN]
+@2  : print $Foo ()
 =================
-CLASS
+Class Foo
    define init = <fn init>
    define Foo = <class Foo>
       [EVAL_VAR] $Foo <class Foo>
    define this = <instance Foo>
-   BLOCK
-      [line 1] RuntimeError at 'return': Can't return a value from an initializer.
-@2  : [STMT_PRINT] $Foo ()
+         [line 1] RuntimeError at 'return': Can't return a value from an initializer.
+@2  : print $Foo ()
 [RESULT] : <instance Foo>;
 [PassError]
 
@@ -2189,16 +2057,55 @@ SOURCE: fun init() { return 123; } print init();
 [EXPR_CALL] $init ()
 ==== Program [2 statements] ====
 @1  : [STMT_FUNCTION] init ()
-      @1  : [STMT_BLOCK]
-         @1  : [STMT_RETURN]
-@2  : [STMT_PRINT] $init ()
+      @1  : [STMT_RETURN]
+@2  : print $init ()
 =================
-FUNCTION
    define init = <fn init>
       [EVAL_VAR] $init <fn init>
-   BLOCK
-      RETURN 123
-@2  : [STMT_PRINT] $init ()
+         RETURN 123
+@2  : print $init ()
 [RESULT] : 123;
+[PASS]
+
+SOURCE: class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return this.x; } } print Foo(42).inc();
+=================
+[EXPR_VAR] $x 
+[EXPR_LITERAL] 1
+[EXPR_BINARY]  (this.x+ 1)
+[EXPR_VAR] $Foo 
+[EXPR_LITERAL] 42
+[EXPR_CALL] $Foo (42)
+[EXPR_CALL] $Foo (42).inc()
+==== Program [2 statements] ====
+@1  : [STMT_CLASS] Foo 
+   @1  : [STMT_FUNCTION] init (x)
+         @2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
+   @1  : [STMT_FUNCTION] inc ()
+         @4  : [STMT_EXPR] [EXPR_SET] this.x =  (this.x+ 1)
+         @1  : [STMT_RETURN]
+@5  : print $Foo (42).inc()
+=================
+Class Foo
+   define init = <fn init>
+   define inc = <fn inc>
+   define Foo = <class Foo>
+            [EVAL_VAR] $Foo <class Foo>
+   define this = <instance Foo>
+   define x = 42
+                           [EVAL_VAR] $x 42
+         define x = 42
+               [EVAL_SET] [EXPR_SET] this.x = $x 
+@2  : [STMT_EXPR] [EXPR_SET] this.x = $x 
+   define this = <instance Foo>
+               [EVAL_GET_M] $Foo (42).inc
+                                       [EVAL_GET] this.x
+                              [EVAL_BINARY] 43 (this.x+ 1)
+         overwrite x = 43
+                           [EVAL_SET] [EXPR_SET] this.x =  (this.x+ 1)
+@4  : [STMT_EXPR] [EXPR_SET] this.x =  (this.x+ 1)
+                                       [EVAL_GET] this.x
+RETURN 43
+@5  : print $Foo (42).inc()
+[RESULT] : 43;
 [PASS]
 

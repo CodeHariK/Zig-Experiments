@@ -23,6 +23,18 @@ void envFree(Environment *env) {
 }
 
 void envDefine(Environment *env, Lox *lox, const char *name, Value value) {
+  /* If the key already exists in this environment, overwrite it instead
+     of appending a duplicate entry. This ensures assignments to fields and
+     variables update the previous value as expected. */
+  for (u32 i = 0; i < env->count; i++) {
+    if (strcmp(env->entries[i].key, name) == 0) {
+      env->entries[i].value = value;
+
+      printEnv(lox, name, value, "overwrite");
+      return;
+    }
+  }
+
   if (env->count >= env->capacity) {
     env->capacity *= 2;
     env->entries = realloc(env->entries, sizeof(EnvKV) * env->capacity);
@@ -35,12 +47,7 @@ void envDefine(Environment *env, Lox *lox, const char *name, Value value) {
 
   env->count++;
 
-  if (lox) {
-    indentPrint(lox->execDepth);
-    printf("define %s = ", name);
-    printValue(value);
-    printf("\n");
-  }
+  printEnv(lox, name, value, "define");
 }
 
 static Environment *envAncestor(Environment *env, int depth) {
@@ -100,16 +107,19 @@ static bool envGetGlobal(Environment *env, const char *name, Value *out) {
   return false; // not found
 }
 
-static bool envAssign(Environment *env, const char *name, Value value) {
+static bool envAssign(Lox *lox, Environment *env, const char *name,
+                      Value value) {
   for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       env->entries[i].value = value;
+
+      printEnv(lox, name, value, "assign");
       return true;
     }
   }
 
   if (env->enclosing) {
-    return envAssign(env->enclosing, name, value);
+    return envAssign(lox, env->enclosing, name, value);
   }
 
   return false;
@@ -405,7 +415,7 @@ Value evalAssign(Lox *lox, Expr *expr) {
     envAssignAt(lox->env, expr->as.assign.depth, expr->as.assign.name.lexeme,
                 result);
   } else {
-    if (!envAssign(lox->env, expr->as.assign.name.lexeme, result)) {
+    if (!envAssign(lox, lox->env, expr->as.assign.name.lexeme, result)) {
       runtimeError(lox, expr->as.assign.name, "Undefined variable.");
       return errorValue("Undefined variable.");
     }
@@ -427,11 +437,16 @@ Value evalGet(Lox *lox, Expr *expr) {
 
   Value value;
   if (envGet(inst->fields, expr->as.getExpr.name.lexeme, &value)) {
+    printExpr(lox, expr, value, lox->indent, false, true, "[EVAL_GET] ");
     return value;
   }
 
   if (envGet(inst->class->methods, expr->as.getExpr.name.lexeme, &value)) {
-    return bindMethod(lox, value, inst);
+    Value bound_method = bindMethod(lox, value, inst);
+
+    printExpr(lox, expr, bound_method, lox->indent, false, true,
+              "[EVAL_GET_M] ");
+    return bound_method;
   }
 
   runtimeError(lox, expr->as.getExpr.name, "Undefined property.");

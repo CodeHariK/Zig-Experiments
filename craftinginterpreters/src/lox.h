@@ -445,6 +445,7 @@ void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool space,
                bool newLine, char *msg);
 void printValue(Value value);
+void printEnv(Lox *lox, const char *name, Value value, char *msg);
 void printToken(Lox *lox, const Token *token, char *msg);
 void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent);
 void printEnvironment(Lox *lox);

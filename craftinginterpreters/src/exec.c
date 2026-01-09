@@ -62,7 +62,6 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_BLOCK:
-    printf("BLOCK\n");
     executeBlock(lox, stmt->as.block.statements, stmt->as.block.count);
     break;
 
@@ -131,8 +130,6 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_FUNCTION: {
-    printf("FUNCTION\n");
-
     Value fnValue = makeFunction(lox, stmt, false);
     envDefine(lox->env, lox, fnValue.as.function->name.lexeme, fnValue);
 
@@ -140,7 +137,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_CLASS: {
-    printf("CLASS\n");
+    printf("Class %s\n", stmt->as.classStmt.name.lexeme);
 
     LoxClass *klass = arenaAlloc(&lox->astArena, sizeof(LoxClass));
     klass->name = stmt->as.classStmt.name;
@@ -158,6 +155,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     classValue.as.klass = klass;
 
     envDefine(lox->env, lox, klass->name.lexeme, classValue);
+
     break;
   }
 

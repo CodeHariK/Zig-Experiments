@@ -296,7 +296,10 @@ void runVarTests(void) {
       {"class Foo { init() { return 123; } } print Foo();", "<instance Foo>;",
        false},
       {"fun init() { return 123; } print init();", "123;", true},
-
+      {"class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return "
+       "this.x; } } print "
+       "Foo(42).inc();",
+       "43;", true},
   };
 
   for (u32 i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
