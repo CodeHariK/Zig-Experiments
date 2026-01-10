@@ -182,14 +182,15 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_VAR: {
-    Value val = NIL_VALUE;
+    Value val = UNDEFINED_VALUE;
     if (stmt->as.var.initializer) {
       val = evaluate(lox, stmt->as.var.initializer);
     }
 
-    indentPrint(lox->indent);
-    printStmt(lox, stmt, NO_VALUE, 0);
-    envDefine(lox->env, lox, stmt->as.var.name.lexeme, val);
+    printStmt(lox, stmt, val, 0);
+    if (val.type != UNDEFINED_VALUE.type) {
+      envDefine(lox->env, lox, stmt->as.var.name.lexeme, val);
+    }
 
     break;
   }

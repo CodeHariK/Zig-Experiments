@@ -1,5 +1,4 @@
 #include "lox.h"
-#include <stdlib.h>
 
 static Value evalUnary(Lox *lox, Expr *expr) {
   auto unary = expr->as.unary;
@@ -8,20 +7,19 @@ static Value evalUnary(Lox *lox, Expr *expr) {
   switch (unary.op.type) {
   case TOKEN_MINUS:
     if (right.type != VAL_NUMBER) {
-      runtimeError(lox, &unary.op, NULL, "Operand must be a number.");
+      return errorValue(lox, &unary.op, expr, "Operand must be a number", true);
     }
     return numberValue(-right.as.number);
 
   case TOKEN_NOT:
     if (right.type != VAL_BOOL) {
-      return errorValue(lox, &unary.op, NULL, "Operand must be a boolean.",
+      return errorValue(lox, &unary.op, NULL, "Operand must be a boolean",
                         true);
     }
     return boolValue(!isTruthy(right));
 
   default:
-    runtimeError(lox, &unary.op, NULL, "Invalid unary operator.");
-    exit(1);
+    return errorValue(lox, &unary.op, expr, "Invalid unary operator", true);
   }
 }
 
@@ -73,8 +71,7 @@ static Value evalBinary(Lox *lox, Expr *expr) {
     return boolValue(!isEqual(left, right));
 
   default:
-    runtimeError(lox, &binary.op, NULL, "Invalid binary operator.");
-    exit(1);
+    return errorValue(lox, &binary.op, expr, "Invalid binary operator", true);
   }
 }
 
@@ -84,7 +81,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
   if (callee.type != VAL_FUNCTION && callee.type != VAL_NATIVE &&
       callee.type != VAL_CLASS) {
-    return errorValue(lox, NULL, expr, "Can only call functions and classes.",
+    return errorValue(lox, NULL, expr, "Can only call functions and classes",
                       true);
   }
 
@@ -146,7 +143,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
   if (expr->as.call.argCount != fn->paramCount) {
     char msg[100];
-    snprintf(msg, sizeof(msg), "Expected %d arguments but got %d.",
+    snprintf(msg, sizeof(msg), "Expected %d arguments but got %d",
              fn->paramCount, expr->as.call.argCount);
     return errorValue(lox, NULL, expr, msg, true);
   }

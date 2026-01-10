@@ -112,7 +112,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
   }
 
   if (!expr) {
-    printf("[NULL_EXPR]");
+    printf("[NULL_EXPR]\n");
     return;
   }
 
@@ -131,8 +131,9 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
   }
   case EXPR_UNARY: {
     printValue(result);
-    printf(" %s", tokenTypeToString(expr->as.unary.op.type));
+    printf(" (%s", tokenTypeToString(expr->as.unary.op.type));
     printExpr(lox, expr->as.unary.right, NO_VALUE, 0, false, "");
+    printf(")");
     break;
   }
   case EXPR_LITERAL: {

@@ -441,7 +441,7 @@ Value evalVariable(Lox *lox, Expr *expr) {
   } else {
     // Global
     if (!envGetGlobal(lox->env, expr->as.var.name.lexeme, &result)) {
-      return errorValue(lox, &expr->as.var.name, NULL, "Undefined variable.",
+      return errorValue(lox, &expr->as.var.name, NULL, "Undefined variable",
                         true);
     }
   }
@@ -460,7 +460,7 @@ Value evalAssign(Lox *lox, Expr *expr) {
                 result);
   } else {
     if (!envAssign(lox, lox->env, expr->as.assign.name.lexeme, result)) {
-      return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable.",
+      return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable",
                         true);
     }
   }
@@ -491,7 +491,7 @@ Value evalGet(Lox *lox, Expr *expr) {
     return bound_method;
   }
 
-  return errorValue(lox, &expr->as.getExpr.name, NULL, "Undefined property.",
+  return errorValue(lox, &expr->as.getExpr.name, NULL, "Undefined property",
                     true);
 }
 
@@ -546,7 +546,7 @@ Value evalSuper(Lox *lox, Expr *expr) {
   Value method;
   if (!envGet(superclass->methods, expr->as.superExpr.method.lexeme, &method)) {
     return errorValue(lox, &expr->as.superExpr.method, expr,
-                      "Undefined property.", true);
+                      "Undefined property on superclass", true);
   }
 
   // 4. Bind to instance

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static Stmt *parseDeclaration(Lox *lox);
+static Stmt *parseStmt(Lox *lox);
 
 static Stmt *parseExprStatement(Lox *lox) {
   Expr *expr = parseExpression(lox);
@@ -23,6 +23,7 @@ static Stmt *parsePrintStmt(Lox *lox) {
   stmt->type = STMT_PRINT;
   stmt->as.expr_print = value;
   stmt->line = lox->parser.line++;
+  printStmt(lox, stmt, NO_VALUE, 0);
   return stmt;
 }
 
@@ -42,6 +43,8 @@ static Stmt *parseVarStmt(Lox *lox) {
   stmt->as.var.name = name;
   stmt->as.var.initializer = initializer;
   stmt->line = lox->parser.line++;
+
+  printStmt(lox, stmt, NO_VALUE, 0);
   return stmt;
 }
 
@@ -77,13 +80,12 @@ static Stmt *parseBlockStmt(Lox *lox) {
   return block;
 }
 
-static Stmt *parseFunctionStmt(Lox *lox) {
-  Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect function name.");
+typedef struct {
+  Token *params;
+  int paramCount;
+} FunctionParams;
 
-  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
-
-  lox->parser.functionDepth++;
-
+static FunctionParams parseFunctionParams(Lox *lox) {
   Token *params = NULL;
   int paramCount = 0;
   int capacity = 0;
@@ -106,6 +108,20 @@ static Stmt *parseFunctionStmt(Lox *lox) {
           consumeToken(lox, TOKEN_IDENTIFIER, "Expect parameter name.");
     } while (matchAnyTokenAdvance(lox, 1, TOKEN_COMMA));
   }
+  return (FunctionParams){
+      .params = params,
+      .paramCount = paramCount,
+  };
+}
+
+static Stmt *parseFunctionStmt(Lox *lox) {
+  Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect function name.");
+
+  consumeToken(lox, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+
+  lox->parser.functionDepth++;
+
+  FunctionParams functionParams = parseFunctionParams(lox);
 
   consumeToken(lox, TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
 
@@ -115,8 +131,8 @@ static Stmt *parseFunctionStmt(Lox *lox) {
   Stmt *stmt = arenaAlloc(&lox->astArena, sizeof(Stmt));
   stmt->type = STMT_FUNCTION;
   stmt->as.functionStmt.name = name;
-  stmt->as.functionStmt.params = params;
-  stmt->as.functionStmt.paramCount = paramCount;
+  stmt->as.functionStmt.params = functionParams.params;
+  stmt->as.functionStmt.paramCount = functionParams.paramCount;
   stmt->as.functionStmt.body = body;
   stmt->line = name.line;
 
@@ -352,7 +368,7 @@ Stmt *parseStmt(Lox *lox) {
   return stmt;
 }
 
-static Stmt *parseDeclaration(Lox *lox) {
+Stmt *parseDeclaration(Lox *lox) {
   if (matchAnyTokenAdvance(lox, 1, TOKEN_FUN)) {
     return parseFunctionStmt(lox);
   }

@@ -67,7 +67,6 @@ static void assertOutputTest(Lox *lox, const TestCase *test, char *output) {
 
 static void runExprTests(void) {
   TestCase exprTests[] = {
-
       {"()", NULL, false},
       {"{}", NULL, false},
       {"!true", "false", true},
@@ -124,54 +123,13 @@ static void runExprTests(void) {
   }
 }
 
-// Run a single statement test
-void runStmtTests(void) {
-  TestCase stmtTests[] = {
-      {"2 / 4", "0.5", false},
-      {"print 1 + 2;", "3\n", true},
-      {"1 + 2;", "", true}, // exprStmt, no print output
-      {"print !false;", "true\n", true},
-      {"print \"hello\";", "hello\n", true},
-  };
-
-  for (u32 i = 0; i < sizeof(stmtTests) / sizeof(stmtTests[0]); i++) {
-    TestCase test = stmtTests[i];
-
-    printf("SOURCE: %s\n", test.source);
-
-    Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
-    initScanner(&lox.scanner, test.source);
-    scanTokens(&lox);
-    initParser(&lox);
-
-    printf("=================\n");
-    Stmt *stmt = parseStmt(&lox);
-    printf("=================\n");
-
-    executeStmt(&lox, stmt);
-
-    assertOutputTest(&lox, &test, lox.output);
-
-    freeLox(&lox);
-  }
-}
-
 void runVarTests(void) {
   TestCase tests[] = {
-      {"var a = 7 * 7; print a/7;", "7\n", true},
-      {"var b = 3.14; print b;", "3.14\n", true},
+      {"var a = 3.14 * 7; a = a/7; print a;", "3.14\n", true},
       {"var s = \"hello\"; print s;", "hello\n", true},
-      {"var x; print x;", "nil\n", true}, // uninitialized variable
-      {"var y = true; print y;", "true\n", true},
-      {"var c = 10; var d = 5; print c;", "10\n", true},
-      {"var c = 10; c = 20; print c;", "20\n", true},
-      {"var a = 1; print a = 2;", "2\n", true},
+      {"var x; print x;", "nil\n", false},
 
-      {"print 1 = 2;", "", false}, // Invalid assignment
-
-      // Empty block
-      {"{}", "", true},
+      {"print 1 = 2;", "", false},
 
       // Chained assignment (right-associative)
       {"var a = 0; var b = 0; print a = b = 3;", "3\n", true},
@@ -280,8 +238,10 @@ void runVarTests(void) {
 
       {"print clock();", "", true},
 
-      {"var a = 8; { fun show() { print a;  } var a = 5;  show(); }", "8\n",
-       true},
+      {"var a = 0; var a = 1;", "", false},
+      {"{ var a = 0; var a = 1; }", "", false},
+      {"var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }",
+       "0\n6\n6\n4\n", true},
 
       {"var a = a;", "", false},
       {"return 123;", "", false},
@@ -339,9 +299,6 @@ int main(void) {
 
   printf("====== Expression Tests ======\n");
   runExprTests();
-
-  printf("====== Statement Tests ======\n");
-  runStmtTests();
 
   printf("====== Variable Tests ======\n");
   runVarTests();

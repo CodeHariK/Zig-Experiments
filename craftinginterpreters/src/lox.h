@@ -423,7 +423,7 @@ void checkNumberOperands(Lox *lox, Token *op, Value left, Value right);
 
 Value evaluate(Lox *lox, Expr *expr);
 
-Stmt *parseStmt(Lox *lox);
+Stmt *parseDeclaration(Lox *lox);
 Program *parseProgram(Lox *lox);
 void executeStmt(Lox *lox, Stmt *stmt);
 void executeProgram(Lox *lox, Program *prog);
@@ -448,6 +448,7 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
 extern const Value NIL_VALUE;
 extern const Value NO_VALUE;
+extern const Value UNDEFINED_VALUE;
 
 void valueToString(Value value, char *buffer, u32 size);
 const char *tokenTypeToString(TokenType type);

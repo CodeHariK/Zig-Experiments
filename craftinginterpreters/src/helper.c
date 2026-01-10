@@ -1,6 +1,7 @@
 #include "lox.h"
 #include <string.h>
 
+const Value UNDEFINED_VALUE = {VAL_ERROR, {.string = "UNDEFINED"}};
 const Value NO_VALUE = {VAL_NIL, {.boolean = true}};
 const Value NIL_VALUE = {VAL_NIL, {.boolean = false}};
 inline Value errorValue(Lox *lox, Token *token, Expr *expr, char *error,
@@ -27,7 +28,7 @@ void valueToString(Value value, char *buffer, u32 size) {
     }
     break;
   case VAL_ERROR:
-    snprintf(buffer, size, "Error: %s\n", value.as.string);
+    snprintf(buffer, size, ">> %s", value.as.string);
     break;
 
   case VAL_BOOL:

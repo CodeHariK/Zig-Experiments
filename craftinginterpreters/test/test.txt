@@ -3,35 +3,36 @@ SOURCE: ()
 =================
 [line 1] Error at ')': Expect expression.
 [EXPR_GROUP] [NULL_EXPR]
+
 =================
-[RESULT] : Error: No evaluation;
+[RESULT] : >> No evaluation
 [PassError]
 
 SOURCE: {}
 =================
 [line 1] Error at '{': Expect expression.
 =================
-[RESULT] : Error: No evaluation;
+[RESULT] : >> No evaluation
 [PassError]
 
 SOURCE: !true
 =================
 [EXPR_LITERAL] true
-[EXPR_UNARY]  !true
+[EXPR_UNARY]  (!true)
 =================
-|   [EVAL_UNARY] false !true
+|   [EVAL_UNARY] false (!true)
 [RESULT] : false
 [PASS]
 
 SOURCE: !true == false
 =================
 [EXPR_LITERAL] true
-[EXPR_UNARY]  !true
+[EXPR_UNARY]  (!true)
 [EXPR_LITERAL] false
-[EXPR_BINARY]  ( !true == false)
+[EXPR_BINARY]  ( (!true) == false)
 =================
-|   |   [EVAL_UNARY] false !true
-|   [EVAL_BINARY] true ( !true == false)
+|   |   [EVAL_UNARY] false (!true)
+|   [EVAL_BINARY] true ( (!true) == false)
 [RESULT] : true
 [PASS]
 
@@ -53,14 +54,14 @@ SOURCE: var x = 10;
 =================
 [line 1] Error at 'var': Expect expression.
 =================
-[RESULT] : Error: No evaluation;
+[RESULT] : >> No evaluation
 [PassError]
 
 SOURCE: print 1 + 2;
 =================
 [line 1] Error at 'print': Expect expression.
 =================
-[RESULT] : Error: No evaluation;
+[RESULT] : >> No evaluation
 [PassError]
 
 SOURCE: // comment
@@ -81,21 +82,19 @@ SOURCE: "hello world"
 SOURCE: !-!-3
 =================
 [EXPR_LITERAL] 3
-[EXPR_UNARY]  -3
-[EXPR_UNARY]  ! -3
-[EXPR_UNARY]  - ! -3
-[EXPR_UNARY]  ! - ! -3
+[EXPR_UNARY]  (-3)
+[EXPR_UNARY]  (! (-3))
+[EXPR_UNARY]  (- (! (-3)))
+[EXPR_UNARY]  (! (- (! (-3))))
 =================
-|   |   |   |   [EVAL_UNARY] -3 -3
-|   |   |   |   [line 1] RuntimeError at '!': Operand must be a boolean.
-|   |   |   [EVAL_UNARY] Error: Operand must be a boolean.
- ! -3
-|   |   |   [line 1] RuntimeError at '-': Operand must be a number.
-|   |   [EVAL_UNARY] -2.15791e-314 - ! -3
-|   |   [line 1] RuntimeError at '!': Operand must be a boolean.
-|   [EVAL_UNARY] Error: Operand must be a boolean.
- ! - ! -3
-[RESULT] : Error: Operand must be a boolean.;
+|   |   |   |   [EVAL_UNARY] -3 (-3)
+|   |   |   |   [line 1] RuntimeError at '!': Operand must be a boolean
+|   |   |   [EVAL_UNARY] >> Operand must be a boolean (! (-3))
+|   |   |   [line 0] RuntimeError: Operand must be a number
+|   |   [EVAL_UNARY] >> Operand must be a number (- (! (-3)))
+|   |   [line 1] RuntimeError at '!': Operand must be a boolean
+|   [EVAL_UNARY] >> Operand must be a boolean (! (- (! (-3))))
+[RESULT] : >> Operand must be a boolean
 [PassError]
 
 SOURCE: 1 + 2 * 3
@@ -159,9 +158,9 @@ SOURCE: nil == nil
 SOURCE: !false
 =================
 [EXPR_LITERAL] false
-[EXPR_UNARY]  !false
+[EXPR_UNARY]  (!false)
 =================
-|   [EVAL_UNARY] true !false
+|   [EVAL_UNARY] true (!false)
 [RESULT] : true
 [PASS]
 
@@ -238,9 +237,9 @@ SOURCE: nil == nil
 SOURCE: !false
 =================
 [EXPR_LITERAL] false
-[EXPR_UNARY]  !false
+[EXPR_UNARY]  (!false)
 =================
-|   [EVAL_UNARY] true !false
+|   [EVAL_UNARY] true (!false)
 [RESULT] : true
 [PASS]
 
@@ -250,11 +249,11 @@ SOURCE: -(1 + 2)
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  (1 + 2)
 [EXPR_GROUP]  (1 + 2)
-[EXPR_UNARY]  - (1 + 2)
+[EXPR_UNARY]  (- (1 + 2))
 =================
 |   |   |   [EVAL_BINARY] 3 (1 + 2)
 |   |   [EVAL_GROUP] 3 (1 + 2)
-|   [EVAL_UNARY] -3 - (1 + 2)
+|   [EVAL_UNARY] -3 (- (1 + 2))
 [RESULT] : -3
 [PASS]
 
@@ -288,104 +287,49 @@ SOURCE: 2 / 4
 [RESULT] : 0.5
 [PASS]
 
-====== Statement Tests ======
-SOURCE: 2 / 4
-=================
-[EXPR_LITERAL] 2
-[EXPR_LITERAL] 4
-[EXPR_BINARY]  (2 / 4)
-[line 1] Error at EOF: Expect ';' after expression.
-### SYNCHRONIZE ###
-=================
-[RESULT] : 
-[PassError]
-
-SOURCE: print 1 + 2;
-=================
-[EXPR_LITERAL] 1
-[EXPR_LITERAL] 2
-[EXPR_BINARY]  (1 + 2)
-=================
-|   [EVAL_BINARY] 3 (1 + 2)
-@1: print 3 (1 + 2)
-[RESULT] : 3;
-[PASS]
-
-SOURCE: 1 + 2;
-=================
-[EXPR_LITERAL] 1
-[EXPR_LITERAL] 2
-[EXPR_BINARY]  (1 + 2)
-=================
-|   [EVAL_BINARY] 3 (1 + 2)
-@1: [STMT_EXPR] 3 (1 + 2)
-[RESULT] : 
-[INFO] no expected output
-
-SOURCE: print !false;
-=================
-[EXPR_LITERAL] false
-[EXPR_UNARY]  !false
-=================
-|   [EVAL_UNARY] true !false
-@1: print true !false
-[RESULT] : true;
-[PASS]
-
-SOURCE: print "hello";
-=================
-[EXPR_LITERAL] hello
-=================
-@1: print hello
-[RESULT] : hello;
-[PASS]
-
 ====== Variable Tests ======
-SOURCE: var a = 7 * 7; print a/7;
+SOURCE: var a = 3.14 * 7; a = a/7; print a;
 =================
+[EXPR_LITERAL] 3.14
 [EXPR_LITERAL] 7
-[EXPR_LITERAL] 7
-[EXPR_BINARY]  (7 * 7)
+[EXPR_BINARY]  (3.14 * 7)
+@1: VAR a =  (3.14 * 7)
+[EXPR_VAR] $a 
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 7
 [EXPR_BINARY]  ($a  / 7)
-==== Program [2 statements] ====
-@1: VAR a =  (7 * 7)
-@2: print  ($a  / 7)
+[EXPR_ASSIGN] a =  ($a  / 7)
+[EXPR_VAR] $a 
+@3: print $a 
+==== Program [3 statements] ====
+@1: VAR a =  (3.14 * 7)
+@2: [STMT_EXPR] a =  ($a  / 7)
+@3: print $a 
 =================
-|   |   [EVAL_BINARY] 49 (7 * 7)
-|   @1: VAR a =  (7 * 7)
-|   define a = 49
-|   |   [EVAL_VAR] $a 49
-|   [EVAL_BINARY] 7 ($a  / 7)
-@2: print 7 ($a  / 7)
-[RESULT] : 7;
-[PASS]
-
-SOURCE: var b = 3.14; print b;
-=================
-[EXPR_LITERAL] 3.14
-[EXPR_VAR] $b 
-==== Program [2 statements] ====
-@1: VAR b = 3.14
-@2: print $b 
-=================
-|   @1: VAR b = 3.14
-|   define b = 3.14
-|   [EVAL_VAR] $b 3.14
-@2: print $b 3.14
+|   |   [EVAL_BINARY] 21.98 (3.14 * 7)
+@1: VAR a = 21.98 (3.14 * 7)
+|   define a = 21.98
+|   |   |   [EVAL_VAR] $a 21.98
+|   |   [EVAL_BINARY] 3.14 ($a  / 7)
+|   [EVAL_ASSIGN] a =  ($a  / 7)
+|   assign a = 3.14
+@2: [STMT_EXPR] a =  ($a  / 7)
+|   [EVAL_VAR] $a 3.14
+@3: print $a 3.14
 [RESULT] : 3.14;
 [PASS]
 
 SOURCE: var s = "hello"; print s;
 =================
 [EXPR_LITERAL] hello
+@1: VAR s = hello
 [EXPR_VAR] $s 
+@2: print $s 
 ==== Program [2 statements] ====
 @1: VAR s = hello
 @2: print $s 
 =================
-|   @1: VAR s = hello
+@1: VAR s = hello
 |   define s = hello
 |   [EVAL_VAR] $s hello
 @2: print $s hello
@@ -394,95 +338,25 @@ SOURCE: var s = "hello"; print s;
 
 SOURCE: var x; print x;
 =================
+@1: VAR x = [NULL_EXPR]
 [EXPR_VAR] $x 
+@2: print $x 
 ==== Program [2 statements] ====
-@1: VAR x = [NULL_EXPR]@2: print $x 
+@1: VAR x = [NULL_EXPR]
+@2: print $x 
 =================
-|   @1: VAR x = [NULL_EXPR]|   define x = nil
-|   [EVAL_VAR] $x nil
-@2: print $x nil
-[RESULT] : nil;
-[PASS]
-
-SOURCE: var y = true; print y;
-=================
-[EXPR_LITERAL] true
-[EXPR_VAR] $y 
-==== Program [2 statements] ====
-@1: VAR y = true
-@2: print $y 
-=================
-|   @1: VAR y = true
-|   define y = true
-|   [EVAL_VAR] $y true
-@2: print $y true
-[RESULT] : true;
-[PASS]
-
-SOURCE: var c = 10; var d = 5; print c;
-=================
-[EXPR_LITERAL] 10
-[EXPR_LITERAL] 5
-[EXPR_VAR] $c 
-==== Program [3 statements] ====
-@1: VAR c = 10
-@2: VAR d = 5
-@3: print $c 
-=================
-|   @1: VAR c = 10
-|   define c = 10
-|   @2: VAR d = 5
-|   define d = 5
-|   [EVAL_VAR] $c 10
-@3: print $c 10
-[RESULT] : 10;
-[PASS]
-
-SOURCE: var c = 10; c = 20; print c;
-=================
-[EXPR_LITERAL] 10
-[EXPR_VAR] $c 
-[EXPR_LITERAL] 20
-[EXPR_ASSIGN] c = 20
-[EXPR_VAR] $c 
-==== Program [3 statements] ====
-@1: VAR c = 10
-@2: [STMT_EXPR] c = 20
-@3: print $c 
-=================
-|   @1: VAR c = 10
-|   define c = 10
-|   [EVAL_ASSIGN] c = 20
-|   assign c = 20
-@2: [STMT_EXPR] c = 20
-|   [EVAL_VAR] $c 20
-@3: print $c 20
-[RESULT] : 20;
-[PASS]
-
-SOURCE: var a = 1; print a = 2;
-=================
-[EXPR_LITERAL] 1
-[EXPR_VAR] $a 
-[EXPR_LITERAL] 2
-[EXPR_ASSIGN] a = 2
-==== Program [2 statements] ====
-@1: VAR a = 1
-@2: print a = 2
-=================
-|   @1: VAR a = 1
-|   define a = 1
-|   [EVAL_ASSIGN] a = 2
-|   assign a = 2
-@2: print a = 2
-[RESULT] : 2;
-[PASS]
+@1: VAR x = [NULL_EXPR]
+|   |   [line 1] RuntimeError at 'x': Undefined variable
+@2: print $x >> Undefined variable
+[RESULT] : >> Undefined variable;
+[PassError]
 
 SOURCE: print 1 = 2;
 =================
 [EXPR_LITERAL] 1
 [EXPR_LITERAL] 2
 [line 1] Error at ';': Invalid assignment target.
+@1: print 1
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
 [NULL_STMT]
@@ -491,30 +365,26 @@ Resolve error. No execution
 [RESULT] : 
 [PassError]
 
-SOURCE: {}
-=================
-==== Program [1 statements] ====
-=================
-[RESULT] : 
-[INFO] no expected output
-
 SOURCE: var a = 0; var b = 0; print a = b = 3;
 =================
 [EXPR_LITERAL] 0
+@1: VAR a = 0
 [EXPR_LITERAL] 0
+@2: VAR b = 0
 [EXPR_VAR] $a 
 [EXPR_VAR] $b 
 [EXPR_LITERAL] 3
 [EXPR_ASSIGN] b = 3
 [EXPR_ASSIGN] a = b = 3
+@3: print a = b = 3
 ==== Program [3 statements] ====
 @1: VAR a = 0
 @2: VAR b = 0
 @3: print a = b = 3
 =================
-|   @1: VAR a = 0
+@1: VAR a = 0
 |   define a = 0
-|   @2: VAR b = 0
+@2: VAR b = 0
 |   define b = 0
 |   |   [EVAL_ASSIGN] b = 3
 |   |   assign b = 3
@@ -527,17 +397,19 @@ SOURCE: var a = 0; var b = 0; print a = b = 3;
 SOURCE: var a = 1; print (a = 2) + 3;
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_ASSIGN] a = 2
 [EXPR_GROUP] a = 2
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  (a = 2 + 3)
+@2: print  (a = 2 + 3)
 ==== Program [2 statements] ====
 @1: VAR a = 1
 @2: print  (a = 2 + 3)
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
 |   |   |   [EVAL_ASSIGN] a = 2
 |   |   |   assign a = 2
@@ -550,16 +422,18 @@ SOURCE: var a = 1; print (a = 2) + 3;
 SOURCE: var a = 1; print a = 2 == 2;
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  (2 == 2)
 [EXPR_ASSIGN] a =  (2 == 2)
+@2: print a =  (2 == 2)
 ==== Program [2 statements] ====
 @1: VAR a = 1
 @2: print a =  (2 == 2)
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
 |   |   [EVAL_BINARY] true (2 == 2)
 |   [EVAL_ASSIGN] a =  (2 == 2)
@@ -571,12 +445,14 @@ SOURCE: var a = 1; print a = 2 == 2;
 SOURCE: { var a = 1; print a; }
 =================
 [EXPR_LITERAL] 1
+@2: VAR a = 1
 [EXPR_VAR] $a 
+@3: print $a 
 ==== Program [1 statements] ====
 |   @2: VAR a = 1
 |   @3: print $a 
 =================
-|   @2: VAR a = 1
+@2: VAR a = 1
 |   define a = 1
 |   [EVAL_VAR] $a 1
 @3: print $a 1
@@ -586,12 +462,14 @@ SOURCE: { var a = 1; print a; }
 SOURCE: var a = 1; { print a; }
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_VAR] $a 
+@3: print $a 
 ==== Program [2 statements] ====
 @1: VAR a = 1
 |   @3: print $a 
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
 |   [EVAL_VAR] $a 1
 @3: print $a 1
@@ -601,18 +479,22 @@ SOURCE: var a = 1; { print a; }
 SOURCE: var a = 1; { var a = 2; print a; } print a;
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_LITERAL] 2
+@3: VAR a = 2
 [EXPR_VAR] $a 
+@4: print $a 
 [EXPR_VAR] $a 
+@5: print $a 
 ==== Program [3 statements] ====
 @1: VAR a = 1
 |   @3: VAR a = 2
 |   @4: print $a 
 @5: print $a 
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
-|   @3: VAR a = 2
+@3: VAR a = 2
 |   define a = 2
 |   [EVAL_VAR] $a 2
 @4: print $a 2
@@ -624,16 +506,18 @@ SOURCE: var a = 1; { var a = 2; print a; } print a;
 SOURCE: var a = 1; { a = 2; } print a;
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 2
 [EXPR_ASSIGN] a = 2
 [EXPR_VAR] $a 
+@4: print $a 
 ==== Program [3 statements] ====
 @1: VAR a = 1
 |   @3: [STMT_EXPR] a = 2
 @4: print $a 
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
 |   [EVAL_ASSIGN] a = 2
 |   assign a = 2
@@ -646,20 +530,23 @@ SOURCE: var a = 1; { a = 2; } print a;
 SOURCE: var a = 1; { var a = 2; a = 3; } print a;
 =================
 [EXPR_LITERAL] 1
+@1: VAR a = 1
 [EXPR_LITERAL] 2
+@3: VAR a = 2
 [EXPR_VAR] $a 
 [EXPR_LITERAL] 3
 [EXPR_ASSIGN] a = 3
 [EXPR_VAR] $a 
+@5: print $a 
 ==== Program [3 statements] ====
 @1: VAR a = 1
 |   @3: VAR a = 2
 |   @4: [STMT_EXPR] a = 3
 @5: print $a 
 =================
-|   @1: VAR a = 1
+@1: VAR a = 1
 |   define a = 1
-|   @3: VAR a = 2
+@3: VAR a = 2
 |   define a = 2
 |   [EVAL_ASSIGN] a = 3
 @4: [STMT_EXPR] a = 3
@@ -672,9 +559,12 @@ SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
 =================
 [EXPR_LITERAL] false
 [EXPR_LITERAL] 1
+@3: print 1
 [EXPR_LITERAL] false
 [EXPR_LITERAL] 2
+@6: print 2
 [EXPR_LITERAL] 3
+@8: print 3
 ==== Program [1 statements] ====
 @1: IF
 |   condition false
@@ -697,10 +587,12 @@ SOURCE: if (false) {print 1;} else if (false) {print 2;} else {print 3;}
 SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
 [EXPR_VAR] $i 
+@4: print $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -714,7 +606,7 @@ SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 |   |   @4: print $i 
 |   |   @5: [STMT_EXPR] i =  ($i  + 1)
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   WHILE
 |   |   |   [EVAL_VAR] $i 0
@@ -754,6 +646,7 @@ SOURCE: print "hi" or 2;
 [EXPR_LITERAL] hi
 [EXPR_LITERAL] 2
 [EXPR_LOGICAL]  hi OR 2
+@1: print  hi OR 2
 ==== Program [1 statements] ====
 @1: print  hi OR 2
 =================
@@ -766,6 +659,7 @@ SOURCE: print nil or "yes";
 [EXPR_LITERAL] nil
 [EXPR_LITERAL] yes
 [EXPR_LOGICAL]  nil OR yes
+@1: print  nil OR yes
 ==== Program [1 statements] ====
 @1: print  nil OR yes
 =================
@@ -778,6 +672,7 @@ SOURCE: print {false and 123};
 =================
 [line 1] Error at '{': Expect expression.
 [line 1] Error at '{': Expect ';' after value.
+@1: [NULL_EXPR]
 ### SYNCHRONIZE ###
 ==== Program [1 statements] ====
 [NULL_STMT]
@@ -792,6 +687,7 @@ SOURCE: print (true and 123);
 [EXPR_LITERAL] 123
 [EXPR_LOGICAL]  true AND 123
 [EXPR_GROUP]  true AND 123
+@1: print  true AND 123
 ==== Program [1 statements] ====
 @1: print  true AND 123
 =================
@@ -806,6 +702,7 @@ SOURCE: print nil and boom;
 [EXPR_LITERAL] nil
 [EXPR_VAR] $boom 
 [EXPR_LOGICAL]  nil AND $boom 
+@1: print  nil AND $boom 
 ==== Program [1 statements] ====
 @1: print  nil AND $boom 
 =================
@@ -816,6 +713,7 @@ SOURCE: print nil and boom;
 SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
@@ -825,6 +723,7 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_VAR] $i 
+@3: print $i 
 ==== Program [1 statements] ====
 |   @1: VAR i = 0
 |   @1: FOR
@@ -833,7 +732,7 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 |   |   body:
 |   |   |   @3: print $i 
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
@@ -865,6 +764,7 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
 [EXPR_ASSIGN] i = 1
@@ -877,6 +777,7 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_VAR] $i 
+@4: print $i 
 ==== Program [2 statements] ====
 @1: VAR i = 0
 |   @2: [STMT_EXPR] i = 1
@@ -886,7 +787,7 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 |   |   body:
 |   |   |   @4: print $i 
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   [EVAL_ASSIGN] i = 1
 |   assign i = 1
@@ -924,6 +825,7 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
@@ -933,6 +835,7 @@ SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_VAR] $i 
+@3: print $i 
 ==== Program [2 statements] ====
 @1: VAR i = 0
 @2: FOR
@@ -941,7 +844,7 @@ SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 |   body:
 |   |   @3: print $i 
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
@@ -976,10 +879,12 @@ SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
 [EXPR_VAR] $i 
+@3: print $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -994,7 +899,7 @@ SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
 |   |   |   @3: print $i 
 |   |   |   @4: [STMT_EXPR] i =  ($i  + 1)
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
@@ -1029,7 +934,9 @@ SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
 SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 =================
 [EXPR_LITERAL] 100
+@1: VAR i = 100
 [EXPR_LITERAL] 0
+@2: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  < 2)
@@ -1039,7 +946,9 @@ SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_VAR] $i 
+@4: print $i 
 [EXPR_VAR] $i 
+@5: print $i 
 ==== Program [3 statements] ====
 @1: VAR i = 100
 |   @2: VAR i = 0
@@ -1050,9 +959,9 @@ SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 |   |   |   @4: print $i 
 @5: print $i 
 =================
-|   @1: VAR i = 100
+@1: VAR i = 100
 |   define i = 100
-|   @2: VAR i = 0
+@2: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
@@ -1079,6 +988,7 @@ SOURCE: var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;
 SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {print i + j;}}
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  < 2)
@@ -1088,6 +998,7 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_LITERAL] 0
+@3: VAR j = 0
 [EXPR_VAR] $j 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($j  < 2)
@@ -1099,6 +1010,7 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 [EXPR_VAR] $i 
 [EXPR_VAR] $j 
 [EXPR_BINARY]  ($i  + $j )
+@5: print  ($i  + $j )
 ==== Program [1 statements] ====
 |   @1: VAR i = 0
 |   @1: FOR
@@ -1112,12 +1024,12 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 |   |   |   |   |   body:
 |   |   |   |   |   |   @5: print  ($i  + $j )
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
 |   |   [EVAL_BINARY] true ($i  < 2)
-|   |   @3: VAR j = 0
+@3: VAR j = 0
 |   |   define j = 0
 |   |   FOR
 |   |   |   |   [EVAL_VAR] $j 0
@@ -1145,7 +1057,7 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 |   |   [EVAL_ASSIGN] i =  ($i  + 1)
 |   |   |   [EVAL_VAR] $i 1
 |   |   [EVAL_BINARY] true ($i  < 2)
-|   |   @3: VAR j = 0
+@3: VAR j = 0
 |   |   define j = 0
 |   |   FOR
 |   |   |   |   [EVAL_VAR] $j 0
@@ -1179,6 +1091,7 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 SOURCE: for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
@@ -1206,6 +1119,7 @@ Resolve error. No execution
 SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 =================
 [EXPR_LITERAL] 0
+@2: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  < 2)
@@ -1215,6 +1129,7 @@ SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 [EXPR_BINARY]  ($i  + 1)
 [EXPR_ASSIGN] i =  ($i  + 1)
 [EXPR_VAR] $i 
+@4: print $i 
 ==== Program [1 statements] ====
 |   |   @2: VAR i = 0
 |   |   @2: FOR
@@ -1223,7 +1138,7 @@ SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 |   |   |   body:
 |   |   |   |   @4: print $i 
 =================
-|   @2: VAR i = 0
+@2: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   |   [EVAL_VAR] $i 0
@@ -1248,7 +1163,9 @@ SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
+@3: print $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -1270,7 +1187,7 @@ SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 |   |   |   then:
 |   |   |   |   @7: BREAK
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   FOR
 |   |   [EVAL_VAR] $i 0
@@ -1310,7 +1227,9 @@ SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     print i;     break;   }   i = i + 1; } 
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_LITERAL] 0
+@2: VAR j = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  < 2)
@@ -1319,6 +1238,7 @@ SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     prin
 [EXPR_ASSIGN] j = 0
 [EXPR_LITERAL] true
 [EXPR_VAR] $i 
+@8: print $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -1338,9 +1258,9 @@ SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     prin
 |   |   |   |   @9: BREAK
 |   |   @10: [STMT_EXPR] i =  ($i  + 1)
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
-|   @2: VAR j = 0
+@2: VAR j = 0
 |   define j = 0
 |   WHILE
 |   |   |   [EVAL_VAR] $i 0
@@ -1379,11 +1299,13 @@ SOURCE: var i = 0; var j = 0; while (i < 2) {   j = 0;   while (true) {     prin
 SOURCE: var i = 0; while (true) {   {     if (i == 2) {break;}   }   print i;   i = i + 1; } 
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_LITERAL] true
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  == 2)
 [EXPR_VAR] $i 
+@8: print $i 
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -1401,7 +1323,7 @@ SOURCE: var i = 0; while (true) {   {     if (i == 2) {break;}   }   print i;   
 |   |   @8: print $i 
 |   |   @9: [STMT_EXPR] i =  ($i  + 1)
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   WHILE
 |   |   IF
@@ -1434,6 +1356,7 @@ SOURCE: var i = 0; while (true) {   {     if (i == 2) {break;}   }   print i;   
 SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i; } }
 =================
 [EXPR_LITERAL] 0
+@1: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 3
 [EXPR_BINARY]  ($i  < 3)
@@ -1446,6 +1369,7 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  == 2)
 [EXPR_VAR] $i 
+@9: print $i 
 ==== Program [2 statements] ====
 @1: VAR i = 0
 @2: WHILE
@@ -1458,7 +1382,7 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 |   |   |   |   |   @8: CONTINUE
 |   |   |   @9: print $i 
 =================
-|   @1: VAR i = 0
+@1: VAR i = 0
 |   define i = 0
 |   WHILE
 |   |   |   [EVAL_VAR] $i 0
@@ -1504,6 +1428,7 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 =================
 [EXPR_LITERAL] 1
+@1: VAR i = 1
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 4
 [EXPR_BINARY]  ($i  < 4)
@@ -1516,6 +1441,7 @@ SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 [EXPR_LITERAL] 2
 [EXPR_BINARY]  ($i  == 2)
 [EXPR_VAR] $i 
+@6: print $i 
 ==== Program [1 statements] ====
 |   @1: VAR i = 1
 |   @1: FOR
@@ -1528,7 +1454,7 @@ SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 |   |   |   |   |   @5: CONTINUE
 |   |   |   @6: print $i 
 =================
-|   @1: VAR i = 1
+@1: VAR i = 1
 |   define i = 1
 |   FOR
 |   |   |   [EVAL_VAR] $i 1
@@ -1568,6 +1494,7 @@ SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 SOURCE: fun hello() { print 123; } hello();
 =================
 [EXPR_LITERAL] 123
+@2: print 123
 [EXPR_VAR] $hello 
 [EXPR_CALL] $hello ()
 ==== Program [2 statements] ====
@@ -1589,6 +1516,7 @@ SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 [EXPR_VAR] $a 
 [EXPR_VAR] $b 
 [EXPR_BINARY]  ($a  + $b )
+@2: print  ($a  + $b )
 [EXPR_VAR] $add 
 [EXPR_LITERAL] 2
 [EXPR_LITERAL] 3
@@ -1615,7 +1543,9 @@ SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
 =================
 [EXPR_LITERAL] 10
+@2: VAR x = 10
 [EXPR_VAR] $x 
+@4: print $x 
 [EXPR_VAR] $inner 
 [EXPR_CALL] $inner ()
 [EXPR_VAR] $outer 
@@ -1632,7 +1562,7 @@ SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
 |   @1 Fn outer
 |   |   [EVAL_VAR] $outer <fn outer>
 |   [EVAL_CALL] [EXPR_CALL] $outer ()
-|   |   @2: VAR x = 10
+@2: VAR x = 10
 |   |   define x = 10
 |   |   define inner = <fn inner>
 |   |   @1 Fn inner
@@ -1649,8 +1579,10 @@ SOURCE: fun f() { return 123; print 0; } print f();
 =================
 [EXPR_LITERAL] 123
 [EXPR_LITERAL] 0
+@2: print 0
 [EXPR_VAR] $f 
 [EXPR_CALL] $f ()
+@3: print [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1: FN f ()
 |   |   @1: RETURN 
@@ -1670,6 +1602,7 @@ SOURCE: fun f() {} print f();
 =================
 [EXPR_VAR] $f 
 [EXPR_CALL] $f ()
+@2: print [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1: FN f ()
 @2: print [EXPR_CALL] $f ()
@@ -1689,6 +1622,7 @@ SOURCE: fun f() { if (true) {return 1;} return 2; } print f();
 [EXPR_LITERAL] 2
 [EXPR_VAR] $f 
 [EXPR_CALL] $f ()
+@4: print [EXPR_CALL] $f ()
 ==== Program [2 statements] ====
 @1: FN f ()
 |   |   @2: IF
@@ -1724,6 +1658,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 [EXPR_VAR] $fact 
 [EXPR_LITERAL] 5
 [EXPR_CALL] $fact (5)
+@4: print [EXPR_CALL] $fact (5)
 ==== Program [2 statements] ====
 @1: FN fact (n)
 |   |   @2: IF
@@ -1793,6 +1728,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } return count; } var c = makeCounter(); print c(); print c();
 =================
 [EXPR_LITERAL] 0
+@2: VAR i = 0
 [EXPR_VAR] $i 
 [EXPR_VAR] $i 
 [EXPR_LITERAL] 1
@@ -1802,10 +1738,13 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 [EXPR_VAR] $count 
 [EXPR_VAR] $makeCounter 
 [EXPR_CALL] $makeCounter ()
+@5: VAR c = [EXPR_CALL] $makeCounter ()
 [EXPR_VAR] $c 
 [EXPR_CALL] $c ()
+@6: print [EXPR_CALL] $c ()
 [EXPR_VAR] $c 
 [EXPR_CALL] $c ()
+@7: print [EXPR_CALL] $c ()
 ==== Program [4 statements] ====
 @1: FN makeCounter ()
 |   |   @2: VAR i = 0
@@ -1821,13 +1760,13 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 |   @1 Fn makeCounter
 |   |   |   [EVAL_VAR] $makeCounter <fn makeCounter>
 |   |   [EVAL_CALL] [EXPR_CALL] $makeCounter ()
-|   |   |   @2: VAR i = 0
+@2: VAR i = 0
 |   |   |   define i = 0
 |   |   |   define count = <fn count>
 |   |   |   @1 Fn count
 |   |   |   |   [EVAL_VAR] $count <fn count>
 |   |   |   @1: RETURN <fn count>
-|   @5: VAR c = [EXPR_CALL] $makeCounter ()
+@5: VAR c = [EXPR_CALL] $makeCounter ()
 |   define c = <fn count>
 |   |   [EVAL_VAR] $c <fn count>
 |   [EVAL_CALL] [EXPR_CALL] $c ()
@@ -1854,53 +1793,116 @@ SOURCE: print clock();
 =================
 [EXPR_VAR] $clock 
 [EXPR_CALL] $clock ()
+@1: print [EXPR_CALL] $clock ()
 ==== Program [1 statements] ====
 @1: print [EXPR_CALL] $clock ()
 =================
 |   |   [EVAL_VAR] $clock <native fn>
 |   [EVAL_CALL] [EXPR_CALL] $clock ()
 @1: print [EXPR_CALL] $clock ()
-[RESULT] : 0.003341;
+[RESULT] : 0.003063;
 [INFO] no expected output
 
-SOURCE: var a = 8; { fun show() { print a;  } var a = 5;  show(); }
+SOURCE: var a = 0; var a = 1;
 =================
-[EXPR_LITERAL] 8
-[EXPR_VAR] $a 
-[EXPR_LITERAL] 5
-[EXPR_VAR] $show 
-[EXPR_CALL] $show ()
+[EXPR_LITERAL] 0
+@1: VAR a = 0
+[EXPR_LITERAL] 1
+@2: VAR a = 1
 ==== Program [2 statements] ====
-@1: VAR a = 8
-|   @1: FN show ()
-|   |   |   @4: print $a 
-|   @5: VAR a = 5
-|   @6: [STMT_EXPR] [EXPR_CALL] $show ()
+@1: VAR a = 0
+@2: VAR a = 1
 =================
-|   @1: VAR a = 8
-|   define a = 8
-|   define show = <fn show>
-|   @1 Fn show
-|   @5: VAR a = 5
-|   define a = 5
-|   |   [EVAL_VAR] $show <fn show>
-|   [EVAL_CALL] [EXPR_CALL] $show ()
-|   |   [EVAL_VAR] $a 8
-@4: print $a 8
-@6: [STMT_EXPR] [EXPR_CALL] $show ()
-[RESULT] : 8;
+@1: VAR a = 0
+|   define a = 0
+@2: VAR a = 1
+|   overwrite a = 1
+[RESULT] : 
+[FAIL] expected error
+
+SOURCE: { var a = 0; var a = 1; }
+=================
+[EXPR_LITERAL] 0
+@2: VAR a = 0
+[EXPR_LITERAL] 1
+@3: VAR a = 1
+==== Program [1 statements] ====
+|   @2: VAR a = 0
+|   @3: VAR a = 1
+=================
+[line 1] Error: Variable already declared in this scope.
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }
+=================
+[EXPR_LITERAL] 0
+@1: VAR a = 0
+[EXPR_VAR] $a 
+@4: print $a 
+[EXPR_VAR] $A 
+[EXPR_CALL] $A ()
+[EXPR_VAR] $a 
+[EXPR_LITERAL] 6
+[EXPR_ASSIGN] a = 6
+[EXPR_VAR] $A 
+[EXPR_CALL] $A ()
+[EXPR_LITERAL] 4
+@8: VAR a = 4
+[EXPR_VAR] $A 
+[EXPR_CALL] $A ()
+[EXPR_VAR] $a 
+@10: print $a 
+==== Program [2 statements] ====
+@1: VAR a = 0
+|   @1: FN A ()
+|   |   |   @4: print $a 
+|   @5: [STMT_EXPR] [EXPR_CALL] $A ()
+|   @6: [STMT_EXPR] a = 6
+|   @7: [STMT_EXPR] [EXPR_CALL] $A ()
+|   @8: VAR a = 4
+|   @9: [STMT_EXPR] [EXPR_CALL] $A ()
+|   @10: print $a 
+=================
+@1: VAR a = 0
+|   define a = 0
+|   define A = <fn A>
+|   @1 Fn A
+|   |   [EVAL_VAR] $A <fn A>
+|   [EVAL_CALL] [EXPR_CALL] $A ()
+|   |   [EVAL_VAR] $a 0
+@4: print $a 0
+@5: [STMT_EXPR] [EXPR_CALL] $A ()
+|   [EVAL_ASSIGN] a = 6
+|   assign a = 6
+@6: [STMT_EXPR] a = 6
+|   |   [EVAL_VAR] $A <fn A>
+|   [EVAL_CALL] [EXPR_CALL] $A ()
+|   |   [EVAL_VAR] $a 6
+@4: print $a 6
+@7: [STMT_EXPR] [EXPR_CALL] $A ()
+@8: VAR a = 4
+|   define a = 4
+|   |   [EVAL_VAR] $A <fn A>
+|   [EVAL_CALL] [EXPR_CALL] $A ()
+|   |   [EVAL_VAR] $a 6
+@4: print $a 6
+@9: [STMT_EXPR] [EXPR_CALL] $A ()
+|   [EVAL_VAR] $a 4
+@10: print $a 4
+[RESULT] : 0;6;6;4;
 [PASS]
 
 SOURCE: var a = a;
 =================
 [EXPR_VAR] $a 
+@1: VAR a = $a 
 ==== Program [1 statements] ====
 @1: VAR a = $a 
 =================
-|   |   |   [line 1] RuntimeError at 'a': Undefined variable.
-|   @1: VAR a = $a 
-|   define a = Error: Undefined variable.
-
+|   |   |   [line 1] RuntimeError at 'a': Undefined variable
+@1: VAR a = $a >> Undefined variable
 [RESULT] : 
 [PassError]
 
@@ -1930,6 +1932,7 @@ Resolve error. No execution
 SOURCE: class Foo {} print Foo;
 =================
 [EXPR_VAR] $Foo 
+@1: print $Foo 
 ==== Program [2 statements] ====
 @1: Class Foo 
 @1: print $Foo 
@@ -1946,7 +1949,9 @@ SOURCE: class Foo {} var f = Foo(); print f;
 =================
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
+@1: VAR f = [EXPR_CALL] $Foo ()
 [EXPR_VAR] $f 
+@2: print $f 
 ==== Program [3 statements] ====
 @1: Class Foo 
 @1: VAR f = [EXPR_CALL] $Foo ()
@@ -1957,7 +1962,7 @@ SOURCE: class Foo {} var f = Foo(); print f;
 |   assign Foo = <class Foo>
 |   |   |   [EVAL_VAR] $Foo <class Foo>
 |   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
-|   @1: VAR f = [EXPR_CALL] $Foo ()
+@1: VAR f = [EXPR_CALL] $Foo ()
 |   define f = <instance Foo>
 |   [EVAL_VAR] $f <instance Foo>
 @2: print $f <instance Foo>
@@ -1971,6 +1976,7 @@ SOURCE: class Foo { get() { return 123; } } print Foo().get();
 [EXPR_CALL] $Foo ()
 [EXPR_GET] [EXPR_CALL] $Foo ().get
 [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
+@2: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().get()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN get ()
@@ -2002,9 +2008,11 @@ this
 [EXPR_VAR] $Foo 
 [EXPR_LITERAL] 42
 [EXPR_CALL] $Foo (42)
+@4: VAR f = [EXPR_CALL] $Foo (42)
 [EXPR_VAR] $f 
 [EXPR_GET] $f .get
 [EXPR_CALL] [EXPR_GET] $f .get()
+@5: print [EXPR_CALL] [EXPR_GET] $f .get()
 ==== Program [3 statements] ====
 @1: Class Foo 
 |   @1: FN init (x)
@@ -2028,7 +2036,7 @@ this
 |   |   |   define x = 42
 |   |   |   [EVAL_SET] [EXPR_SET] this.x = $x 
 @2: [STMT_EXPR] [EXPR_SET] this.x = $x 
-|   @4: VAR f = [EXPR_CALL] $Foo (42)
+@4: VAR f = [EXPR_CALL] $Foo (42)
 |   define f = <instance Foo>
 |   |   |   [EVAL_VAR] $f <instance Foo>
 |   |   define this = <instance Foo>
@@ -2045,6 +2053,7 @@ SOURCE: class Foo { init() { return 123; } } print Foo();
 [EXPR_LITERAL] 123
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
+@2: print [EXPR_CALL] $Foo ()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init ()
@@ -2069,6 +2078,7 @@ SOURCE: fun init() { return 123; } print init();
 [EXPR_LITERAL] 123
 [EXPR_VAR] $init 
 [EXPR_CALL] $init ()
+@2: print [EXPR_CALL] $init ()
 ==== Program [2 statements] ====
 @1: FN init ()
 |   |   @1: RETURN 
@@ -2103,6 +2113,7 @@ this
 [EXPR_CALL] $Foo (42)
 [EXPR_GET] [EXPR_CALL] $Foo (42).inc
 [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
+@5: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo (42).inc()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init (x)
@@ -2144,6 +2155,7 @@ SOURCE: class Foo {} print Foo.x;
 =================
 [EXPR_VAR] $Foo 
 [EXPR_GET] $Foo .x
+@1: print [EXPR_GET] $Foo .x
 ==== Program [2 statements] ====
 @1: Class Foo 
 @1: print [EXPR_GET] $Foo .x
@@ -2154,7 +2166,7 @@ SOURCE: class Foo {} print Foo.x;
 |   |   [EVAL_VAR] $Foo <class Foo>
 |   |   [line 1] RuntimeError at 'x': Only instances have properties, Invalid access
 @1: print [EXPR_GET] $Foo .x
-[RESULT] : Error: Only instances have properties, Invalid access;;
+[RESULT] : >> Only instances have properties, Invalid access;
 [PassError]
 
 SOURCE: class Foo {} print Foo().x;
@@ -2162,6 +2174,7 @@ SOURCE: class Foo {} print Foo().x;
 [EXPR_VAR] $Foo 
 [EXPR_CALL] $Foo ()
 [EXPR_GET] [EXPR_CALL] $Foo ().x
+@1: print [EXPR_GET] [EXPR_CALL] $Foo ().x
 ==== Program [2 statements] ====
 @1: Class Foo 
 @1: print [EXPR_GET] [EXPR_CALL] $Foo ().x
@@ -2171,9 +2184,9 @@ SOURCE: class Foo {} print Foo().x;
 |   assign Foo = <class Foo>
 |   |   |   [EVAL_VAR] $Foo <class Foo>
 |   |   [EVAL_CALL] [EXPR_CALL] $Foo ()
-|   |   [line 1] RuntimeError at 'x': Undefined property.
+|   |   [line 1] RuntimeError at 'x': Undefined property
 @1: print [EXPR_GET] [EXPR_CALL] $Foo ().x
-[RESULT] : Error: Undefined property.;;
+[RESULT] : >> Undefined property;
 [PassError]
 
 SOURCE: class Foo { init() { this.x = 123; } } print Foo().x();
@@ -2186,6 +2199,7 @@ this
 [EXPR_CALL] $Foo ()
 [EXPR_GET] [EXPR_CALL] $Foo ().x
 [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
+@3: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init ()
@@ -2204,9 +2218,9 @@ this
 |   |   |   |   [EVAL_SET] [EXPR_SET] this.x = 123
 @2: [STMT_EXPR] [EXPR_SET] this.x = 123
 |   |   [EVAL_GET] [EXPR_GET] [EXPR_CALL] $Foo ().x
-|   |   [line 1] RuntimeError: Can only call functions and classes.
+|   |   [line 1] RuntimeError: Can only call functions and classes
 @3: print [EXPR_CALL] [EXPR_GET] [EXPR_CALL] $Foo ().x()
-[RESULT] : Error: Can only call functions and classes.;;
+[RESULT] : >> Can only call functions and classes;
 [PassError]
 
 SOURCE: class Foo { init(a) { } } print Foo(3,4);
@@ -2215,6 +2229,7 @@ SOURCE: class Foo { init(a) { } } print Foo(3,4);
 [EXPR_LITERAL] 3
 [EXPR_LITERAL] 4
 [EXPR_CALL] $Foo (3,4)
+@2: print [EXPR_CALL] $Foo (3,4)
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init (a)
@@ -2228,9 +2243,9 @@ SOURCE: class Foo { init(a) { } } print Foo(3,4);
 |   [EVAL_CALL] [EXPR_CALL] $Foo (3,4)
 |   define this = <instance Foo>
 |   [EVAL_CALL] [EXPR_CALL] <fn init>(3,4)
-|   |   [line 1] RuntimeError: Expected 1 arguments but got 2.
+|   |   [line 1] RuntimeError: Expected 1 arguments but got 2
 @2: print [EXPR_CALL] $Foo (3,4)
-[RESULT] : Error: Expected 1 arguments but got 2.;;
+[RESULT] : >> Expected 1 arguments but got 2;
 [PassError]
 
 SOURCE: class A {} super.foo();
@@ -2249,6 +2264,7 @@ Resolve error. No execution
 SOURCE: class A { foo() { print "Hello world";} } class B < A { bar() { super.foo(); } } B().bar();
 =================
 [EXPR_LITERAL] Hello world
+@2: print Hello world
 [EXPR_VAR] $A 
 [EXPR_SUPER] 
 [EXPR_CALL] [EXPR_SUPER] ()
