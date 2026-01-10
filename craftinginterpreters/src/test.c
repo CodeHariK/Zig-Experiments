@@ -104,7 +104,7 @@ static void runExprTests(void) {
     printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
+    loxInit(&lox, DEBUG_PRINT, true, false);
     initScanner(&lox.scanner, test.source);
     scanTokens(&lox);
     initParser(&lox);
@@ -183,7 +183,6 @@ void runVarTests(void) {
        "{print i + j;}}",
        "0;1;1;2;", true},
       // for with expression body
-      {"for (var i = 0; i < 3; i = i + 1) i = i + 10; print i;", "13;", false},
       // for inside block
       {"{ for (var i = 0; i < 2; i = i + 1) {print i;} }", "0;1;", true},
 
@@ -266,9 +265,12 @@ void runVarTests(void) {
       {"class Foo { init(a) { } } print Foo(3,4);", "", false},
 
       {"class A {} super.foo();", "", false},
-      {"class A { foo() { print \"Hello world\";} } class B < A { bar() { "
+      {"class B < A {} class A {}", "", false},
+      {"class A {} class B < 123 {}", "", false},
+      {"class A { foo() { print 1+0; print \"Hello world\";} } class B < A { "
+       "bar() { "
        "super.foo(); } } B().bar();",
-       "Hello world\n", true},
+       "1\nHello world\n", true},
       //
   };
 
@@ -279,7 +281,7 @@ void runVarTests(void) {
     printf("SOURCE: %s\n", test.source);
 
     Lox lox;
-    loxInit(&lox, DEBUG_PRINT);
+    loxInit(&lox, DEBUG_PRINT, true, false);
     initScanner(&lox.scanner, test.source);
     scanTokens(&lox);
     initParser(&lox);

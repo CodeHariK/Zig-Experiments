@@ -318,7 +318,7 @@ typedef struct LoxFunction {
 
 typedef struct LoxClass {
   Token name;
-  Environment *methods;
+  Environment *methodsEnv;
   struct LoxClass *superclass;
 } LoxClass;
 
@@ -372,7 +372,10 @@ typedef struct {
   char runtimeErrorMsg[512];
   char output[1024 * 10];
   u32 output_len;
+
   bool debugPrint;
+  bool debugParserPrint;
+  bool debugTokenPrint;
 
   u32 indent;
 
@@ -390,7 +393,8 @@ typedef struct {
   Environment *env;
 } Lox;
 
-void loxInit(Lox *lox, bool debugPrint);
+void loxInit(Lox *lox, bool debugPrint, bool debugParserPrint,
+             bool debugTokenPrint);
 void freeLox(Lox *lox);
 
 void loxRun(Lox *lox, const char *source);

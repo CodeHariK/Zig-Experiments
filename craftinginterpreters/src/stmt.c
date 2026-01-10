@@ -28,7 +28,6 @@ static Stmt *parsePrintStmt(Lox *lox) {
 }
 
 static Stmt *parseVarStmt(Lox *lox) {
-  // consume "var"
   Token name = consumeToken(lox, TOKEN_IDENTIFIER, "Expect variable name.");
 
   Expr *initializer = NULL;
@@ -138,6 +137,8 @@ static Stmt *parseFunctionStmt(Lox *lox) {
 
   lox->parser.functionDepth--;
 
+  printStmt(lox, stmt, NO_VALUE, 0);
+
   return stmt;
 }
 
@@ -150,6 +151,7 @@ static Stmt *parseClassStmt(Lox *lox) {
     Token superClassToken =
         consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass name.");
     superclass = newVariableExpr(lox, superClassToken);
+    printExpr(lox, superclass, NO_VALUE, 0, true, "[EXPR_SUP] ");
   }
 
   consumeToken(lox, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -179,6 +181,8 @@ static Stmt *parseClassStmt(Lox *lox) {
   stmt->as.classStmt.methodCount = count;
   stmt->line = tok.line;
   stmt->as.classStmt.superclass = superclass;
+
+  printStmt(lox, stmt, NO_VALUE, 0);
 
   return stmt;
 }

@@ -114,7 +114,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
     // Call init if exists
     Value init;
-    if (envGet(klass->methods, "init", &init)) {
+    if (envGet(klass->methodsEnv, "init", &init)) {
       Value bound = bindMethod(lox, init, instance);
 
       Expr fakeCall = *expr;

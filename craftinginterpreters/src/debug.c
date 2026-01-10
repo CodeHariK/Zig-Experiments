@@ -89,11 +89,10 @@ void printEnvironment(Lox *lox) {
 }
 
 void printToken(Lox *lox, const Token *token, char *msg) {
-  if (true || !lox->debugPrint)
-    return;
-
-  printf("%s[TOK] %-20s '%.*s'\n", msg, tokenTypeToString(token->type),
-         token->length, token->lexeme);
+  if (lox->debugTokenPrint) {
+    printf("@%d %s[TOK] %-20s '%.*s'\n", token->line, msg,
+           tokenTypeToString(token->type), token->length, token->lexeme);
+  }
 }
 
 void printEnv(Lox *lox, const char *name, Value value, char *msg) {
@@ -112,7 +111,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
   }
 
   if (!expr) {
-    printf("[NULL_EXPR]\n");
+    printf("\n");
     return;
   }
 
@@ -165,7 +164,6 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_CALL: {
-    printf("[EXPR_CALL] ");
     printExpr(lox, expr->as.call.callee, NO_VALUE, 0, false, "");
     printf("(");
     for (u8 i = 0; i < expr->as.call.argCount; i++) {
@@ -196,9 +194,7 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_SUPER: {
-    printf("[EXPR_SUPER] ");
-    printToken(lox, &expr->as.superExpr.keyword, "");
-    printToken(lox, &expr->as.superExpr.method, " ");
+    printf("super.%s", expr->as.superExpr.method.lexeme);
     break;
   }
   }
@@ -227,7 +223,7 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
     break;
   }
   case STMT_EXPR: {
-    printExpr(lox, stmt->as.expr, result, 0, true, "[STMT_EXPR] ");
+    printExpr(lox, stmt->as.expr, result, 0, true, "");
     break;
   }
   case STMT_VAR: {
@@ -314,12 +310,15 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent) {
   }
 
   case STMT_CLASS: {
-    printf("Class %s \n", stmt->as.classStmt.name.lexeme);
+    printf("Class %s ", stmt->as.classStmt.name.lexeme);
+    printExpr(lox, stmt->as.classStmt.superclass, NO_VALUE, 0, true, "> ");
 
     for (u8 i = 0; i < stmt->as.classStmt.methodCount; i++) {
       Stmt *t = stmt->as.classStmt.methods[i];
       printStmt(lox, t, NO_VALUE, indent + 1);
     }
+
+    printf("--------\n");
 
     break;
   }

@@ -2,11 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void loxInit(Lox *lox, bool debugPrint) {
+void loxInit(Lox *lox, bool debugPrint, bool debugParserPrint,
+             bool debugTokenPrint) {
   *lox = (Lox){
       .hadError = false,
       .hadRuntimeError = false,
       .debugPrint = debugPrint,
+      .debugParserPrint = debugParserPrint,
+      .debugTokenPrint = debugTokenPrint,
+
       .errorMsg[0] = '\0',
       .runtimeErrorMsg[0] = '\0',
       .output_len = 0,

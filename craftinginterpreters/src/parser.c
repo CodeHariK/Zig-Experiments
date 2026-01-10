@@ -112,7 +112,6 @@ Expr *newVariableExpr(Lox *lox, Token token) {
   expr->type = EXPR_VARIABLE;
   expr->as.var.name = token;
   expr->as.var.depth = -1;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_VAR] ");
   return expr;
 }
 
@@ -144,7 +143,7 @@ static Expr *newCallExpr(Lox *lox, Expr *callee, Expr **args, u8 argCount,
   callExpr->as.call.arguments = args;
   callExpr->as.call.argCount = argCount;
   callExpr->line = line;
-  printExpr(lox, callExpr, NO_VALUE, 0, true, "");
+  printExpr(lox, callExpr, NO_VALUE, 0, true, "[EXPR_CALL] ");
   return callExpr;
 }
 
@@ -173,7 +172,7 @@ static Expr *newThisExpr(Lox *lox) {
   thisExpr->type = EXPR_THIS;
   thisExpr->as.thisExpr.keyword = prevToken(&lox->parser);
   thisExpr->as.thisExpr.depth = -1;
-  printExpr(lox, thisExpr, NO_VALUE, 0, true, "");
+  // printExpr(lox, thisExpr, NO_VALUE, 0, true, "[EXPR_THIS] ");
   return thisExpr;
 }
 
@@ -183,7 +182,6 @@ static Expr *newSuperExpr(Lox *lox, Token keyword, Token method) {
   superExpr->as.superExpr.keyword = keyword;
   superExpr->as.superExpr.method = method;
   superExpr->as.superExpr.depth = -1;
-  printExpr(lox, superExpr, NO_VALUE, 0, true, "");
   return superExpr;
 }
 
@@ -227,7 +225,9 @@ static Expr *parsePrimary(Lox *lox) {
   }
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_IDENTIFIER)) {
-    return newVariableExpr(lox, prevToken(parser));
+    Expr *e = newVariableExpr(lox, prevToken(parser));
+    printExpr(lox, e, NO_VALUE, 0, true, "[EXPR_VAR] ");
+    return e;
   }
 
   parseError(lox, "Expect expression.");
@@ -390,8 +390,8 @@ static Expr *parseLogicOr(Lox *lox) {
 // assignment     → IDENTIFIER "=" assignment
 //                | equality ;
 static Expr *parseAssignment(Lox *lox) {
-  Expr *expr = parseLogicOr(lox);
-  if (!expr)
+  Expr *prev = parseLogicOr(lox);
+  if (!prev)
     return NULL;
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_EQUAL)) {
@@ -399,18 +399,17 @@ static Expr *parseAssignment(Lox *lox) {
     if (!value)
       return NULL;
 
-    if (expr->type == EXPR_VARIABLE) {
-      Token name = expr->as.var.name;
+    if (prev->type == EXPR_VARIABLE) {
+      Token name = prev->as.var.name;
       return newAssignExpr(lox, name, value); // existing variable assignment
-    } else if (expr->type == EXPR_GET) {
-      // Convert EXPR_GET into EXPR_SET
-      return newSetExpr(lox, expr, value);
+    } else if (prev->type == EXPR_GET) {
+      return newSetExpr(lox, prev, value);
     } else {
       parseError(lox, "Invalid assignment target.");
     }
   }
 
-  return expr;
+  return prev;
 }
 
 Expr *parseExpression(Lox *lox) { return parseAssignment(lox); }

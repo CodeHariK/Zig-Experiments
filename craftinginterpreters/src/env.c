@@ -446,7 +446,7 @@ Value evalVariable(Lox *lox, Expr *expr) {
     }
   }
 
-  printExpr(lox, expr, result, lox->indent, true, "[EVAL_VAR] ");
+  printExpr(lox, expr, result, lox->indent, true, "envget ");
   return result;
 }
 
@@ -484,7 +484,7 @@ Value evalGet(Lox *lox, Expr *expr) {
     return value;
   }
 
-  if (envGet(inst->class->methods, expr->as.getExpr.name.lexeme, &value)) {
+  if (envGet(inst->class->methodsEnv, expr->as.getExpr.name.lexeme, &value)) {
     Value bound_method = bindMethod(lox, value, inst);
 
     printExpr(lox, expr, bound_method, lox->indent, true, "[EVAL_GET_M] ");
@@ -507,7 +507,7 @@ Value evalSet(Lox *lox, Expr *expr) {
 
   envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
 
-  printExpr(lox, expr, value, lox->indent, true, "[EVAL_SET] ");
+  // printExpr(lox, expr, value, lox->indent, true, "[EVAL_SET] ");
   return value;
 }
 
@@ -515,7 +515,10 @@ Value evalSuper(Lox *lox, Expr *expr) {
   // 1. Get `this`
   Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
 
+  printf("~~\n");
+
   if (thisVal.type != VAL_INSTANCE) {
+
     /* Debugging aid: print environment distances to 'this' to help
        diagnose resolution mismatches. This is temporary and will be
        removed once the resolver is verified to produce correct depths. */
@@ -544,7 +547,8 @@ Value evalSuper(Lox *lox, Expr *expr) {
 
   // 3. Look up method on superclass
   Value method;
-  if (!envGet(superclass->methods, expr->as.superExpr.method.lexeme, &method)) {
+  if (!envGet(superclass->methodsEnv, expr->as.superExpr.method.lexeme,
+              &method)) {
     return errorValue(lox, &expr->as.superExpr.method, expr,
                       "Undefined property on superclass", true);
   }

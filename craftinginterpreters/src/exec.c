@@ -78,10 +78,12 @@ static void execForStmt(Lox *lox, Stmt *stmt) {
 }
 
 static void execClassStmt(Lox *lox, Stmt *stmt) {
-  indentPrint(lox->indent);
   printf("@%d: Class %s\n", stmt->line, stmt->as.classStmt.name.lexeme);
 
-  // 1. Evaluate superclass if present
+  // 1. Define class name early (allows self-reference)
+  envDefine(lox->env, lox, stmt->as.classStmt.name.lexeme, NIL_VALUE);
+
+  // 2. Evaluate superclass if present
   Value superclassVal = NIL_VALUE;
   if (stmt->as.classStmt.superclass) {
     superclassVal = evaluate(lox, stmt->as.classStmt.superclass);
@@ -93,20 +95,18 @@ static void execClassStmt(Lox *lox, Stmt *stmt) {
     }
   }
 
-  // 2. Define class name early (allows self-reference)
-  envDefine(lox->env, lox, stmt->as.classStmt.name.lexeme, NIL_VALUE);
-
   // 3. Create temporary env for 'super'
-  Environment *previous = lox->env;
   if (stmt->as.classStmt.superclass) {
-    lox->env = envNew(previous);
+    Environment *prevEnv = lox->env;
+    lox->env = envNew(prevEnv);
     envDefine(lox->env, lox, "super", superclassVal);
+    lox->env = prevEnv;
   }
 
   // 4. Create class object
   LoxClass *klass = arenaAlloc(&lox->astArena, sizeof(LoxClass));
   klass->name = stmt->as.classStmt.name;
-  klass->methods = envNew(NULL);
+  klass->methodsEnv = envNew(NULL);
   klass->superclass =
       stmt->as.classStmt.superclass ? superclassVal.as.klass : NULL;
 
@@ -114,20 +114,17 @@ static void execClassStmt(Lox *lox, Stmt *stmt) {
   for (int i = 0; i < stmt->as.classStmt.methodCount; i++) {
     Stmt *method = stmt->as.classStmt.methods[i];
     Value fnValue = makeFunction(lox, method, true);
-    envDefine(klass->methods, lox, fnValue.as.function->name.lexeme, fnValue);
+    envDefine(klass->methodsEnv, lox, fnValue.as.function->name.lexeme,
+              fnValue);
   }
 
-  // 6. Restore environment
-  if (stmt->as.classStmt.superclass) {
-    lox->env = previous;
-  }
-
-  // 7. Assign class value
+  // 6. Assign class value
   Value classValue;
   classValue.type = VAL_CLASS;
   classValue.as.klass = klass;
 
   envAssign(lox, lox->env, stmt->as.classStmt.name.lexeme, classValue);
+  printf("--------\n");
 }
 
 static void execReturnStmt(Lox *lox, Stmt *stmt) {
@@ -170,7 +167,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     loxAppendOutput(lox, buf);
     loxAppendOutput(lox, "\n");
 
-    printStmt(lox, stmt, result, 0);
+    printStmt(lox, stmt, result, lox->indent);
 
     break;
   }
