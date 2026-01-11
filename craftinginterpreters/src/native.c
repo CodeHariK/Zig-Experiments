@@ -10,6 +10,6 @@ Value clockNative(int argCount, Value *args) {
 
 void defineNativeFunctions(Lox *lox) {
   // Define native functions
-  envDefine(lox->env, NULL, "clock",
+  envDefine(lox->env, lox, "clock",
             (Value){VAL_NATIVE, {.native = clockNative}});
 }

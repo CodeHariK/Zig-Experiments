@@ -15,8 +15,6 @@ static void executeBlock(Lox *lox, Stmt **stmts, int count) {
 }
 
 static void execIfStmt(Lox *lox, Stmt *stmt) {
-  indentPrint(lox->indent);
-  printf("IF\n");
   if (isTruthy(evaluate(lox, stmt->as.ifStmt.condition))) {
     executeStmt(lox, stmt->as.ifStmt.then_branch);
   } else if (stmt->as.ifStmt.else_branch) {
@@ -29,11 +27,13 @@ static void execIfStmt(Lox *lox, Stmt *stmt) {
 }
 
 static void execWhileStmt(Lox *lox, Stmt *stmt) {
-  indentPrint(lox->indent);
-  printf("WHILE\n");
 
-  while (!lox->hadRuntimeError && !lox->hadError &&
-         isTruthy(evaluate(lox, stmt->as.whileStmt.condition))) {
+  while (!lox->hadRuntimeError && !lox->hadError) {
+
+    if (stmt->as.forStmt.condition &&
+        !isTruthy(evaluate(lox, stmt->as.forStmt.condition))) {
+      break;
+    }
 
     executeStmt(lox, stmt->as.whileStmt.body);
 
@@ -46,12 +46,12 @@ static void execWhileStmt(Lox *lox, Stmt *stmt) {
       lox->signal.type = SIGNAL_NONE;
       // continue;
     }
+
+    printf("---\n");
   }
 }
 
 static void execForStmt(Lox *lox, Stmt *stmt) {
-  indentPrint(lox->indent);
-  printf("FOR\n");
 
   while (!lox->hadRuntimeError && !lox->hadError) {
     if (stmt->as.forStmt.condition &&
@@ -74,11 +74,12 @@ static void execForStmt(Lox *lox, Stmt *stmt) {
     if (stmt->as.forStmt.increment) {
       evaluate(lox, stmt->as.forStmt.increment);
     }
+
+    printf("---\n");
   }
 }
 
 static void execClassStmt(Lox *lox, Stmt *stmt) {
-  printf("@%d: Class %s\n", stmt->line, stmt->as.classStmt.name.lexeme);
 
   // 1. Define class name early (allows self-reference)
   envDefine(lox->env, lox, stmt->as.classStmt.name.lexeme, NIL_VALUE);
@@ -124,7 +125,7 @@ static void execClassStmt(Lox *lox, Stmt *stmt) {
   classValue.as.klass = klass;
 
   envAssign(lox, lox->env, stmt->as.classStmt.name.lexeme, classValue);
-  printf("--------\n");
+  printf("---\n");
 }
 
 static void execReturnStmt(Lox *lox, Stmt *stmt) {
@@ -142,8 +143,6 @@ static void execReturnStmt(Lox *lox, Stmt *stmt) {
 
   lox->signal.type = SIGNAL_RETURN;
   lox->signal.returnValue = value;
-
-  printStmt(lox, stmt, value, lox->indent);
 }
 
 void executeStmt(Lox *lox, Stmt *stmt) {
@@ -151,10 +150,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   if (!stmt)
     return;
 
-  if (stmt->type != STMT_BLOCK && stmt->type != STMT_EXPR &&
-      stmt->type != STMT_PRINT) {
-    lox->indent++;
-  }
+  printStmt(lox, stmt, NO_VALUE, lox->indent, false);
 
   switch (stmt->type) {
   case STMT_PRINT: {
@@ -167,24 +163,21 @@ void executeStmt(Lox *lox, Stmt *stmt) {
     loxAppendOutput(lox, buf);
     loxAppendOutput(lox, "\n");
 
-    printStmt(lox, stmt, result, lox->indent);
-
     break;
   }
 
   case STMT_EXPR: {
-    Value val = evaluate(lox, stmt->as.expr);
-    printStmt(lox, stmt, val, 0);
+    evaluate(lox, stmt->as.expr);
     break;
   }
 
   case STMT_VAR: {
+
     Value val = UNDEFINED_VALUE;
     if (stmt->as.var.initializer) {
       val = evaluate(lox, stmt->as.var.initializer);
     }
 
-    printStmt(lox, stmt, val, 0);
     if (val.type != UNDEFINED_VALUE.type) {
       envDefine(lox->env, lox, stmt->as.var.name.lexeme, val);
     }
@@ -213,9 +206,6 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   case STMT_FUNCTION: {
     Value fnValue = makeFunction(lox, stmt, false);
     envDefine(lox->env, lox, fnValue.as.function->name.lexeme, fnValue);
-
-    indentPrint(lox->indent);
-    printf("@%d Fn %s\n", stmt->line, stmt->as.functionStmt.name.lexeme);
     break;
   }
 
@@ -226,25 +216,16 @@ void executeStmt(Lox *lox, Stmt *stmt) {
 
   case STMT_BREAK: {
     lox->signal.type = SIGNAL_BREAK;
-    indentPrint(lox->indent);
-    printf("BREAK\n");
     break;
   }
   case STMT_CONTINUE: {
     lox->signal.type = SIGNAL_CONTINUE;
-    indentPrint(lox->indent);
-    printf("CONTINUE\n");
     break;
   }
   case STMT_RETURN: {
     execReturnStmt(lox, stmt);
     break;
   }
-  }
-
-  if (stmt->type != STMT_BLOCK && stmt->type != STMT_EXPR &&
-      stmt->type != STMT_PRINT) {
-    lox->indent--;
   }
 }
 

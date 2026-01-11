@@ -78,7 +78,7 @@ static Expr *newBinaryExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   expr->as.binary.left = left;
   expr->as.binary.op = op;
   expr->as.binary.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_BINARY] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -87,7 +87,7 @@ static Expr *newUnaryExpr(Lox *lox, Token op, Expr *right) {
   expr->type = EXPR_UNARY;
   expr->as.unary.op = op;
   expr->as.unary.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_UNARY] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -95,7 +95,7 @@ static Expr *newLiteralExpr(Lox *lox, Value value) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_LITERAL;
   expr->as.literal.value = value;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_LITERAL] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -103,7 +103,7 @@ static Expr *newGroupingExpr(Lox *lox, Expr *expression) {
   Expr *expr = arenaAlloc(&lox->astArena, sizeof(Expr));
   expr->type = EXPR_GROUPING;
   expr->as.grouping.expression = expression;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_GROUP] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -121,7 +121,7 @@ static Expr *newAssignExpr(Lox *lox, Token name, Expr *value) {
   expr->as.assign.name = name;
   expr->as.assign.value = value;
   expr->as.var.depth = -1;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_ASSIGN] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -131,7 +131,7 @@ static Expr *newLogicalExpr(Lox *lox, Expr *left, Token op, Expr *right) {
   expr->as.logical.left = left;
   expr->as.logical.op = op;
   expr->as.logical.right = right;
-  printExpr(lox, expr, NO_VALUE, 0, true, "[EXPR_LOGICAL] ");
+  printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }
 
@@ -143,7 +143,7 @@ static Expr *newCallExpr(Lox *lox, Expr *callee, Expr **args, u8 argCount,
   callExpr->as.call.arguments = args;
   callExpr->as.call.argCount = argCount;
   callExpr->line = line;
-  printExpr(lox, callExpr, NO_VALUE, 0, true, "[EXPR_CALL] ");
+  printExpr(lox, callExpr, NO_VALUE, 0, true, "");
   return callExpr;
 }
 
@@ -226,7 +226,7 @@ static Expr *parsePrimary(Lox *lox) {
 
   if (matchAnyTokenAdvance(lox, 1, TOKEN_IDENTIFIER)) {
     Expr *e = newVariableExpr(lox, prevToken(parser));
-    printExpr(lox, e, NO_VALUE, 0, true, "[EXPR_VAR] ");
+    printExpr(lox, e, NO_VALUE, 0, true, "");
     return e;
   }
 

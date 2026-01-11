@@ -113,6 +113,7 @@ bool envAssign(Lox *lox, Environment *env, const char *name, Value value) {
       env->entries[i].value = value;
 
       printEnv(lox, name, value, "assign");
+
       return true;
     }
   }
@@ -435,6 +436,8 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
 Value evalVariable(Lox *lox, Expr *expr) {
   Value result;
 
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
+
   if (expr->as.var.depth != -1) {
     // Local or non-global resolved by resolver
     result = envGetAt(lox->env, expr->as.var.depth, expr->as.var.name.lexeme);
@@ -446,14 +449,12 @@ Value evalVariable(Lox *lox, Expr *expr) {
     }
   }
 
-  printExpr(lox, expr, result, lox->indent, true, "envget ");
+  printExpr(lox, expr, result, lox->indent + 1, true, "envget ");
   return result;
 }
 
 Value evalAssign(Lox *lox, Expr *expr) {
   Value result = evaluate(lox, expr->as.assign.value);
-
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[EVAL_ASSIGN] ");
 
   if (expr->as.assign.depth != -1) {
     envAssignAt(lox->env, expr->as.assign.depth, expr->as.assign.name.lexeme,
@@ -469,6 +470,9 @@ Value evalAssign(Lox *lox, Expr *expr) {
 }
 
 Value evalGet(Lox *lox, Expr *expr) {
+
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
+
   Value obj = evaluate(lox, expr->as.getExpr.object);
 
   if (obj.type != VAL_INSTANCE) {
@@ -486,8 +490,6 @@ Value evalGet(Lox *lox, Expr *expr) {
 
   if (envGet(inst->class->methodsEnv, expr->as.getExpr.name.lexeme, &value)) {
     Value bound_method = bindMethod(lox, value, inst);
-
-    printExpr(lox, expr, bound_method, lox->indent, true, "[EVAL_GET_M] ");
     return bound_method;
   }
 
@@ -496,6 +498,8 @@ Value evalGet(Lox *lox, Expr *expr) {
 }
 
 Value evalSet(Lox *lox, Expr *expr) {
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[EVAL_SET] ");
+
   Value obj = evaluate(lox, expr->as.setExpr.object);
 
   if (obj.type != VAL_INSTANCE) {
@@ -512,25 +516,12 @@ Value evalSet(Lox *lox, Expr *expr) {
 }
 
 Value evalSuper(Lox *lox, Expr *expr) {
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[> EVAL_SUPER] ");
+
   // 1. Get `this`
   Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
 
-  printf("~~\n");
-
   if (thisVal.type != VAL_INSTANCE) {
-
-    /* Debugging aid: print environment distances to 'this' to help
-       diagnose resolution mismatches. This is temporary and will be
-       removed once the resolver is verified to produce correct depths. */
-    printf("evalSuper: requested depth=%d\n", expr->as.superExpr.depth);
-    for (int d = expr->as.superExpr.depth - 2;
-         d <= expr->as.superExpr.depth + 2; d++) {
-      if (d < 0)
-        continue;
-      Value v = envGetAt(lox->env, d, "this");
-      printf("  depth %d -> type %d\n", d, v.type);
-    }
-
     return errorValue(lox, &expr->as.superExpr.keyword, expr,
                       "Invalid 'this' binding.", true);
   }

@@ -76,6 +76,7 @@ static Value evalBinary(Lox *lox, Expr *expr) {
 }
 
 static Value evalCall(Lox *lox, Expr *expr) {
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
 
   Value callee = evaluate(lox, expr->as.call.callee);
 
@@ -84,8 +85,6 @@ static Value evalCall(Lox *lox, Expr *expr) {
     return errorValue(lox, NULL, expr, "Can only call functions and classes",
                       true);
   }
-
-  printExpr(lox, expr, callee, lox->indent, true, "[EVAL_CALL] ");
 
   if (callee.type == VAL_NATIVE) {
     NativeFn native = callee.as.native;
@@ -192,6 +191,8 @@ Value evaluate(Lox *lox, Expr *expr) {
 
   lox->indent++;
 
+  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
+
   switch (expr->type) {
   case EXPR_LITERAL: {
     result = literalValue(expr);
@@ -199,18 +200,15 @@ Value evaluate(Lox *lox, Expr *expr) {
   }
   case EXPR_GROUPING: {
     result = evaluate(lox, expr->as.grouping.expression);
-    printExpr(lox, expr, result, lox->indent, true, "[EVAL_GROUP] ");
     break;
   }
   case EXPR_UNARY: {
     result = evalUnary(lox, expr);
-    printExpr(lox, expr, result, lox->indent, true, "[EVAL_UNARY] ");
     break;
   }
 
   case EXPR_BINARY: {
     result = evalBinary(lox, expr);
-    printExpr(lox, expr, result, lox->indent, true, "[EVAL_BINARY] ");
     break;
   }
 
@@ -230,7 +228,6 @@ Value evaluate(Lox *lox, Expr *expr) {
     }
 
     result = evaluate(lox, expr->as.logical.right);
-    printExpr(lox, expr, result, lox->indent, true, "[EVAL_LOGICAL] ");
     break;
   }
 

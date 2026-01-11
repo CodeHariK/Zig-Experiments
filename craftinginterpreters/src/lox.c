@@ -10,6 +10,7 @@ void loxInit(Lox *lox, bool debugPrint, bool debugParserPrint,
       .debugPrint = debugPrint,
       .debugParserPrint = debugParserPrint,
       .debugTokenPrint = debugTokenPrint,
+      .indent = 0,
 
       .errorMsg[0] = '\0',
       .runtimeErrorMsg[0] = '\0',

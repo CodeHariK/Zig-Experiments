@@ -461,10 +461,9 @@ char *exprTypeToString(ExprType type);
 void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
                char *msg);
-void printValue(Value value);
 void printEnv(Lox *lox, const char *name, Value value, char *msg);
 void printToken(Lox *lox, const Token *token, char *msg);
-void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent);
+void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent, bool full);
 void printEnvironment(Lox *lox);
 void printProgram(Lox *lox, Program *prog);
 void loxAppendOutput(Lox *lox, const char *s);

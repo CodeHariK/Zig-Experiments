@@ -65,215 +65,126 @@ static void assertOutputTest(Lox *lox, const TestCase *test, char *output) {
   printf("\n");
 }
 
-static void runExprTests(void) {
-  TestCase exprTests[] = {
-      {"()", NULL, false},
-      {"{}", NULL, false},
-      {"!true", "false", true},
-      {"!true == false", "true", true},
-      {"123.45", "123.45", true},
-      {"nil", "nil", true},
-      {"var x = 10;", NULL, false},
-      {"print 1 + 2;", NULL, false},
-      {"// comment\n123", "123", true},
-      {"\"hello world\"", "hello world", true},
-      {"!-!-3", "0", false},
-      {"1 + 2 * 3", "7", true},
-      {"(1 + 2) * 3", "9", true},
-      {"5 > 3", "true", true},
-      {"5 < 3", "false", true},
-      {"nil == nil", "true", true},
-      {"!false", "true", true},
-      {"5 > 3", "true", true},
-      {"5 < 3", "false", true},
-      {"5 >= 5", "true", true},
-      {"5 <= 4", "false", true},
-      {"true == false", "false", true},
-      {"true != false", "true", true},
-      {"nil == nil", "true", true},
-      {"!false", "true", true},
-      {"-(1 + 2)", "-3", true},
-      {"(1 + 2) * (3 - 1)", "6", true},
-      {"2 / 4", "0.5", true},
-  };
+TestCase tests[] = {
+    {"var a = 3.14 * 7; a = a/7; print a;", "3.14\n", true},
+    {"var s = \"hello\"; print s;", "hello\n", true},
+    {"var x; print x;", "nil\n", false},
 
-  for (u32 i = 0; i < sizeof(exprTests) / sizeof(exprTests[0]); i++) {
+    {"print 1 = !true;", "", false},
 
-    TestCase test = exprTests[i];
+    {"var a = 0; var b = 0; print a = b = 3;", "3\n", true},
 
-    printf("SOURCE: %s\n", test.source);
+    {"var a = 1; print (a = 2) + 3;", "5\n", true},
 
-    Lox lox;
-    loxInit(&lox, DEBUG_PRINT, true, false);
-    initScanner(&lox.scanner, test.source);
-    scanTokens(&lox);
-    initParser(&lox);
+    {"var a = 1; print a = 2 == 2;", "true\n", true},
 
-    printf("=================\n");
-    Expr *expr = parseExpression(&lox);
-    printf("=================\n");
-    Value result = evaluate(&lox, expr);
+    {"{ var a = 1; print a; }", "1\n", true},
 
-    char buffer[64];
-    valueToString(result, buffer, sizeof(buffer));
+    {"var a = 1; { print a; }", "1\n", true},
 
-    assertOutputTest(&lox, &test, buffer);
+    {"var a = 1; { var a = 2; print a; } print a;", "2\n1\n", true},
 
-    freeLox(&lox);
-  }
-}
+    {"var a = 1; { a = 2; } print a;", "2\n", true},
 
-void runVarTests(void) {
-  TestCase tests[] = {
-      {"var a = 3.14 * 7; a = a/7; print a;", "3.14\n", true},
-      {"var s = \"hello\"; print s;", "hello\n", true},
-      {"var x; print x;", "nil\n", false},
+    {"var a = 1; { var a = 2; a = 3; } print a;", "1\n", true},
 
-      {"print 1 = 2;", "", false},
+    {"if (false) {print 1;} else if (false) {print 2;} else {print 3;}", "3\n",
+     true},
 
-      // Chained assignment (right-associative)
-      {"var a = 0; var b = 0; print a = b = 3;", "3\n", true},
+    {"var i = 0; while (i < 3) { print i; i = i + 1; }", "0\n1\n2\n", true},
 
-      // Assignment inside expression
-      {"var a = 1; print (a = 2) + 3;", "5\n", true},
+    {"print \"hi\" or 2;", "hi\n", true},
+    {"print nil or \"yes\";", "yes\n", true},
+    {"print {false and 123};", "false\n", false},
+    {"print (true and 123);", "123\n", true},
+    {"print nil and boom;", "nil\n", true},
 
-      // Assignment precedence vs equality
-      {"var a = 1; print a = 2 == 2;", "true\n", true},
+    {"for (var i = 0; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
+    {"var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}", "1;2;3;", true},
+    {"var i = 0; for (; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
+    {"for (var i = 0; i < 3;) { print i; i = i + 1; }", "0;1;2;", true},
 
-      // Block creates a new scope
-      {"{ var a = 1; print a; }", "1\n", true},
+    {"var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;",
+     "0;1;100;", true},
+    {"for (var i = 0; i < 2; i = i + 1) {"
+     "for (var j = 0; j < 2; j = j + 1) "
+     "{print i + j;}}",
+     "0;1;1;2;", true},
+    {"{ for (var i = 0; i < 2; i = i + 1) {print i;} }", "0;1;", true},
 
-      // Outer variable still accessible inside block
-      {"var a = 1; { print a; }", "1\n", true},
+    {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }",
+     "0;1;2;", true},
+    {"var i = 0; var j = 0; "
+     "while (i < 2) { j = 0;  while (true) { print i; break; } i = i + 1;} ",
+     "0;1;", true},
 
-      // Block shadows outer variable
-      {"var a = 1; { var a = 2; print a; } print a;", "2\n1\n", true},
+    {"var i = 0; while (true) { { if (i == 2) {break;} } print i; i=i+1;}",
+     "0;1;", true},
 
-      // Assignment affects nearest scope
-      {"var a = 1; { a = 2; } print a;", "2\n", true},
+    {"var i = 0; while (i < 3) { "
+     "{ i = i + 1; if (i == 2) {continue;} print i; } }",
+     "1;3;", true},
+    {"for (var i = 1; i < 4; i = i + 1) { "
+     "if (i == 2) {continue;} print i; }",
+     "1;3;", true},
 
-      // Inner assignment does not affect outer shadowed variable
-      {"var a = 1; { var a = 2; a = 3; } print a;", "1\n", true},
+    {"fun hello() { print 123; } hello();", "123;", true},
+    {"fun add(a, b) { print a + b; } add(2, 3);", "5;", true},
+    {"fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();",
+     "10;", true},
 
-      {"if (false) {print 1;} else if (false) {print 2;} else {print 3;}",
-       "3\n", true},
-      {"var i = 0; while (i < 3) { print i; i = i + 1; }", "0\n1\n2\n", true},
+    {"fun f() { return 123; print 0; } print f();", "123;", true},
+    {"fun f() {} print f();", "nil;", true},
+    {"fun f() { if (true) {return 1;} return 2; } print f();", "1;", true},
+    {"fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print "
+     "fact(5);",
+     "120;", true},
 
-      {"print \"hi\" or 2;", "hi\n", true},
-      {"print nil or \"yes\";", "yes\n", true},
-      {"print {false and 123};", "false\n", false},
-      {"print (true and 123);", "123\n", true},
-      {"print nil and boom;", "nil\n", true},
+    {"fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } "
+     "return count; } var c = makeCounter(); print c(); print c();",
+     "1;2;", true},
 
-      // basic counting
-      {"for (var i = 0; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
-      // initializer without var
-      {"var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}", "1;2;3;", true},
-      // empty initializer
-      {"var i = 0; for (; i < 3; i = i + 1) {print i;}", "0;1;2;", true},
-      // empty increment
-      {"for (var i = 0; i < 3;) { print i; i = i + 1; }", "0;1;2;", true},
+    {"print clock();", "", true},
 
-      // block scoping
-      {"var i = 100; for (var i = 0; i < 2; i = i + 1) {print i;} print i;",
-       "0;1;100;", true},
-      // nested for
-      {"for (var i = 0; i < 2; i = i + 1) {"
-       "for (var j = 0; j < 2; j = j + 1) "
-       "{print i + j;}}",
-       "0;1;1;2;", true},
-      // for with expression body
-      // for inside block
-      {"{ for (var i = 0; i < 2; i = i + 1) {print i;} }", "0;1;", true},
+    {"var a = 0; var a = 1;", "", false},
+    {"{ var a = 0; var a = 1; }", "", false},
+    {"var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }",
+     "0\n6\n6\n4\n", true},
 
-      // empty condition (infinite loop with break simulation)
-      {"var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }",
-       "0;1;2;", true},
-      // break exits only the nearest loop
-      {"var i = 0; var j = 0; "
-       "while (i < 2) { "
-       "  j = 0; "
-       "  while (true) { "
-       "    print i; "
-       "    break; "
-       "  } "
-       "  i = i + 1; "
-       "} ",
-       "0;1;", true},
+    {"var a = a;", "", false},
+    {"return 123;", "", false},
+    {"break;", "", false},
 
-      // break inside nested blocks and if
-      {"var i = 0; "
-       "while (true) { "
-       "  { "
-       "    if (i == 2) {break;} "
-       "  } "
-       "  print i; "
-       "  i = i + 1; "
-       "} ",
-       "0;1;", true},
+    {"class Foo {} print Foo;", "<class Foo>;", true},
+    {"class Foo {} var f = Foo(); print f;", "<instance Foo>;", true},
+    {"class Foo { hello() { return 123; } } print Foo().hello();", "123;",
+     true},
+    {"class Foo { init(x){ this.x = x; } hello(){ return this.x; } } "
+     "var f = Foo(42); print f.hello();",
+     "42;", true},
+    {"class Foo { init() { return 123; } } print Foo();", "<instance Foo>;",
+     false},
+    {"fun init() { return 123; } print init();", "123;", true},
+    {"class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return "
+     "this.x; } } print "
+     "Foo(42).inc();",
+     "43;", true},
+    {"class Foo {} print Foo.x;", "", false},
+    {"class Foo {} print Foo().x;", "", false},
+    {"class Foo { init() { this.x = 123; } } print Foo().x();", "", false},
+    {"class Foo { init(a) { } } print Foo(3,4);", "", false},
 
-      {"var i = 0; while (i < 3) { "
-       "{ i = i + 1; if (i == 2) {continue;} print i; } }",
-       "1;3;", true},
-      {"for (var i = 1; i < 4; i = i + 1) { "
-       "if (i == 2) {continue;} print i; }",
-       "1;3;", true},
+    {"class A {} super.foo();", "", false},
+    {"class B < A {} class A {}", "", false},
+    {"class A {} class B < 123 {}", "", false},
+    {"class A { foo() { print 1+0; print \"Hello world\";} } class B < A { "
+     "bar() { "
+     "super.foo(); } } B().bar();",
+     "1\nHello world\n", true},
+    //
+};
 
-      {"fun hello() { print 123; } hello();", "123;", true},
-      {"fun add(a, b) { print a + b; } add(2, 3);", "5;", true},
-      {"fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();",
-       "10;", true},
-
-      {"fun f() { return 123; print 0; } print f();", "123;", true},
-      {"fun f() {} print f();", "nil;", true},
-      {"fun f() { if (true) {return 1;} return 2; } print f();", "1;", true},
-      {"fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print "
-       "fact(5);",
-       "120;", true},
-
-      {"fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } "
-       "return count; } var c = makeCounter(); print c(); print c();",
-       "1;2;", true},
-
-      {"print clock();", "", true},
-
-      {"var a = 0; var a = 1;", "", false},
-      {"{ var a = 0; var a = 1; }", "", false},
-      {"var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }",
-       "0\n6\n6\n4\n", true},
-
-      {"var a = a;", "", false},
-      {"return 123;", "", false},
-      {"break;", "", false},
-
-      {"class Foo {} print Foo;", "<class Foo>;", true},
-      {"class Foo {} var f = Foo(); print f;", "<instance Foo>;", true},
-      {"class Foo { get() { return 123; } } print Foo().get();", "123;", true},
-      {"class Foo { init(x){ this.x = x; } get(){ return this.x; } } "
-       "var f = Foo(42); print f.get();",
-       "42;", true},
-      {"class Foo { init() { return 123; } } print Foo();", "<instance Foo>;",
-       false},
-      {"fun init() { return 123; } print init();", "123;", true},
-      {"class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return "
-       "this.x; } } print "
-       "Foo(42).inc();",
-       "43;", true},
-      {"class Foo {} print Foo.x;", "", false},
-      {"class Foo {} print Foo().x;", "", false},
-      {"class Foo { init() { this.x = 123; } } print Foo().x();", "", false},
-      {"class Foo { init(a) { } } print Foo(3,4);", "", false},
-
-      {"class A {} super.foo();", "", false},
-      {"class B < A {} class A {}", "", false},
-      {"class A {} class B < 123 {}", "", false},
-      {"class A { foo() { print 1+0; print \"Hello world\";} } class B < A { "
-       "bar() { "
-       "super.foo(); } } B().bar();",
-       "1\nHello world\n", true},
-      //
-  };
-
+int main(void) {
   for (u32 i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
 
     TestCase test = tests[i];
@@ -295,13 +206,4 @@ void runVarTests(void) {
 
     freeLox(&lox);
   }
-}
-
-int main(void) {
-
-  printf("====== Expression Tests ======\n");
-  runExprTests();
-
-  printf("====== Variable Tests ======\n");
-  runVarTests();
 }

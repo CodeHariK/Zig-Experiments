@@ -23,7 +23,7 @@ static Stmt *parsePrintStmt(Lox *lox) {
   stmt->type = STMT_PRINT;
   stmt->as.expr_print = value;
   stmt->line = lox->parser.line++;
-  printStmt(lox, stmt, NO_VALUE, 0);
+  printStmt(lox, stmt, NO_VALUE, 0, true);
   return stmt;
 }
 
@@ -43,7 +43,7 @@ static Stmt *parseVarStmt(Lox *lox) {
   stmt->as.var.initializer = initializer;
   stmt->line = lox->parser.line++;
 
-  printStmt(lox, stmt, NO_VALUE, 0);
+  printStmt(lox, stmt, NO_VALUE, 0, true);
   return stmt;
 }
 
@@ -137,7 +137,7 @@ static Stmt *parseFunctionStmt(Lox *lox) {
 
   lox->parser.functionDepth--;
 
-  printStmt(lox, stmt, NO_VALUE, 0);
+  printStmt(lox, stmt, NO_VALUE, 0, true);
 
   return stmt;
 }
@@ -182,7 +182,7 @@ static Stmt *parseClassStmt(Lox *lox) {
   stmt->line = tok.line;
   stmt->as.classStmt.superclass = superclass;
 
-  printStmt(lox, stmt, NO_VALUE, 0);
+  printStmt(lox, stmt, NO_VALUE, 0, true);
 
   return stmt;
 }
