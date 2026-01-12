@@ -75,6 +75,58 @@ static Value evalBinary(Lox *lox, Expr *expr) {
   }
 }
 
+static Value evalVariable(Lox *lox, Expr *expr) {
+  Value result;
+
+  if (expr->as.var.depth != -1) {
+    // Local or non-global resolved by resolver
+    result = envGetAt(lox->env, expr->as.var.depth, expr->as.var.name.lexeme);
+  } else {
+    // Global
+    if (!envGetGlobal(lox->env, expr->as.var.name.lexeme, &result)) {
+      return errorValue(lox, &expr->as.var.name, NULL, "Undefined variable",
+                        true);
+    }
+  }
+
+  printExpr(lox, expr, result, lox->indent + 1, true, "envget ");
+  return result;
+}
+
+static Value evalAssign(Lox *lox, Expr *expr) {
+  Value result = evaluate(lox, expr->as.assign.value);
+
+  if (expr->as.assign.depth != -1) {
+    envAssignAt(lox, lox->env, expr->as.assign.depth,
+                expr->as.assign.name.lexeme, result);
+  } else {
+    if (!envAssign(lox->env, lox, expr->as.assign.name.lexeme, result)) {
+      return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable",
+                        true);
+    }
+  }
+
+  return result;
+}
+
+static Value bindMethod(Lox *lox, Value method, LoxInstance *instance) {
+  LoxFunction *fn = method.as.function;
+
+  Environment *env = envNew(fn->closure);
+
+  envDefine(env, lox, "this",
+            (Value){
+                .type = VAL_INSTANCE,
+                .as.instance = instance,
+            });
+
+  LoxFunction *bound = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
+  *bound = *fn;
+  bound->closure = env;
+
+  return (Value){.type = VAL_FUNCTION, .as.function = bound};
+}
+
 static Value evalCall(Lox *lox, Expr *expr) {
   printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
 
@@ -88,11 +140,6 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
   if (callee.type == VAL_NATIVE) {
     NativeFn native = callee.as.native;
-    // simple native call, assuming no arg check for now or handle it inside
-    // For clock(), argCount is 0.
-    // But general native fns might want to check args.
-    // Let's pass checking responsibility to the native function?
-    // Or just pass args.
 
     // 1. Evaluate arguments
     Value args[255];
@@ -107,7 +154,6 @@ static Value evalCall(Lox *lox, Expr *expr) {
     LoxClass *klass = callee.as.klass;
 
     LoxInstance *instance = arenaAlloc(&lox->astArena, sizeof(LoxInstance));
-
     instance->class = klass;
     instance->fields = envNew(NULL);
 
@@ -132,10 +178,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
       lox->signal.type = SIGNAL_NONE;
     }
 
-    Value result;
-    result.type = VAL_INSTANCE;
-    result.as.instance = instance;
-    return result;
+    return (Value){.type = VAL_INSTANCE, .as.instance = instance};
   }
 
   LoxFunction *fn = callee.as.function;
@@ -180,6 +223,82 @@ static Value evalCall(Lox *lox, Expr *expr) {
   lox->signal.type = SIGNAL_NONE;
 
   return result;
+}
+
+static Value evalGet(Lox *lox, Expr *expr) {
+
+  Value obj = evaluate(lox, expr->as.getExpr.object);
+
+  if (obj.type != VAL_INSTANCE) {
+    return errorValue(lox, &expr->as.getExpr.name, NULL,
+                      "Only instances have properties, Invalid access", true);
+  }
+
+  LoxInstance *inst = obj.as.instance;
+
+  Value value;
+  if (envGet(lox, inst->fields, expr->as.getExpr.name.lexeme, &value)) {
+    return value;
+  }
+
+  if (envGet(lox, inst->class->methodsEnv, expr->as.getExpr.name.lexeme,
+             &value)) {
+    Value bound_method = bindMethod(lox, value, inst);
+    return bound_method;
+  }
+
+  return errorValue(lox, &expr->as.getExpr.name, NULL, "Undefined property",
+                    true);
+}
+
+static Value evalSet(Lox *lox, Expr *expr) {
+
+  Value obj = evaluate(lox, expr->as.setExpr.object);
+
+  if (obj.type != VAL_INSTANCE) {
+    return errorValue(lox, &expr->as.setExpr.name, NULL,
+                      "Only instances have fields, Invalid set", true);
+  }
+
+  Value value = evaluate(lox, expr->as.setExpr.value);
+
+  envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
+
+  return value;
+}
+
+static Value evalSuper(Lox *lox, Expr *expr) {
+
+  // 1. Get `this`
+  Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
+
+  if (thisVal.type != VAL_INSTANCE) {
+    return errorValue(lox, &expr->as.superExpr.keyword, expr,
+                      "Invalid 'this' binding.", true);
+  }
+
+  LoxInstance *instance = thisVal.as.instance;
+
+  // 2. Get superclass from the class, NOT the environment
+  LoxClass *superclass = instance->class->superclass;
+
+  if (!superclass) {
+    return errorValue(lox, &expr->as.superExpr.keyword, expr,
+                      "Invalid superclass.", true);
+  }
+
+  // 3. Look up method on superclass
+  Value method;
+  if (!envGet(lox, superclass->methodsEnv, expr->as.superExpr.method.lexeme,
+              &method)) {
+    return errorValue(lox, &expr->as.superExpr.method, expr,
+                      "Undefined property on superclass", true);
+  }
+
+  // 4. Bind to instance
+  Value bound = bindMethod(lox, method, instance);
+
+  return bound;
 }
 
 Value evaluate(Lox *lox, Expr *expr) {

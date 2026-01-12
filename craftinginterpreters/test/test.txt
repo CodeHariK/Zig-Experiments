@@ -1,3 +1,225 @@
+SOURCE: print clock();
+|   define clock = <native fn>
+=================
+[VAR $clock :-1]
+[CALL [VAR $clock :-1]()]
+@1: print [CALL [VAR $clock :-1]()]
+==== Program [1 statements] ====
+@1: print [CALL [VAR $clock :-1]()]
+=================
+@1: print [CALL [VAR $clock :-1]()]
+|   [CALL [VAR $clock :-1]()]
+|   |   |   envget [VAR $clock :-1] => <native fn>
+[RESULT] : 0.00198;
+[INFO] no expected output
+
+SOURCE: print 1 = !true;
+|   define clock = <native fn>
+=================
+_1
+_true
+(!_true)
+[line 1] Error at ';': Invalid assignment target.
+@1: print _1
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+[NULL_STMT]
+=================
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: print "hi" or 2;
+|   define clock = <native fn>
+=================
+_hi
+_2
+ _hi OR _2
+@1: print  _hi OR _2
+==== Program [1 statements] ====
+@1: print  _hi OR _2
+=================
+@1: print  _hi OR _2
+|   :>  _hi OR _2
+|   |   :> _hi
+[RESULT] : hi;
+[PASS]
+
+SOURCE: print nil or "yes";
+|   define clock = <native fn>
+=================
+_nil
+_yes
+ _nil OR _yes
+@1: print  _nil OR _yes
+==== Program [1 statements] ====
+@1: print  _nil OR _yes
+=================
+@1: print  _nil OR _yes
+|   :>  _nil OR _yes
+|   |   :> _nil
+|   |   :> _yes
+[RESULT] : yes;
+[PASS]
+
+SOURCE: print {false and 123};
+|   define clock = <native fn>
+=================
+[line 1] Error at '{': Expect expression.
+[line 1] Error at '{': Expect ';' after value.
+@1: 
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+[NULL_STMT]
+=================
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: print (true and 123);
+|   define clock = <native fn>
+=================
+_true
+_123
+ _true AND _123
+ _true AND _123
+@1: print  _true AND _123
+==== Program [1 statements] ====
+@1: print  _true AND _123
+=================
+@1: print  _true AND _123
+|   :>  _true AND _123
+|   |   :>  _true AND _123
+|   |   |   :> _true
+|   |   |   :> _123
+[RESULT] : 123;
+[PASS]
+
+SOURCE: print nil and boom;
+|   define clock = <native fn>
+=================
+_nil
+[VAR $boom :-1]
+ _nil AND [VAR $boom :-1]
+@1: print  _nil AND [VAR $boom :-1]
+==== Program [1 statements] ====
+@1: print  _nil AND [VAR $boom :-1]
+=================
+@1: print  _nil AND [VAR $boom :-1]
+|   :>  _nil AND [VAR $boom :-1]
+|   |   :> _nil
+[RESULT] : nil;
+[PASS]
+
+SOURCE: { var a = 0; var a = 1; }
+|   define clock = <native fn>
+=================
+_0
+@2: VAR a = _0
+_1
+@3: VAR a = _1
+==== Program [1 statements] ====
+|   @2: VAR a = _0
+|   @3: VAR a = _1
+=================
+[line 1] Error: Variable already declared in this scope.
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: var x; print x;
+|   define clock = <native fn>
+=================
+@1: VAR x = 
+[VAR $x :-1]
+@2: print [VAR $x :-1]
+==== Program [2 statements] ====
+@1: VAR x = 
+@2: print [VAR $x :-1]
+=================
+@1: VAR x = 
+@2: print [VAR $x :-1]
+|   |   [line 1] RuntimeError at 'x': Undefined variable
+[RESULT] : Undefined variable;
+[PassError]
+
+SOURCE: { var a = 1; print a; }
+|   define clock = <native fn>
+=================
+_1
+@2: VAR a = _1
+[VAR $a :-1]
+@3: print [VAR $a :-1]
+==== Program [1 statements] ====
+|   @2: VAR a = _1
+|   @3: print [VAR $a :-1]
+=================
+@2: VAR a = _1
+|   :> _1
+|   define a = 1
+@3: print [VAR $a :0]
+|   |   envget [VAR $a :0] => 1
+[RESULT] : 1;
+[PASS]
+
+SOURCE: var a = 1; { print a; }
+|   define clock = <native fn>
+=================
+_1
+@1: VAR a = _1
+[VAR $a :-1]
+@3: print [VAR $a :-1]
+==== Program [2 statements] ====
+@1: VAR a = _1
+|   @3: print [VAR $a :-1]
+=================
+@1: VAR a = _1
+|   :> _1
+|   define a = 1
+@3: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 1
+[RESULT] : 1;
+[PASS]
+
+SOURCE: var a = a;
+|   define clock = <native fn>
+=================
+[VAR $a :-1]
+@1: VAR a = [VAR $a :-1]
+==== Program [1 statements] ====
+@1: VAR a = [VAR $a :-1]
+=================
+@1: VAR a = [VAR $a :-1]
+|   |   [line 1] RuntimeError at 'a': Undefined variable
+[RESULT] : 
+[PassError]
+
+SOURCE: return 123;
+|   define clock = <native fn>
+=================
+[line 1] Error at 'return': Can't return from top-level code.
+_123
+@1: RETURN
+==== Program [1 statements] ====
+@1: RETURN
+=================
+[line 1] Error: Can't return from top-level code.
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
+SOURCE: break;
+|   define clock = <native fn>
+=================
+[line 1] Error at 'break': Can't use 'break' outside of a loop.
+### SYNCHRONIZE ###
+==== Program [1 statements] ====
+[NULL_STMT]
+=================
+Resolve error. No execution
+[RESULT] : 
+[PassError]
+
 SOURCE: var a = 3.14 * 7; a = a/7; print a;
 |   define clock = <native fn>
 =================
@@ -32,57 +254,6 @@ _7
 |   |   envget [VAR $a :-1] => 3.14
 [RESULT] : 3.14;
 [PASS]
-
-SOURCE: var s = "hello"; print s;
-|   define clock = <native fn>
-=================
-_hello
-@1: VAR s = _hello
-[VAR $s :-1]
-@2: print [VAR $s :-1]
-==== Program [2 statements] ====
-@1: VAR s = _hello
-@2: print [VAR $s :-1]
-=================
-@1: VAR s = _hello
-|   :> _hello
-|   define s = hello
-@2: print [VAR $s :-1]
-|   |   envget [VAR $s :-1] => hello
-[RESULT] : hello;
-[PASS]
-
-SOURCE: var x; print x;
-|   define clock = <native fn>
-=================
-@1: VAR x = 
-[VAR $x :-1]
-@2: print [VAR $x :-1]
-==== Program [2 statements] ====
-@1: VAR x = 
-@2: print [VAR $x :-1]
-=================
-@1: VAR x = 
-@2: print [VAR $x :-1]
-|   |   [line 1] RuntimeError at 'x': Undefined variable
-[RESULT] : Undefined variable;
-[PassError]
-
-SOURCE: print 1 = !true;
-|   define clock = <native fn>
-=================
-_1
-_true
-(!_true)
-[line 1] Error at ';': Invalid assignment target.
-@1: print _1
-### SYNCHRONIZE ###
-==== Program [1 statements] ====
-[NULL_STMT]
-=================
-Resolve error. No execution
-[RESULT] : 
-[PassError]
 
 SOURCE: var a = 0; var b = 0; print a = b = 3;
 |   define clock = <native fn>
@@ -171,44 +342,6 @@ _2
 |   |   |   :> _2
 |   |   assign a = true
 [RESULT] : true;
-[PASS]
-
-SOURCE: { var a = 1; print a; }
-|   define clock = <native fn>
-=================
-_1
-@2: VAR a = _1
-[VAR $a :-1]
-@3: print [VAR $a :-1]
-==== Program [1 statements] ====
-|   @2: VAR a = _1
-|   @3: print [VAR $a :-1]
-=================
-@2: VAR a = _1
-|   :> _1
-|   define a = 1
-@3: print [VAR $a :0]
-|   |   envget [VAR $a :0] => 1
-[RESULT] : 1;
-[PASS]
-
-SOURCE: var a = 1; { print a; }
-|   define clock = <native fn>
-=================
-_1
-@1: VAR a = _1
-[VAR $a :-1]
-@3: print [VAR $a :-1]
-==== Program [2 statements] ====
-@1: VAR a = _1
-|   @3: print [VAR $a :-1]
-=================
-@1: VAR a = _1
-|   :> _1
-|   define a = 1
-@3: print [VAR $a :-1]
-|   |   envget [VAR $a :-1] => 1
-[RESULT] : 1;
 [PASS]
 
 SOURCE: var a = 1; { var a = 2; print a; } print a;
@@ -401,88 +534,6 @@ _1
 |   |   |   envget [VAR $i :-1] => 3
 |   |   :> _3
 [RESULT] : 0;1;2;
-[PASS]
-
-SOURCE: print "hi" or 2;
-|   define clock = <native fn>
-=================
-_hi
-_2
- _hi OR _2
-@1: print  _hi OR _2
-==== Program [1 statements] ====
-@1: print  _hi OR _2
-=================
-@1: print  _hi OR _2
-|   :>  _hi OR _2
-|   |   :> _hi
-[RESULT] : hi;
-[PASS]
-
-SOURCE: print nil or "yes";
-|   define clock = <native fn>
-=================
-_nil
-_yes
- _nil OR _yes
-@1: print  _nil OR _yes
-==== Program [1 statements] ====
-@1: print  _nil OR _yes
-=================
-@1: print  _nil OR _yes
-|   :>  _nil OR _yes
-|   |   :> _nil
-|   |   :> _yes
-[RESULT] : yes;
-[PASS]
-
-SOURCE: print {false and 123};
-|   define clock = <native fn>
-=================
-[line 1] Error at '{': Expect expression.
-[line 1] Error at '{': Expect ';' after value.
-@1: 
-### SYNCHRONIZE ###
-==== Program [1 statements] ====
-[NULL_STMT]
-=================
-Resolve error. No execution
-[RESULT] : 
-[PassError]
-
-SOURCE: print (true and 123);
-|   define clock = <native fn>
-=================
-_true
-_123
- _true AND _123
- _true AND _123
-@1: print  _true AND _123
-==== Program [1 statements] ====
-@1: print  _true AND _123
-=================
-@1: print  _true AND _123
-|   :>  _true AND _123
-|   |   :>  _true AND _123
-|   |   |   :> _true
-|   |   |   :> _123
-[RESULT] : 123;
-[PASS]
-
-SOURCE: print nil and boom;
-|   define clock = <native fn>
-=================
-_nil
-[VAR $boom :-1]
- _nil AND [VAR $boom :-1]
-@1: print  _nil AND [VAR $boom :-1]
-==== Program [1 statements] ====
-@1: print  _nil AND [VAR $boom :-1]
-=================
-@1: print  _nil AND [VAR $boom :-1]
-|   :>  _nil AND [VAR $boom :-1]
-|   |   :> _nil
-[RESULT] : nil;
 [PASS]
 
 SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
@@ -1421,16 +1472,16 @@ SOURCE: fun hello() { print 123; } hello();
 =================
 _123
 @2: print _123
-@1: FN hello 
+@1: FN hello ()
 |   @2: print _123
 [VAR $hello :-1]
 [CALL [VAR $hello :-1]()]
 ==== Program [2 statements] ====
-@1: FN hello 
+@1: FN hello ()
 |   @2: print _123
 @3: [CALL [VAR $hello :-1]()]
 =================
-@1: FN hello 
+@1: FN hello ()
 |   define hello = <fn hello>
 @3: [CALL [VAR $hello :-1]()]
 |   [CALL [VAR $hello :-1]()]
@@ -1447,18 +1498,18 @@ SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 [VAR $b :-1]
 ([VAR $a :-1] + [VAR $b :-1])
 @2: print ([VAR $a :-1] + [VAR $b :-1])
-@1: FN add 
-a,b|   @2: print ([VAR $a :-1] + [VAR $b :-1])
+@1: FN add (a,b)
+|   @2: print ([VAR $a :-1] + [VAR $b :-1])
 [VAR $add :-1]
 _2
 _3
 [CALL [VAR $add :-1](_2,_3)]
 ==== Program [2 statements] ====
-@1: FN add 
-a,b|   @2: print ([VAR $a :-1] + [VAR $b :-1])
+@1: FN add (a,b)
+|   @2: print ([VAR $a :-1] + [VAR $b :-1])
 @3: [CALL [VAR $add :-1](_2,_3)]
 =================
-@1: FN add 
+@1: FN add (a,b)
 |   define add = <fn add>
 @3: [CALL [VAR $add :-1](_2,_3)]
 |   [CALL [VAR $add :-1](_2,_3)]
@@ -1481,26 +1532,26 @@ _10
 @2: VAR x = _10
 [VAR $x :-1]
 @4: print [VAR $x :-1]
-@1: FN inner 
+@1: FN inner ()
 |   @4: print [VAR $x :-1]
 [VAR $inner :-1]
 [CALL [VAR $inner :-1]()]
-@1: FN outer 
+@1: FN outer ()
 |   @2: VAR x = _10
-|   @1: FN inner 
+|   @1: FN inner ()
 |   |   @4: print [VAR $x :-1]
 |   @5: [CALL [VAR $inner :-1]()]
 [VAR $outer :-1]
 [CALL [VAR $outer :-1]()]
 ==== Program [2 statements] ====
-@1: FN outer 
+@1: FN outer ()
 |   @2: VAR x = _10
-|   @1: FN inner 
+|   @1: FN inner ()
 |   |   @4: print [VAR $x :-1]
 |   @5: [CALL [VAR $inner :-1]()]
 @6: [CALL [VAR $outer :-1]()]
 =================
-@1: FN outer 
+@1: FN outer ()
 |   define outer = <fn outer>
 @6: [CALL [VAR $outer :-1]()]
 |   [CALL [VAR $outer :-1]()]
@@ -1508,7 +1559,7 @@ _10
 |   @2: VAR x = _10
 |   |   :> _10
 |   |   define x = 10
-|   @1: FN inner 
+|   @1: FN inner ()
 |   |   define inner = <fn inner>
 |   @5: [CALL [VAR $inner :0]()]
 |   |   [CALL [VAR $inner :0]()]
@@ -1522,21 +1573,22 @@ SOURCE: fun f() { return 123; print 0; } print f();
 |   define clock = <native fn>
 =================
 _123
+@1: RETURN
 _0
 @2: print _0
-@1: FN f 
+@1: FN f ()
 |   @1: RETURN
 |   @2: print _0
 [VAR $f :-1]
 [CALL [VAR $f :-1]()]
 @3: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
-@1: FN f 
+@1: FN f ()
 |   @1: RETURN
 |   @2: print _0
 @3: print [CALL [VAR $f :-1]()]
 =================
-@1: FN f 
+@1: FN f ()
 |   define f = <fn f>
 @3: print [CALL [VAR $f :-1]()]
 |   [CALL [VAR $f :-1]()]
@@ -1549,15 +1601,15 @@ _0
 SOURCE: fun f() {} print f();
 |   define clock = <native fn>
 =================
-@1: FN f 
+@1: FN f ()
 [VAR $f :-1]
 [CALL [VAR $f :-1]()]
 @2: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
-@1: FN f 
+@1: FN f ()
 @2: print [CALL [VAR $f :-1]()]
 =================
-@1: FN f 
+@1: FN f ()
 |   define f = <fn f>
 @2: print [CALL [VAR $f :-1]()]
 |   [CALL [VAR $f :-1]()]
@@ -1570,8 +1622,10 @@ SOURCE: fun f() { if (true) {return 1;} return 2; } print f();
 =================
 _true
 _1
+@1: RETURN
 _2
-@1: FN f 
+@1: RETURN
+@1: FN f ()
 |   @2: IF
 |   |   condition _true
 |   |   then:
@@ -1581,7 +1635,7 @@ _2
 [CALL [VAR $f :-1]()]
 @4: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
-@1: FN f 
+@1: FN f ()
 |   @2: IF
 |   |   condition _true
 |   |   then:
@@ -1589,7 +1643,7 @@ _2
 |   @1: RETURN
 @4: print [CALL [VAR $f :-1]()]
 =================
-@1: FN f 
+@1: FN f ()
 |   define f = <fn f>
 @4: print [CALL [VAR $f :-1]()]
 |   [CALL [VAR $f :-1]()]
@@ -1608,6 +1662,7 @@ SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fa
 _1
 ([VAR $n :-1] <= _1)
 _1
+@1: RETURN
 [VAR $n :-1]
 [VAR $fact :-1]
 [VAR $n :-1]
@@ -1615,8 +1670,9 @@ _1
 ([VAR $n :-1] - _1)
 [CALL [VAR $fact :-1](([VAR $n :-1] - _1))]
 ([VAR $n :-1] * [CALL [VAR $fact :-1](([VAR $n :-1] - _1))])
-@1: FN fact 
-n|   @2: IF
+@1: RETURN
+@1: FN fact (n)
+|   @2: IF
 |   |   condition ([VAR $n :-1] <= _1)
 |   |   then:
 |   |   |   @1: RETURN
@@ -1626,15 +1682,15 @@ _5
 [CALL [VAR $fact :-1](_5)]
 @4: print [CALL [VAR $fact :-1](_5)]
 ==== Program [2 statements] ====
-@1: FN fact 
-n|   @2: IF
+@1: FN fact (n)
+|   @2: IF
 |   |   condition ([VAR $n :-1] <= _1)
 |   |   then:
 |   |   |   @1: RETURN
 |   @1: RETURN
 @4: print [CALL [VAR $fact :-1](_5)]
 =================
-@1: FN fact 
+@1: FN fact (n)
 |   define fact = <fn fact>
 @4: print [CALL [VAR $fact :-1](_5)]
 |   [CALL [VAR $fact :-1](_5)]
@@ -1713,13 +1769,15 @@ _1
 ([VAR $i :-1] + _1)
 [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 [VAR $i :-1]
-@1: FN count 
+@1: RETURN
+@1: FN count ()
 |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   @1: RETURN
 [VAR $count :-1]
-@1: FN makeCounter 
+@1: RETURN
+@1: FN makeCounter ()
 |   @2: VAR i = _0
-|   @1: FN count 
+|   @1: FN count ()
 |   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   @1: RETURN
 |   @1: RETURN
@@ -1733,9 +1791,9 @@ _1
 [CALL [VAR $c :-1]()]
 @7: print [CALL [VAR $c :-1]()]
 ==== Program [4 statements] ====
-@1: FN makeCounter 
+@1: FN makeCounter ()
 |   @2: VAR i = _0
-|   @1: FN count 
+|   @1: FN count ()
 |   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   @1: RETURN
 |   @1: RETURN
@@ -1743,7 +1801,7 @@ _1
 @6: print [CALL [VAR $c :-1]()]
 @7: print [CALL [VAR $c :-1]()]
 =================
-@1: FN makeCounter 
+@1: FN makeCounter ()
 |   define makeCounter = <fn makeCounter>
 @5: VAR c = [CALL [VAR $makeCounter :-1]()]
 |   [CALL [VAR $makeCounter :-1]()]
@@ -1751,7 +1809,7 @@ _1
 |   @2: VAR i = _0
 |   |   :> _0
 |   |   define i = 0
-|   @1: FN count 
+|   @1: FN count ()
 |   |   define count = <fn count>
 |   @1: RETURN
 |   |   |   envget [VAR $count :0] => <fn count>
@@ -1781,57 +1839,6 @@ _1
 [RESULT] : 1;2;
 [PASS]
 
-SOURCE: print clock();
-|   define clock = <native fn>
-=================
-[VAR $clock :-1]
-[CALL [VAR $clock :-1]()]
-@1: print [CALL [VAR $clock :-1]()]
-==== Program [1 statements] ====
-@1: print [CALL [VAR $clock :-1]()]
-=================
-@1: print [CALL [VAR $clock :-1]()]
-|   [CALL [VAR $clock :-1]()]
-|   |   |   envget [VAR $clock :-1] => <native fn>
-[RESULT] : 0.003187;
-[INFO] no expected output
-
-SOURCE: var a = 0; var a = 1;
-|   define clock = <native fn>
-=================
-_0
-@1: VAR a = _0
-_1
-@2: VAR a = _1
-==== Program [2 statements] ====
-@1: VAR a = _0
-@2: VAR a = _1
-=================
-@1: VAR a = _0
-|   :> _0
-|   define a = 0
-@2: VAR a = _1
-|   :> _1
-|   overwrite a = 1
-[RESULT] : 
-[FAIL] expected error
-
-SOURCE: { var a = 0; var a = 1; }
-|   define clock = <native fn>
-=================
-_0
-@2: VAR a = _0
-_1
-@3: VAR a = _1
-==== Program [1 statements] ====
-|   @2: VAR a = _0
-|   @3: VAR a = _1
-=================
-[line 1] Error: Variable already declared in this scope.
-Resolve error. No execution
-[RESULT] : 
-[PassError]
-
 SOURCE: var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }
 |   define clock = <native fn>
 =================
@@ -1839,7 +1846,7 @@ _0
 @1: VAR a = _0
 [VAR $a :-1]
 @4: print [VAR $a :-1]
-@1: FN A 
+@1: FN A ()
 |   @4: print [VAR $a :-1]
 [VAR $A :-1]
 [CALL [VAR $A :-1]()]
@@ -1856,7 +1863,7 @@ _4
 @10: print [VAR $a :-1]
 ==== Program [2 statements] ====
 @1: VAR a = _0
-|   @1: FN A 
+|   @1: FN A ()
 |   |   @4: print [VAR $a :-1]
 |   @5: [CALL [VAR $A :-1]()]
 |   @6: [ASSIGN a :-1 = _6]
@@ -1868,7 +1875,7 @@ _4
 @1: VAR a = _0
 |   :> _0
 |   define a = 0
-@1: FN A 
+@1: FN A ()
 |   define A = <fn A>
 @5: [CALL [VAR $A :0]()]
 |   [CALL [VAR $A :0]()]
@@ -1897,44 +1904,6 @@ _4
 [RESULT] : 0;6;6;4;
 [PASS]
 
-SOURCE: var a = a;
-|   define clock = <native fn>
-=================
-[VAR $a :-1]
-@1: VAR a = [VAR $a :-1]
-==== Program [1 statements] ====
-@1: VAR a = [VAR $a :-1]
-=================
-@1: VAR a = [VAR $a :-1]
-|   |   [line 1] RuntimeError at 'a': Undefined variable
-[RESULT] : 
-[PassError]
-
-SOURCE: return 123;
-|   define clock = <native fn>
-=================
-[line 1] Error at 'return': Can't return from top-level code.
-_123
-==== Program [1 statements] ====
-@1: RETURN
-=================
-[line 1] Error: Can't return from top-level code.
-Resolve error. No execution
-[RESULT] : 
-[PassError]
-
-SOURCE: break;
-|   define clock = <native fn>
-=================
-[line 1] Error at 'break': Can't use 'break' outside of a loop.
-### SYNCHRONIZE ###
-==== Program [1 statements] ====
-[NULL_STMT]
-=================
-Resolve error. No execution
-[RESULT] : 
-[PassError]
-
 SOURCE: class Foo {} print Foo;
 |   define clock = <native fn>
 =================
@@ -1948,8 +1917,7 @@ SOURCE: class Foo {} print Foo;
 @1: print [VAR $Foo :-1]
 =================
 @1: Class Foo 
-|   define Foo = nil
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @1: print [VAR $Foo :-1]
 |   |   envget [VAR $Foo :-1] => <class Foo>
@@ -1973,8 +1941,7 @@ SOURCE: class Foo {} var f = Foo(); print f;
 @2: print [VAR $f :-1]
 =================
 @1: Class Foo 
-|   define Foo = nil
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @1: VAR f = [CALL [VAR $Foo :-1]()]
 |   [CALL [VAR $Foo :-1]()]
@@ -1990,10 +1957,11 @@ SOURCE: class Foo { hello() { return 123; } } print Foo().hello();
 |   define clock = <native fn>
 =================
 _123
-@1: FN hello 
+@1: RETURN
+@1: FN hello ()
 |   @1: RETURN
 @1: Class Foo 
-|   @1: FN hello 
+|   @1: FN hello ()
 |   |   @1: RETURN
 --------
 [VAR $Foo :-1]
@@ -2003,15 +1971,14 @@ _123
 @2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
-|   @1: FN hello 
+|   @1: FN hello ()
 |   |   @1: RETURN
 --------
 @2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define hello = <fn hello>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
 |   [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
@@ -2030,18 +1997,19 @@ _123
 SOURCE: class Foo { init(x){ this.x = x; } hello(){ return this.x; } } var f = Foo(42); print f.hello();
 |   define clock = <native fn>
 =================
-[GET [THIS].x]
+[GET [THIS :-1].x]
 [VAR $x :-1]
-[SET [THIS].x = [VAR $x :-1]]
-@1: FN init 
-x|   @2: [SET [THIS].x = [VAR $x :-1]]
-[GET [THIS].x]
-@1: FN hello 
+[SET [THIS :-1].x = [VAR $x :-1]]
+@1: FN init (x)
+|   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+[GET [THIS :-1].x]
+@1: RETURN
+@1: FN hello ()
 |   @1: RETURN
 @1: Class Foo 
-|   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
-|   @1: FN hello 
+|   @1: FN init (x)
+|   |   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+|   @1: FN hello ()
 |   |   @1: RETURN
 --------
 [VAR $Foo :-1]
@@ -2054,19 +2022,18 @@ _42
 @5: print [CALL [GET [VAR $f :-1].hello]()]
 ==== Program [3 statements] ====
 @1: Class Foo 
-|   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
-|   @1: FN hello 
+|   @1: FN init (x)
+|   |   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+|   @1: FN hello ()
 |   |   @1: RETURN
 --------
 @4: VAR f = [CALL [VAR $Foo :-1](_42)]
 @5: print [CALL [GET [VAR $f :-1].hello]()]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define init = <fn init>
 |   define hello = <fn hello>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @4: VAR f = [CALL [VAR $Foo :-1](_42)]
 |   [CALL [VAR $Foo :-1](_42)]
@@ -2077,9 +2044,9 @@ x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   |   :> _<fn init>
 |   |   :> _42
 |   |   define x = 42
-|   @2: [SET [THIS].x = [VAR $x :1]]
-|   |   :> [SET [THIS].x = [VAR $x :1]]
-|   |   |   :> [THIS]
+|   @2: [SET [THIS :2].x = [VAR $x :1]]
+|   |   :> [SET [THIS :2].x = [VAR $x :1]]
+|   |   |   :> [THIS :2]
 |   |   |   |   envget [VAR $x :1] => 42
 |   |   |   define x = 42
 |   define f = <instance Foo>
@@ -2091,8 +2058,8 @@ x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   |   |   envget hello = <fn hello>
 |   |   |   define this = <instance Foo>
 |   @1: RETURN
-|   |   :> [GET [THIS].x]
-|   |   |   :> [THIS]
+|   |   :> [GET [THIS :2].x]
+|   |   |   :> [THIS :2]
 |   |   |   envget x = 42
 [RESULT] : 42;
 [PASS]
@@ -2101,10 +2068,11 @@ SOURCE: class Foo { init() { return 123; } } print Foo();
 |   define clock = <native fn>
 =================
 _123
-@1: FN init 
+@1: RETURN
+@1: FN init ()
 |   @1: RETURN
 @1: Class Foo 
-|   @1: FN init 
+|   @1: FN init ()
 |   |   @1: RETURN
 --------
 [VAR $Foo :-1]
@@ -2112,15 +2080,14 @@ _123
 @2: print [CALL [VAR $Foo :-1]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
-|   @1: FN init 
+|   @1: FN init ()
 |   |   @1: RETURN
 --------
 @2: print [CALL [VAR $Foo :-1]()]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define init = <fn init>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @2: print [CALL [VAR $Foo :-1]()]
 |   [CALL [VAR $Foo :-1]()]
@@ -2130,57 +2097,33 @@ _123
 |   [CALL _<fn init>()]
 |   |   :> _<fn init>
 |   @1: RETURN
-|   |   :> _123
 |   |   [line 1] RuntimeError at 'return': Can't return a value from an initializer.
 [RESULT] : nil;
 [PassError]
 
-SOURCE: fun init() { return 123; } print init();
-|   define clock = <native fn>
-=================
-_123
-@1: FN init 
-|   @1: RETURN
-[VAR $init :-1]
-[CALL [VAR $init :-1]()]
-@2: print [CALL [VAR $init :-1]()]
-==== Program [2 statements] ====
-@1: FN init 
-|   @1: RETURN
-@2: print [CALL [VAR $init :-1]()]
-=================
-@1: FN init 
-|   define init = <fn init>
-@2: print [CALL [VAR $init :-1]()]
-|   [CALL [VAR $init :-1]()]
-|   |   |   envget [VAR $init :-1] => <fn init>
-|   @1: RETURN
-|   |   :> _123
-[RESULT] : 123;
-[PASS]
-
 SOURCE: class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return this.x; } } print Foo(42).inc();
 |   define clock = <native fn>
 =================
-[GET [THIS].x]
+[GET [THIS :-1].x]
 [VAR $x :-1]
-[SET [THIS].x = [VAR $x :-1]]
-@1: FN init 
-x|   @2: [SET [THIS].x = [VAR $x :-1]]
-[GET [THIS].x]
-[GET [THIS].x]
+[SET [THIS :-1].x = [VAR $x :-1]]
+@1: FN init (x)
+|   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+[GET [THIS :-1].x]
+[GET [THIS :-1].x]
 _1
-([GET [THIS].x] + _1)
-[SET [THIS].x = ([GET [THIS].x] + _1)]
-[GET [THIS].x]
-@1: FN inc 
-|   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
+([GET [THIS :-1].x] + _1)
+[SET [THIS :-1].x = ([GET [THIS :-1].x] + _1)]
+[GET [THIS :-1].x]
+@1: RETURN
+@1: FN inc ()
+|   @4: [SET [THIS :-1].x = ([GET [THIS :-1].x] + _1)]
 |   @1: RETURN
 @1: Class Foo 
-|   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
-|   @1: FN inc 
-|   |   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
+|   @1: FN init (x)
+|   |   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+|   @1: FN inc ()
+|   |   @4: [SET [THIS :-1].x = ([GET [THIS :-1].x] + _1)]
 |   |   @1: RETURN
 --------
 [VAR $Foo :-1]
@@ -2191,19 +2134,18 @@ _42
 @5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
-|   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
-|   @1: FN inc 
-|   |   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
+|   @1: FN init (x)
+|   |   @2: [SET [THIS :-1].x = [VAR $x :-1]]
+|   @1: FN inc ()
+|   |   @4: [SET [THIS :-1].x = ([GET [THIS :-1].x] + _1)]
 |   |   @1: RETURN
 --------
 @5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define init = <fn init>
 |   define inc = <fn inc>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
 |   [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
@@ -2216,26 +2158,26 @@ x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   |   |   |   :> _<fn init>
 |   |   |   |   :> _42
 |   |   |   |   define x = 42
-|   |   |   @2: [SET [THIS].x = [VAR $x :1]]
-|   |   |   |   :> [SET [THIS].x = [VAR $x :1]]
-|   |   |   |   |   :> [THIS]
+|   |   |   @2: [SET [THIS :2].x = [VAR $x :1]]
+|   |   |   |   :> [SET [THIS :2].x = [VAR $x :1]]
+|   |   |   |   |   :> [THIS :2]
 |   |   |   |   |   |   envget [VAR $x :1] => 42
 |   |   |   |   |   define x = 42
 |   |   |   envget inc = UNDEFINED
 |   |   |   envget inc = <fn inc>
 |   |   |   define this = <instance Foo>
-|   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
-|   |   :> [SET [THIS].x = ([GET [THIS].x] + _1)]
-|   |   |   :> [THIS]
-|   |   |   :> ([GET [THIS].x] + _1)
-|   |   |   |   :> [GET [THIS].x]
-|   |   |   |   |   :> [THIS]
+|   @4: [SET [THIS :2].x = ([GET [THIS :2].x] + _1)]
+|   |   :> [SET [THIS :2].x = ([GET [THIS :2].x] + _1)]
+|   |   |   :> [THIS :2]
+|   |   |   :> ([GET [THIS :2].x] + _1)
+|   |   |   |   :> [GET [THIS :2].x]
+|   |   |   |   |   :> [THIS :2]
 |   |   |   |   |   envget x = 42
 |   |   |   |   :> _1
 |   |   |   overwrite x = 43
 |   @1: RETURN
-|   |   :> [GET [THIS].x]
-|   |   |   :> [THIS]
+|   |   :> [GET [THIS :2].x]
+|   |   |   :> [THIS :2]
 |   |   |   envget x = 43
 [RESULT] : 43;
 [PASS]
@@ -2254,8 +2196,7 @@ SOURCE: class Foo {} print Foo.x;
 @1: print [GET [VAR $Foo :-1].x]
 =================
 @1: Class Foo 
-|   define Foo = nil
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @1: print [GET [VAR $Foo :-1].x]
 |   :> [GET [VAR $Foo :-1].x]
@@ -2279,8 +2220,7 @@ SOURCE: class Foo {} print Foo().x;
 @1: print [GET [CALL [VAR $Foo :-1]()].x]
 =================
 @1: Class Foo 
-|   define Foo = nil
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @1: print [GET [CALL [VAR $Foo :-1]()].x]
 |   :> [GET [CALL [VAR $Foo :-1]()].x]
@@ -2296,14 +2236,14 @@ SOURCE: class Foo {} print Foo().x;
 SOURCE: class Foo { init() { this.x = 123; } } print Foo().x();
 |   define clock = <native fn>
 =================
-[GET [THIS].x]
+[GET [THIS :-1].x]
 _123
-[SET [THIS].x = _123]
-@1: FN init 
-|   @2: [SET [THIS].x = _123]
+[SET [THIS :-1].x = _123]
+@1: FN init ()
+|   @2: [SET [THIS :-1].x = _123]
 @1: Class Foo 
-|   @1: FN init 
-|   |   @2: [SET [THIS].x = _123]
+|   @1: FN init ()
+|   |   @2: [SET [THIS :-1].x = _123]
 --------
 [VAR $Foo :-1]
 [CALL [VAR $Foo :-1]()]
@@ -2312,15 +2252,14 @@ _123
 @3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
-|   @1: FN init 
-|   |   @2: [SET [THIS].x = _123]
+|   @1: FN init ()
+|   |   @2: [SET [THIS :-1].x = _123]
 --------
 @3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define init = <fn init>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
 |   [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
@@ -2331,9 +2270,9 @@ _123
 |   |   |   |   define this = <instance Foo>
 |   |   |   [CALL _<fn init>()]
 |   |   |   |   :> _<fn init>
-|   |   |   @2: [SET [THIS].x = _123]
-|   |   |   |   :> [SET [THIS].x = _123]
-|   |   |   |   |   :> [THIS]
+|   |   |   @2: [SET [THIS :2].x = _123]
+|   |   |   |   :> [SET [THIS :2].x = _123]
+|   |   |   |   |   :> [THIS :2]
 |   |   |   |   |   :> _123
 |   |   |   |   |   define x = 123
 |   |   |   envget x = 123
@@ -2344,10 +2283,10 @@ _123
 SOURCE: class Foo { init(a) { } } print Foo(3,4);
 |   define clock = <native fn>
 =================
-@1: FN init 
-a@1: Class Foo 
-|   @1: FN init 
-a--------
+@1: FN init (a)
+@1: Class Foo 
+|   @1: FN init (a)
+--------
 [VAR $Foo :-1]
 _3
 _4
@@ -2355,14 +2294,13 @@ _4
 @2: print [CALL [VAR $Foo :-1](_3,_4)]
 ==== Program [2 statements] ====
 @1: Class Foo 
-|   @1: FN init 
-a--------
+|   @1: FN init (a)
+--------
 @2: print [CALL [VAR $Foo :-1](_3,_4)]
 =================
 @1: Class Foo 
-|   define Foo = nil
 |   define init = <fn init>
-|   assign Foo = <class Foo>
+|   define Foo = <class Foo>
 ---
 @2: print [CALL [VAR $Foo :-1](_3,_4)]
 |   [CALL [VAR $Foo :-1](_3,_4)]
@@ -2380,11 +2318,11 @@ SOURCE: class A {} super.foo();
 =================
 @1: Class A 
 --------
-[CALL [SUPER]()]
+[CALL [SUPER.foo :-1]()]
 ==== Program [2 statements] ====
 @1: Class A 
 --------
-@1: [CALL [SUPER]()]
+@1: [CALL [SUPER.foo :-1]()]
 =================
 [line 1] Error: Can't use 'super' outside of a class.
 Resolve error. No execution
@@ -2394,7 +2332,7 @@ Resolve error. No execution
 SOURCE: class B < A {} class A {}
 |   define clock = <native fn>
 =================
-[EXPR_SUP] [VAR $A :-1]
+[SUPERCLASS] [VAR $A :-1]
 @1: Class B 
 > [VAR $A :-1]
 --------
@@ -2408,7 +2346,6 @@ SOURCE: class B < A {} class A {}
 --------
 =================
 @1: Class B 
-|   define B = nil
 |   |   [line 1] RuntimeError at 'A': Undefined variable
 |   [line 1] RuntimeError at 'A': Superclass must be a class.
 [RESULT] : 
@@ -2420,7 +2357,7 @@ SOURCE: class A {} class B < 123 {}
 @1: Class A 
 --------
 [line 1] Error at '123': Expect superclass name.
-[EXPR_SUP] [VAR $123 :-1]
+[SUPERCLASS] [VAR $123 :-1]
 [line 1] Error at '123': Expect '{' before class body.
 [line 1] Error at '123': Expect function name.
 [line 1] Error at '123': Expect '(' after function name.
@@ -2431,19 +2368,19 @@ _123
 [line 1] Error at '{': Expect ';' after expression.
 ### SYNCHRONIZE ###
 [line 1] Error at EOF: Expect '}' after block.
-@1: FN 123 
-123[line 1] Error at EOF: Expect '}' after class body.
+@1: FN 123 (123)
+[line 1] Error at EOF: Expect '}' after class body.
 @1: Class B 
 > [VAR $123 :-1]
-|   @1: FN 123 
-123--------
+|   @1: FN 123 (123)
+--------
 ==== Program [2 statements] ====
 @1: Class A 
 --------
 @1: Class B 
 > [VAR $123 :-1]
-|   @1: FN 123 
-123--------
+|   @1: FN 123 (123)
+--------
 =================
 Resolve error. No execution
 [RESULT] : 
@@ -2458,22 +2395,22 @@ _0
 @2: print (_1 + _0)
 _Hello world
 @3: print _Hello world
-@1: FN foo 
+@1: FN foo ()
 |   @2: print (_1 + _0)
 |   @3: print _Hello world
 @1: Class A 
-|   @1: FN foo 
+|   @1: FN foo ()
 |   |   @2: print (_1 + _0)
 |   |   @3: print _Hello world
 --------
-[EXPR_SUP] [VAR $A :-1]
-[CALL [SUPER]()]
-@1: FN bar 
-|   @5: [CALL [SUPER]()]
+[SUPERCLASS] [VAR $A :-1]
+[CALL [SUPER.foo :-1]()]
+@1: FN bar ()
+|   @5: [CALL [SUPER.foo :-1]()]
 @1: Class B 
 > [VAR $A :-1]
-|   @1: FN bar 
-|   |   @5: [CALL [SUPER]()]
+|   @1: FN bar ()
+|   |   @5: [CALL [SUPER.foo :-1]()]
 --------
 [VAR $B :-1]
 [CALL [VAR $B :-1]()]
@@ -2481,28 +2418,26 @@ _Hello world
 [CALL [GET [CALL [VAR $B :-1]()].bar]()]
 ==== Program [3 statements] ====
 @1: Class A 
-|   @1: FN foo 
+|   @1: FN foo ()
 |   |   @2: print (_1 + _0)
 |   |   @3: print _Hello world
 --------
 @1: Class B 
 > [VAR $A :-1]
-|   @1: FN bar 
-|   |   @5: [CALL [SUPER]()]
+|   @1: FN bar ()
+|   |   @5: [CALL [SUPER.foo :-1]()]
 --------
 @6: [CALL [GET [CALL [VAR $B :-1]()].bar]()]
 =================
 @1: Class A 
-|   define A = nil
 |   define foo = <fn foo>
-|   assign A = <class A>
+|   define A = <class A>
 ---
 @1: Class B 
-|   define B = nil
 |   |   envget [VAR $A :-1] => <class A>
 |   define super = <class A>
 |   define bar = <fn bar>
-|   assign B = <class B>
+|   define B = <class B>
 ---
 @6: [CALL [GET [CALL [VAR $B :-1]()].bar]()]
 |   [CALL [GET [CALL [VAR $B :-1]()].bar]()]
@@ -2513,9 +2448,9 @@ _Hello world
 |   |   |   envget bar = UNDEFINED
 |   |   |   envget bar = <fn bar>
 |   |   |   define this = <instance B>
-|   @5: [CALL [SUPER]()]
-|   |   [CALL [SUPER]()]
-|   |   |   :> [SUPER]
+|   @5: [CALL [SUPER.foo :2]()]
+|   |   [CALL [SUPER.foo :2]()]
+|   |   |   :> [SUPER.foo :2]
 |   |   |   |   envget foo = <fn foo>
 |   |   |   |   define this = <instance B>
 |   |   @2: print (_1 + _0)

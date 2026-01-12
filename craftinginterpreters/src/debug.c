@@ -63,7 +63,7 @@ void indentPrint(int indent) {
     printf("|   ");
 }
 
-static void printValue(Value value) {
+void printValue(Value value) {
   char valueBuf[64];
   valueToString(value, valueBuf, sizeof(valueBuf));
   fputs(valueBuf, stdout);
@@ -193,14 +193,12 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
     break;
   }
   case EXPR_THIS: {
-    printf("[THIS]");
-    // printf("%s", expr->as.thisExpr.keyword.lexeme);
-    // printf("]");
+    printf("[THIS :%d]", expr->as.thisExpr.depth);
     break;
   }
   case EXPR_SUPER: {
-    printf("[SUPER]");
-    // printf("super.%s", expr->as.superExpr.method.lexeme);
+    printf("[SUPER.%s :%d]", expr->as.superExpr.method.lexeme,
+           expr->as.superExpr.depth);
     break;
   }
   }
@@ -317,10 +315,7 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent, bool full) {
   }
 
   case STMT_FUNCTION: {
-    printf("FN %s \n", stmt->as.functionStmt.name.lexeme);
-    if (!full) {
-      break;
-    }
+    printf("FN %s (", stmt->as.functionStmt.name.lexeme);
 
     for (u8 i = 0; i < stmt->as.functionStmt.paramCount; i++) {
       Token t = stmt->as.functionStmt.params[i];
@@ -328,6 +323,12 @@ void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent, bool full) {
       if (i < stmt->as.functionStmt.paramCount - 1) {
         printf(",");
       }
+    }
+
+    printf(")\n");
+
+    if (!full) {
+      break;
     }
 
     printStmt(lox, stmt->as.functionStmt.body, result, indent, true);

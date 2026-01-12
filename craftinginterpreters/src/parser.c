@@ -120,7 +120,7 @@ static Expr *newAssignExpr(Lox *lox, Token name, Expr *value) {
   expr->type = EXPR_ASSIGN;
   expr->as.assign.name = name;
   expr->as.assign.value = value;
-  expr->as.var.depth = -1;
+  expr->as.assign.depth = -1;
   printExpr(lox, expr, NO_VALUE, 0, true, "");
   return expr;
 }

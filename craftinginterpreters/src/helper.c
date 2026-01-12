@@ -1,5 +1,4 @@
 #include "lox.h"
-#include <string.h>
 
 const Value UNDEFINED_VALUE = {VAL_ERROR, {.string = "UNDEFINED"}};
 const Value NO_VALUE = {VAL_NIL, {.boolean = true}};
@@ -236,39 +235,4 @@ bool isEqual(Value a, Value b) {
   }
 
   return false;
-}
-
-Value makeFunction(Lox *lox, Stmt *func, bool isClass) {
-
-  LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
-  fn->name = func->as.functionStmt.name;
-  fn->params = func->as.functionStmt.params;
-  fn->paramCount = func->as.functionStmt.paramCount;
-  fn->body = func->as.functionStmt.body;
-  fn->closure = lox->env;
-  if (isClass) {
-    fn->isInitializer = strcmp(fn->name.lexeme, "init") == 0;
-  } else {
-    fn->isInitializer = false;
-  }
-
-  return (Value){.type = VAL_FUNCTION, .as.function = fn};
-}
-
-Value bindMethod(Lox *lox, Value method, LoxInstance *instance) {
-  LoxFunction *fn = method.as.function;
-
-  Environment *env = envNew(fn->closure);
-
-  envDefine(env, lox, "this",
-            (Value){
-                .type = VAL_INSTANCE,
-                .as.instance = instance,
-            });
-
-  LoxFunction *bound = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
-  *bound = *fn;
-  bound->closure = env;
-
-  return (Value){.type = VAL_FUNCTION, .as.function = bound};
 }

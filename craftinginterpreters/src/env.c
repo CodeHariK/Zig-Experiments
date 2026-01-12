@@ -92,7 +92,7 @@ Value envGetAt(Environment *env, int depth, const char *name) {
   return NIL_VALUE;
 }
 
-static bool envGetGlobal(Environment *env, const char *name, Value *out) {
+bool envGetGlobal(Environment *env, const char *name, Value *out) {
   while (env->enclosing) {
     env = env->enclosing;
   }
@@ -109,7 +109,7 @@ static bool envGetGlobal(Environment *env, const char *name, Value *out) {
   return false; // not found
 }
 
-bool envAssign(Lox *lox, Environment *env, const char *name, Value value) {
+bool envAssign(Environment *env, Lox *lox, const char *name, Value value) {
   for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       env->entries[i].value = value;
@@ -121,14 +121,14 @@ bool envAssign(Lox *lox, Environment *env, const char *name, Value value) {
   }
 
   if (env->enclosing) {
-    return envAssign(lox, env->enclosing, name, value);
+    return envAssign(env->enclosing, lox, name, value);
   }
 
   return false;
 }
 
-static bool envAssignAt(Lox *lox, Environment *env, int depth, const char *name,
-                        Value value) {
+bool envAssignAt(Lox *lox, Environment *env, int depth, const char *name,
+                 Value value) {
   Environment *target = envAncestor(env, depth);
   if (!target)
     return false;
@@ -436,114 +436,4 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
     // Syntax validity is already handled via loopDepth in parser
     break;
   }
-}
-
-Value evalVariable(Lox *lox, Expr *expr) {
-  Value result;
-
-  if (expr->as.var.depth != -1) {
-    // Local or non-global resolved by resolver
-    result = envGetAt(lox->env, expr->as.var.depth, expr->as.var.name.lexeme);
-  } else {
-    // Global
-    if (!envGetGlobal(lox->env, expr->as.var.name.lexeme, &result)) {
-      return errorValue(lox, &expr->as.var.name, NULL, "Undefined variable",
-                        true);
-    }
-  }
-
-  printExpr(lox, expr, result, lox->indent + 1, true, "envget ");
-  return result;
-}
-
-Value evalAssign(Lox *lox, Expr *expr) {
-  Value result = evaluate(lox, expr->as.assign.value);
-
-  if (expr->as.assign.depth != -1) {
-    envAssignAt(lox, lox->env, expr->as.assign.depth,
-                expr->as.assign.name.lexeme, result);
-  } else {
-    if (!envAssign(lox, lox->env, expr->as.assign.name.lexeme, result)) {
-      return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable",
-                        true);
-    }
-  }
-
-  return result;
-}
-
-Value evalGet(Lox *lox, Expr *expr) {
-
-  Value obj = evaluate(lox, expr->as.getExpr.object);
-
-  if (obj.type != VAL_INSTANCE) {
-    return errorValue(lox, &expr->as.getExpr.name, NULL,
-                      "Only instances have properties, Invalid access", true);
-  }
-
-  LoxInstance *inst = obj.as.instance;
-
-  Value value;
-  if (envGet(lox, inst->fields, expr->as.getExpr.name.lexeme, &value)) {
-    return value;
-  }
-
-  if (envGet(lox, inst->class->methodsEnv, expr->as.getExpr.name.lexeme,
-             &value)) {
-    Value bound_method = bindMethod(lox, value, inst);
-    return bound_method;
-  }
-
-  return errorValue(lox, &expr->as.getExpr.name, NULL, "Undefined property",
-                    true);
-}
-
-Value evalSet(Lox *lox, Expr *expr) {
-
-  Value obj = evaluate(lox, expr->as.setExpr.object);
-
-  if (obj.type != VAL_INSTANCE) {
-    return errorValue(lox, &expr->as.setExpr.name, NULL,
-                      "Only instances have fields, Invalid set", true);
-  }
-
-  Value value = evaluate(lox, expr->as.setExpr.value);
-
-  envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
-
-  return value;
-}
-
-Value evalSuper(Lox *lox, Expr *expr) {
-
-  // 1. Get `this`
-  Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
-
-  if (thisVal.type != VAL_INSTANCE) {
-    return errorValue(lox, &expr->as.superExpr.keyword, expr,
-                      "Invalid 'this' binding.", true);
-  }
-
-  LoxInstance *instance = thisVal.as.instance;
-
-  // 2. Get superclass from the class, NOT the environment
-  LoxClass *superclass = instance->class->superclass;
-
-  if (!superclass) {
-    return errorValue(lox, &expr->as.superExpr.keyword, expr,
-                      "Invalid superclass.", true);
-  }
-
-  // 3. Look up method on superclass
-  Value method;
-  if (!envGet(lox, superclass->methodsEnv, expr->as.superExpr.method.lexeme,
-              &method)) {
-    return errorValue(lox, &expr->as.superExpr.method, expr,
-                      "Undefined property on superclass", true);
-  }
-
-  // 4. Bind to instance
-  Value bound = bindMethod(lox, method, instance);
-
-  return bound;
 }

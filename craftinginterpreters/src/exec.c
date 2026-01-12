@@ -79,12 +79,28 @@ static void execForStmt(Lox *lox, Stmt *stmt) {
   }
 }
 
+static void execFuncstmt(Lox *lox, Environment *parent, Stmt *func,
+                         bool isClass) {
+
+  LoxFunction *fn = arenaAlloc(&lox->astArena, sizeof(LoxFunction));
+  fn->name = func->as.functionStmt.name;
+  fn->params = func->as.functionStmt.params;
+  fn->paramCount = func->as.functionStmt.paramCount;
+  fn->body = func->as.functionStmt.body;
+  fn->closure = lox->env;
+  if (isClass) {
+    fn->isInitializer = strcmp(fn->name.lexeme, "init") == 0;
+  } else {
+    fn->isInitializer = false;
+  }
+
+  envDefine(parent, lox, fn->name.lexeme,
+            (Value){.type = VAL_FUNCTION, .as.function = fn});
+}
+
 static void execClassStmt(Lox *lox, Stmt *stmt) {
 
-  // 1. Define class name early (allows self-reference)
-  envDefine(lox->env, lox, stmt->as.classStmt.name.lexeme, NIL_VALUE);
-
-  // 2. Evaluate superclass if present
+  // Evaluate superclass if present
   Value superclassVal = NIL_VALUE;
   if (stmt->as.classStmt.superclass) {
     superclassVal = evaluate(lox, stmt->as.classStmt.superclass);
@@ -94,37 +110,28 @@ static void execClassStmt(Lox *lox, Stmt *stmt) {
                    "Superclass must be a class.");
       return;
     }
-  }
 
-  // 3. Create temporary env for 'super'
-  if (stmt->as.classStmt.superclass) {
     Environment *prevEnv = lox->env;
     lox->env = envNew(prevEnv);
     envDefine(lox->env, lox, "super", superclassVal);
     lox->env = prevEnv;
   }
 
-  // 4. Create class object
   LoxClass *klass = arenaAlloc(&lox->astArena, sizeof(LoxClass));
   klass->name = stmt->as.classStmt.name;
   klass->methodsEnv = envNew(NULL);
   klass->superclass =
       stmt->as.classStmt.superclass ? superclassVal.as.klass : NULL;
-
-  // 5. Define methods
   for (int i = 0; i < stmt->as.classStmt.methodCount; i++) {
     Stmt *method = stmt->as.classStmt.methods[i];
-    Value fnValue = makeFunction(lox, method, true);
-    envDefine(klass->methodsEnv, lox, fnValue.as.function->name.lexeme,
-              fnValue);
+    execFuncstmt(lox, klass->methodsEnv, method, true);
   }
 
-  // 6. Assign class value
-  Value classValue;
-  classValue.type = VAL_CLASS;
-  classValue.as.klass = klass;
-
-  envAssign(lox, lox->env, stmt->as.classStmt.name.lexeme, classValue);
+  envDefine(lox->env, lox, stmt->as.classStmt.name.lexeme,
+            (Value){
+                .type = VAL_CLASS,
+                .as.klass = klass,
+            });
   printf("---\n");
 }
 
@@ -132,13 +139,13 @@ static void execReturnStmt(Lox *lox, Stmt *stmt) {
   Value value = NIL_VALUE;
 
   if (stmt->as.returnStmt.value) {
-    value = evaluate(lox, stmt->as.returnStmt.value);
-
     if (lox->currentFunction && lox->currentFunction->isInitializer) {
       runtimeError(lox, &stmt->as.returnStmt.keyword, NULL,
                    "Can't return a value from an initializer.");
       return;
     }
+
+    value = evaluate(lox, stmt->as.returnStmt.value);
   }
 
   lox->signal.type = SIGNAL_RETURN;
@@ -204,8 +211,7 @@ void executeStmt(Lox *lox, Stmt *stmt) {
   }
 
   case STMT_FUNCTION: {
-    Value fnValue = makeFunction(lox, stmt, false);
-    envDefine(lox->env, lox, fnValue.as.function->name.lexeme, fnValue);
+    execFuncstmt(lox, lox->env, stmt, false);
     break;
   }
 

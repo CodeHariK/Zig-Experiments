@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define u32 uint32_t
 #define i32 int32_t
@@ -165,7 +166,6 @@ typedef struct Expr {
 
     struct {
       Token name;
-      struct Expr *initializer;
       int depth;
     } var;
 
@@ -432,22 +432,17 @@ Program *parseProgram(Lox *lox);
 void executeStmt(Lox *lox, Stmt *stmt);
 void executeProgram(Lox *lox, Program *prog);
 
-Value makeFunction(Lox *lox, Stmt *functionStmt, bool isClass);
-Value bindMethod(Lox *lox, Value method, LoxInstance *instance);
-
 void defineNativeFunctions(Lox *lox);
 
 Environment *envNew(Environment *enclosing);
 void envFree(Environment *env);
 void envDefine(Environment *env, Lox *lox, const char *name, Value value);
 bool envGet(Lox *lox, Environment *env, const char *name, Value *out);
-bool envAssign(Lox *lox, Environment *env, const char *name, Value value);
+bool envGetGlobal(Environment *env, const char *name, Value *out);
+bool envAssign(Environment *env, Lox *lox, const char *name, Value value);
+bool envAssignAt(Lox *lox, Environment *env, int depth, const char *name,
+                 Value value);
 Value envGetAt(Environment *env, int depth, const char *name);
-Value evalVariable(Lox *lox, Expr *expr);
-Value evalGet(Lox *lox, Expr *expr);
-Value evalSet(Lox *lox, Expr *expr);
-Value evalAssign(Lox *lox, Expr *expr);
-Value evalSuper(Lox *lox, Expr *expr);
 void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt);
 
 extern const Value NIL_VALUE;
@@ -461,6 +456,7 @@ char *exprTypeToString(ExprType type);
 void indentPrint(int indent);
 void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
                char *msg);
+void printValue(Value value);
 void printEnv(Lox *lox, const char *name, Value value, char *msg);
 void printToken(Lox *lox, const Token *token, char *msg);
 void printStmt(Lox *lox, Stmt *stmt, Value result, u32 indent, bool full);

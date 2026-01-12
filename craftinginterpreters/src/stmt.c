@@ -151,7 +151,7 @@ static Stmt *parseClassStmt(Lox *lox) {
     Token superClassToken =
         consumeToken(lox, TOKEN_IDENTIFIER, "Expect superclass name.");
     superclass = newVariableExpr(lox, superClassToken);
-    printExpr(lox, superclass, NO_VALUE, 0, true, "[EXPR_SUP] ");
+    printExpr(lox, superclass, NO_VALUE, 0, true, "[SUPERCLASS] ");
   }
 
   consumeToken(lox, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -251,6 +251,8 @@ static Stmt *parseReturnStmt(Lox *lox) {
   stmt->as.returnStmt.keyword = keyword;
   stmt->as.returnStmt.value = value;
   stmt->line = keyword.line;
+
+  printStmt(lox, stmt, NO_VALUE, 0, true);
 
   return stmt;
 }
