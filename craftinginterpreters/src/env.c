@@ -61,13 +61,15 @@ static Environment *envAncestor(Environment *env, int depth) {
   return current;
 }
 
-bool envGet(Environment *env, const char *name, Value *out) {
+bool envGet(Lox *lox, Environment *env, const char *name, Value *out) {
   for (u32 i = 0; i < env->count; i++) {
     if (strcmp(env->entries[i].key, name) == 0) {
       *out = env->entries[i].value;
+      printEnv(lox, name, *out, "envget");
       return true;
     }
   }
+  printEnv(lox, name, UNDEFINED_VALUE, "envget");
   return false;
 }
 
@@ -125,7 +127,7 @@ bool envAssign(Lox *lox, Environment *env, const char *name, Value value) {
   return false;
 }
 
-static bool envAssignAt(Environment *env, int depth, const char *name,
+static bool envAssignAt(Lox *lox, Environment *env, int depth, const char *name,
                         Value value) {
   Environment *target = envAncestor(env, depth);
   if (!target)
@@ -134,6 +136,9 @@ static bool envAssignAt(Environment *env, int depth, const char *name,
   for (u32 i = 0; i < target->count; i++) {
     if (strcmp(target->entries[i].key, name) == 0) {
       target->entries[i].value = value;
+
+      printEnv(lox, name, value, "assignAt");
+
       return true;
     }
   }
@@ -436,8 +441,6 @@ void resolveStmt(Resolver *r, Lox *lox, Stmt *stmt) {
 Value evalVariable(Lox *lox, Expr *expr) {
   Value result;
 
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
-
   if (expr->as.var.depth != -1) {
     // Local or non-global resolved by resolver
     result = envGetAt(lox->env, expr->as.var.depth, expr->as.var.name.lexeme);
@@ -457,8 +460,8 @@ Value evalAssign(Lox *lox, Expr *expr) {
   Value result = evaluate(lox, expr->as.assign.value);
 
   if (expr->as.assign.depth != -1) {
-    envAssignAt(lox->env, expr->as.assign.depth, expr->as.assign.name.lexeme,
-                result);
+    envAssignAt(lox, lox->env, expr->as.assign.depth,
+                expr->as.assign.name.lexeme, result);
   } else {
     if (!envAssign(lox, lox->env, expr->as.assign.name.lexeme, result)) {
       return errorValue(lox, &expr->as.assign.name, NULL, "Undefined variable",
@@ -471,8 +474,6 @@ Value evalAssign(Lox *lox, Expr *expr) {
 
 Value evalGet(Lox *lox, Expr *expr) {
 
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
-
   Value obj = evaluate(lox, expr->as.getExpr.object);
 
   if (obj.type != VAL_INSTANCE) {
@@ -483,12 +484,12 @@ Value evalGet(Lox *lox, Expr *expr) {
   LoxInstance *inst = obj.as.instance;
 
   Value value;
-  if (envGet(inst->fields, expr->as.getExpr.name.lexeme, &value)) {
-    printExpr(lox, expr, value, lox->indent, true, "[EVAL_GET] ");
+  if (envGet(lox, inst->fields, expr->as.getExpr.name.lexeme, &value)) {
     return value;
   }
 
-  if (envGet(inst->class->methodsEnv, expr->as.getExpr.name.lexeme, &value)) {
+  if (envGet(lox, inst->class->methodsEnv, expr->as.getExpr.name.lexeme,
+             &value)) {
     Value bound_method = bindMethod(lox, value, inst);
     return bound_method;
   }
@@ -498,7 +499,6 @@ Value evalGet(Lox *lox, Expr *expr) {
 }
 
 Value evalSet(Lox *lox, Expr *expr) {
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[EVAL_SET] ");
 
   Value obj = evaluate(lox, expr->as.setExpr.object);
 
@@ -511,12 +511,10 @@ Value evalSet(Lox *lox, Expr *expr) {
 
   envDefine(obj.as.instance->fields, lox, expr->as.setExpr.name.lexeme, value);
 
-  // printExpr(lox, expr, value, lox->indent, true, "[EVAL_SET] ");
   return value;
 }
 
 Value evalSuper(Lox *lox, Expr *expr) {
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "[> EVAL_SUPER] ");
 
   // 1. Get `this`
   Value thisVal = envGetAt(lox->env, expr->as.superExpr.depth, "this");
@@ -538,7 +536,7 @@ Value evalSuper(Lox *lox, Expr *expr) {
 
   // 3. Look up method on superclass
   Value method;
-  if (!envGet(superclass->methodsEnv, expr->as.superExpr.method.lexeme,
+  if (!envGet(lox, superclass->methodsEnv, expr->as.superExpr.method.lexeme,
               &method)) {
     return errorValue(lox, &expr->as.superExpr.method, expr,
                       "Undefined property on superclass", true);
@@ -547,6 +545,5 @@ Value evalSuper(Lox *lox, Expr *expr) {
   // 4. Bind to instance
   Value bound = bindMethod(lox, method, instance);
 
-  printExpr(lox, expr, bound, lox->indent, true, "[EVAL_SUPER] ");
   return bound;
 }

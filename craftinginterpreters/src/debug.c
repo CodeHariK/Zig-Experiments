@@ -145,15 +145,16 @@ void printExpr(Lox *lox, Expr *expr, Value result, u32 indent, bool newLine,
 
   case EXPR_VARIABLE: {
     printf("[VAR ");
-    printf("$%s", expr->as.var.name.lexeme);
+    printf("$%s :%d", expr->as.var.name.lexeme, expr->as.var.depth);
     printf("]");
     break;
   }
 
   case EXPR_ASSIGN: {
-    printf("[ASSIGN] ");
-    printf("%s = ", expr->as.assign.name.lexeme);
+    printf("[ASSIGN %s :%d = ", expr->as.assign.name.lexeme,
+           expr->as.assign.depth);
     printExpr(lox, expr->as.assign.value, NO_VALUE, 0, false, "");
+    printf("]");
     break;
   }
   case EXPR_LOGICAL: {

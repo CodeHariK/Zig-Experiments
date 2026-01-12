@@ -17,6 +17,35 @@
 ## Core Dumped
 
 * [Computer architecture from scratch](https://www.youtube.com/playlist?list=PL9vTTBa7QaQOoMfpP3ztvgyQkPWDPfJez)
+* [Operating Systems Theory](https://www.youtube.com/playlist?list=PL9vTTBa7QaQPdvEuMTqS9McY-ieaweU8M)
+
+* [Core Dumped: WHY IS THE STACK SO FAST?](https://www.youtube.com/watch?v=N3o5yHYLviQ)
+* [Core Dumped: WHY IS THE HEAP SO SLOW?](https://www.youtube.com/watch?v=ioJkA7Mw2-U)
+
+* [Core Dumped: Process](https://www.youtube.com/watch?v=LDhoD4IVElk)
+
+## Bitlemon
+
+* [The Central Processing Unit (CPU)](https://www.youtube.com/playlist?list=PL38NNHQLqJqaAJYo71PSNSkf61__4P8Sh)
+* [Memory Management (Virtual Memory / Paging / DMA)](https://www.youtube.com/playlist?list=PL38NNHQLqJqZoDp4CrAueD1aBin7OebEL)
+* [The CPU Cache](https://www.youtube.com/playlist?list=PL38NNHQLqJqYnNrTenxBvGJSPCkV9EOWk)
+
+## Computerphile
+
+* [What Every Programmer Should Know about How CPUs Work](https://www.youtube.com/watch?v=-HNpim5x-IE)
+
+* [CPU Pipeline - Computerphile](https://www.youtube.com/watch?v=BVNx3wtJ9vs)
+* [How Branch Prediction Works in CPUs - Computerphile](https://www.youtube.com/watch?v=nczJ58WvtYo)
+* [How CPUs do Out Of Order Operations - Computerphile](https://www.youtube.com/watch?v=jNC9LPc3BI0)
+* [Modern CPUs Assign Registers To Speed Up Your Code - Computerphile](https://www.youtube.com/watch?v=Me0GF5zMfAk)
+* [How CPUs Do Math(s) - Computerphile](https://www.youtube.com/watch?v=nhXevKMm3JI)
+* [How CPU Memory & Caches Work - Computerphile](https://www.youtube.com/watch?v=SAk-6gVkio0)
+* [CPU Interrupts - Computerphile](https://www.youtube.com/watch?v=tGMSARJk7cA)
+* [CPU Kernel Mode - Computerphile](https://www.youtube.com/watch?v=yV4fGeIv7MI)
+* [CPU Summary - Computerphile](https://www.youtube.com/watch?v=fpkCNu_dzcM)
+* [Machine Code Explained - Computerphile](https://www.youtube.com/watch?v=8VsiYWW9r48)
+* [Computer Timescales Mapped onto Human Timescales - Computerphile](https://www.youtube.com/watch?v=PpaQrzoDW2I)
+* [What is Bootstrapping Anyway? - Computerphile](https://www.youtube.com/watch?v=Pu7LvnxV6N0)
 
 ## Computer Science
 
@@ -72,14 +101,6 @@
 * [Core Dumped: How computer processors run conditions and loops](https://www.youtube.com/watch?v=Ui6QyzcD3_E)
 
 * [Ben Eater: Binary to decimal can’t be that hard, right?](https://www.youtube.com/watch?v=v3-a-zqKfgA)
-
-
-## Software
-
-* [Core Dumped: WHY IS THE STACK SO FAST?](https://www.youtube.com/watch?v=N3o5yHYLviQ)
-* [Core Dumped: WHY IS THE HEAP SO SLOW?](https://www.youtube.com/watch?v=ioJkA7Mw2-U)
-
-* [Core Dumped: Process](https://www.youtube.com/watch?v=LDhoD4IVElk)
 
 ## RISC-V
 

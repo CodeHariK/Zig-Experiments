@@ -113,7 +113,7 @@ static Value evalCall(Lox *lox, Expr *expr) {
 
     // Call init if exists
     Value init;
-    if (envGet(klass->methodsEnv, "init", &init)) {
+    if (envGet(lox, klass->methodsEnv, "init", &init)) {
       Value bound = bindMethod(lox, init, instance);
 
       Expr fakeCall = *expr;
@@ -191,7 +191,9 @@ Value evaluate(Lox *lox, Expr *expr) {
 
   lox->indent++;
 
-  printExpr(lox, expr, NO_VALUE, lox->indent, true, "");
+  if (expr->type != EXPR_CALL && expr->type != EXPR_VARIABLE) {
+    printExpr(lox, expr, NO_VALUE, lox->indent, true, ":> ");
+  }
 
   switch (expr->type) {
   case EXPR_LITERAL: {

@@ -440,7 +440,7 @@ void defineNativeFunctions(Lox *lox);
 Environment *envNew(Environment *enclosing);
 void envFree(Environment *env);
 void envDefine(Environment *env, Lox *lox, const char *name, Value value);
-bool envGet(Environment *env, const char *name, Value *out);
+bool envGet(Lox *lox, Environment *env, const char *name, Value *out);
 bool envAssign(Lox *lox, Environment *env, const char *name, Value value);
 Value envGetAt(Environment *env, int depth, const char *name);
 Value evalVariable(Lox *lox, Expr *expr);

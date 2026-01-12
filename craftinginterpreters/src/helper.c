@@ -28,7 +28,7 @@ void valueToString(Value value, char *buffer, u32 size) {
     }
     break;
   case VAL_ERROR:
-    snprintf(buffer, size, ">> %s", value.as.string);
+    snprintf(buffer, size, "%s", value.as.string);
     break;
 
   case VAL_BOOL:

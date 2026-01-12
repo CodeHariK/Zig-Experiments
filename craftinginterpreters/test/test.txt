@@ -5,35 +5,31 @@ _3.14
 _7
 (_3.14 * _7)
 @1: VAR a = (_3.14 * _7)
-[VAR $a]
-[VAR $a]
+[VAR $a :-1]
+[VAR $a :-1]
 _7
-([VAR $a] / _7)
-[ASSIGN] a = ([VAR $a] / _7)
-[VAR $a]
-@3: print [VAR $a]
+([VAR $a :-1] / _7)
+[ASSIGN a :-1 = ([VAR $a :-1] / _7)]
+[VAR $a :-1]
+@3: print [VAR $a :-1]
 ==== Program [3 statements] ====
 @1: VAR a = (_3.14 * _7)
-@2: [ASSIGN] a = ([VAR $a] / _7)
-@3: print [VAR $a]
+@2: [ASSIGN a :-1 = ([VAR $a :-1] / _7)]
+@3: print [VAR $a :-1]
 =================
 @1: VAR a = (_3.14 * _7)
-|   (_3.14 * _7)
-|   |   _3.14
-|   |   _7
+|   :> (_3.14 * _7)
+|   |   :> _3.14
+|   |   :> _7
 |   define a = 21.98
-@2: [ASSIGN] a = ([VAR $a] / _7)
-|   [ASSIGN] a = ([VAR $a] / _7)
-|   |   ([VAR $a] / _7)
-|   |   |   [VAR $a]
-|   |   |   [VAR $a]
-|   |   |   |   envget [VAR $a] => 21.98
-|   |   |   _7
+@2: [ASSIGN a :-1 = ([VAR $a :-1] / _7)]
+|   :> [ASSIGN a :-1 = ([VAR $a :-1] / _7)]
+|   |   :> ([VAR $a :-1] / _7)
+|   |   |   |   envget [VAR $a :-1] => 21.98
+|   |   |   :> _7
 |   |   assign a = 3.14
-@3: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 3.14
+@3: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 3.14
 [RESULT] : 3.14;
 [PASS]
 
@@ -42,19 +38,17 @@ SOURCE: var s = "hello"; print s;
 =================
 _hello
 @1: VAR s = _hello
-[VAR $s]
-@2: print [VAR $s]
+[VAR $s :-1]
+@2: print [VAR $s :-1]
 ==== Program [2 statements] ====
 @1: VAR s = _hello
-@2: print [VAR $s]
+@2: print [VAR $s :-1]
 =================
 @1: VAR s = _hello
-|   _hello
+|   :> _hello
 |   define s = hello
-@2: print [VAR $s]
-|   [VAR $s]
-|   [VAR $s]
-|   |   envget [VAR $s] => hello
+@2: print [VAR $s :-1]
+|   |   envget [VAR $s :-1] => hello
 [RESULT] : hello;
 [PASS]
 
@@ -62,18 +56,16 @@ SOURCE: var x; print x;
 |   define clock = <native fn>
 =================
 @1: VAR x = 
-[VAR $x]
-@2: print [VAR $x]
+[VAR $x :-1]
+@2: print [VAR $x :-1]
 ==== Program [2 statements] ====
 @1: VAR x = 
-@2: print [VAR $x]
+@2: print [VAR $x :-1]
 =================
 @1: VAR x = 
-@2: print [VAR $x]
-|   [VAR $x]
-|   [VAR $x]
+@2: print [VAR $x :-1]
 |   |   [line 1] RuntimeError at 'x': Undefined variable
-[RESULT] : >> Undefined variable;
+[RESULT] : Undefined variable;
 [PassError]
 
 SOURCE: print 1 = !true;
@@ -99,27 +91,27 @@ _0
 @1: VAR a = _0
 _0
 @2: VAR b = _0
-[VAR $a]
-[VAR $b]
+[VAR $a :-1]
+[VAR $b :-1]
 _3
-[ASSIGN] b = _3
-[ASSIGN] a = [ASSIGN] b = _3
-@3: print [ASSIGN] a = [ASSIGN] b = _3
+[ASSIGN b :-1 = _3]
+[ASSIGN a :-1 = [ASSIGN b :-1 = _3]]
+@3: print [ASSIGN a :-1 = [ASSIGN b :-1 = _3]]
 ==== Program [3 statements] ====
 @1: VAR a = _0
 @2: VAR b = _0
-@3: print [ASSIGN] a = [ASSIGN] b = _3
+@3: print [ASSIGN a :-1 = [ASSIGN b :-1 = _3]]
 =================
 @1: VAR a = _0
-|   _0
+|   :> _0
 |   define a = 0
 @2: VAR b = _0
-|   _0
+|   :> _0
 |   define b = 0
-@3: print [ASSIGN] a = [ASSIGN] b = _3
-|   [ASSIGN] a = [ASSIGN] b = _3
-|   |   [ASSIGN] b = _3
-|   |   |   _3
+@3: print [ASSIGN a :-1 = [ASSIGN b :-1 = _3]]
+|   :> [ASSIGN a :-1 = [ASSIGN b :-1 = _3]]
+|   |   :> [ASSIGN b :-1 = _3]
+|   |   |   :> _3
 |   |   |   assign b = 3
 |   |   assign a = 3
 [RESULT] : 3;
@@ -130,27 +122,27 @@ SOURCE: var a = 1; print (a = 2) + 3;
 =================
 _1
 @1: VAR a = _1
-[VAR $a]
+[VAR $a :-1]
 _2
-[ASSIGN] a = _2
-[ASSIGN] a = _2
+[ASSIGN a :-1 = _2]
+[ASSIGN a :-1 = _2]
 _3
-([ASSIGN] a = _2 + _3)
-@2: print ([ASSIGN] a = _2 + _3)
+([ASSIGN a :-1 = _2] + _3)
+@2: print ([ASSIGN a :-1 = _2] + _3)
 ==== Program [2 statements] ====
 @1: VAR a = _1
-@2: print ([ASSIGN] a = _2 + _3)
+@2: print ([ASSIGN a :-1 = _2] + _3)
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
-@2: print ([ASSIGN] a = _2 + _3)
-|   ([ASSIGN] a = _2 + _3)
-|   |   [ASSIGN] a = _2
-|   |   |   [ASSIGN] a = _2
-|   |   |   |   _2
+@2: print ([ASSIGN a :-1 = _2] + _3)
+|   :> ([ASSIGN a :-1 = _2] + _3)
+|   |   :> [ASSIGN a :-1 = _2]
+|   |   |   :> [ASSIGN a :-1 = _2]
+|   |   |   |   :> _2
 |   |   |   |   assign a = 2
-|   |   _3
+|   |   :> _3
 [RESULT] : 5;
 [PASS]
 
@@ -159,24 +151,24 @@ SOURCE: var a = 1; print a = 2 == 2;
 =================
 _1
 @1: VAR a = _1
-[VAR $a]
+[VAR $a :-1]
 _2
 _2
 (_2 == _2)
-[ASSIGN] a = (_2 == _2)
-@2: print [ASSIGN] a = (_2 == _2)
+[ASSIGN a :-1 = (_2 == _2)]
+@2: print [ASSIGN a :-1 = (_2 == _2)]
 ==== Program [2 statements] ====
 @1: VAR a = _1
-@2: print [ASSIGN] a = (_2 == _2)
+@2: print [ASSIGN a :-1 = (_2 == _2)]
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
-@2: print [ASSIGN] a = (_2 == _2)
-|   [ASSIGN] a = (_2 == _2)
-|   |   (_2 == _2)
-|   |   |   _2
-|   |   |   _2
+@2: print [ASSIGN a :-1 = (_2 == _2)]
+|   :> [ASSIGN a :-1 = (_2 == _2)]
+|   |   :> (_2 == _2)
+|   |   |   :> _2
+|   |   |   :> _2
 |   |   assign a = true
 [RESULT] : true;
 [PASS]
@@ -186,19 +178,17 @@ SOURCE: { var a = 1; print a; }
 =================
 _1
 @2: VAR a = _1
-[VAR $a]
-@3: print [VAR $a]
+[VAR $a :-1]
+@3: print [VAR $a :-1]
 ==== Program [1 statements] ====
 |   @2: VAR a = _1
-|   @3: print [VAR $a]
+|   @3: print [VAR $a :-1]
 =================
 @2: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
-@3: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 1
+@3: print [VAR $a :0]
+|   |   envget [VAR $a :0] => 1
 [RESULT] : 1;
 [PASS]
 
@@ -207,19 +197,17 @@ SOURCE: var a = 1; { print a; }
 =================
 _1
 @1: VAR a = _1
-[VAR $a]
-@3: print [VAR $a]
+[VAR $a :-1]
+@3: print [VAR $a :-1]
 ==== Program [2 statements] ====
 @1: VAR a = _1
-|   @3: print [VAR $a]
+|   @3: print [VAR $a :-1]
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
-@3: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 1
+@3: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 1
 [RESULT] : 1;
 [PASS]
 
@@ -230,30 +218,26 @@ _1
 @1: VAR a = _1
 _2
 @3: VAR a = _2
-[VAR $a]
-@4: print [VAR $a]
-[VAR $a]
-@5: print [VAR $a]
+[VAR $a :-1]
+@4: print [VAR $a :-1]
+[VAR $a :-1]
+@5: print [VAR $a :-1]
 ==== Program [3 statements] ====
 @1: VAR a = _1
 |   @3: VAR a = _2
-|   @4: print [VAR $a]
-@5: print [VAR $a]
+|   @4: print [VAR $a :-1]
+@5: print [VAR $a :-1]
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
 @3: VAR a = _2
-|   _2
+|   :> _2
 |   define a = 2
-@4: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 2
-@5: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 1
+@4: print [VAR $a :0]
+|   |   envget [VAR $a :0] => 2
+@5: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 1
 [RESULT] : 2;1;
 [PASS]
 
@@ -262,27 +246,25 @@ SOURCE: var a = 1; { a = 2; } print a;
 =================
 _1
 @1: VAR a = _1
-[VAR $a]
+[VAR $a :-1]
 _2
-[ASSIGN] a = _2
-[VAR $a]
-@4: print [VAR $a]
+[ASSIGN a :-1 = _2]
+[VAR $a :-1]
+@4: print [VAR $a :-1]
 ==== Program [3 statements] ====
 @1: VAR a = _1
-|   @3: [ASSIGN] a = _2
-@4: print [VAR $a]
+|   @3: [ASSIGN a :-1 = _2]
+@4: print [VAR $a :-1]
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
-@3: [ASSIGN] a = _2
-|   [ASSIGN] a = _2
-|   |   _2
+@3: [ASSIGN a :-1 = _2]
+|   :> [ASSIGN a :-1 = _2]
+|   |   :> _2
 |   |   assign a = 2
-@4: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 2
+@4: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 2
 [RESULT] : 2;
 [PASS]
 
@@ -293,30 +275,29 @@ _1
 @1: VAR a = _1
 _2
 @3: VAR a = _2
-[VAR $a]
+[VAR $a :-1]
 _3
-[ASSIGN] a = _3
-[VAR $a]
-@5: print [VAR $a]
+[ASSIGN a :-1 = _3]
+[VAR $a :-1]
+@5: print [VAR $a :-1]
 ==== Program [3 statements] ====
 @1: VAR a = _1
 |   @3: VAR a = _2
-|   @4: [ASSIGN] a = _3
-@5: print [VAR $a]
+|   @4: [ASSIGN a :-1 = _3]
+@5: print [VAR $a :-1]
 =================
 @1: VAR a = _1
-|   _1
+|   :> _1
 |   define a = 1
 @3: VAR a = _2
-|   _2
+|   :> _2
 |   define a = 2
-@4: [ASSIGN] a = _3
-|   [ASSIGN] a = _3
-|   |   _3
-@5: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 1
+@4: [ASSIGN a :0 = _3]
+|   :> [ASSIGN a :0 = _3]
+|   |   :> _3
+|   |   assignAt a = 3
+@5: print [VAR $a :-1]
+|   |   envget [VAR $a :-1] => 1
 [RESULT] : 1;
 [PASS]
 
@@ -345,11 +326,11 @@ _3
 |   |   |   @8: print _3
 =================
 @1: IF
-|   _false
+|   :> _false
 @4: IF
-|   _false
+|   :> _false
 @8: print _3
-|   _3
+|   :> _3
 [RESULT] : 3;
 [PASS]
 
@@ -358,87 +339,67 @@ SOURCE: var i = 0; while (i < 3) { print i; i = i + 1; }
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _3
-([VAR $i] < _3)
-[VAR $i]
-@4: print [VAR $i]
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _3)
+[VAR $i :-1]
+@4: print [VAR $i :-1]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 ==== Program [2 statements] ====
 @1: VAR i = _0
 @2: WHILE
-|   condition ([VAR $i] < _3)
+|   condition ([VAR $i :-1] < _3)
 |   body:
-|   |   @4: print [VAR $i]
-|   |   @5: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @4: print [VAR $i :-1]
+|   |   @5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: WHILE
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _3
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 0
+|   |   :> _3
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 0
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _3
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _3
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 2
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 2
+|   |   |   :> _1
 |   |   assign i = 3
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _3
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -453,8 +414,8 @@ _2
 @1: print  _hi OR _2
 =================
 @1: print  _hi OR _2
-|    _hi OR _2
-|   |   _hi
+|   :>  _hi OR _2
+|   |   :> _hi
 [RESULT] : hi;
 [PASS]
 
@@ -469,9 +430,9 @@ _yes
 @1: print  _nil OR _yes
 =================
 @1: print  _nil OR _yes
-|    _nil OR _yes
-|   |   _nil
-|   |   _yes
+|   :>  _nil OR _yes
+|   |   :> _nil
+|   |   :> _yes
 [RESULT] : yes;
 [PASS]
 
@@ -501,10 +462,10 @@ _123
 @1: print  _true AND _123
 =================
 @1: print  _true AND _123
-|    _true AND _123
-|   |    _true AND _123
-|   |   |   _true
-|   |   |   _123
+|   :>  _true AND _123
+|   |   :>  _true AND _123
+|   |   |   :> _true
+|   |   |   :> _123
 [RESULT] : 123;
 [PASS]
 
@@ -512,15 +473,15 @@ SOURCE: print nil and boom;
 |   define clock = <native fn>
 =================
 _nil
-[VAR $boom]
- _nil AND [VAR $boom]
-@1: print  _nil AND [VAR $boom]
+[VAR $boom :-1]
+ _nil AND [VAR $boom :-1]
+@1: print  _nil AND [VAR $boom :-1]
 ==== Program [1 statements] ====
-@1: print  _nil AND [VAR $boom]
+@1: print  _nil AND [VAR $boom :-1]
 =================
-@1: print  _nil AND [VAR $boom]
-|    _nil AND [VAR $boom]
-|   |   _nil
+@1: print  _nil AND [VAR $boom :-1]
+|   :>  _nil AND [VAR $boom :-1]
+|   |   :> _nil
 [RESULT] : nil;
 [PASS]
 
@@ -529,81 +490,64 @@ SOURCE: for (var i = 0; i < 3; i = i + 1) {print i;}
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _3
-([VAR $i] < _3)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _3)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
-@3: print [VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
+@3: print [VAR $i :-1]
 ==== Program [1 statements] ====
 |   @1: VAR i = _0
 |   @1: FOR
-|   |   condition ([VAR $i] < _3)
-|   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   condition ([VAR $i :-1] < _3)
+|   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   body:
-|   |   |   @3: print [VAR $i]
+|   |   |   @3: print [VAR $i :-1]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @1: FOR
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 0
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 0
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 0
+|   |   |   :> _1
+|   |   assignAt i = 1
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 1
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 2
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 2
+|   |   |   :> _1
+|   |   assignAt i = 3
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 3
+|   |   :> _3
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -612,92 +556,72 @@ SOURCE: var i = 0; for (i = 1; i < 4; i = i + 1) {print i;}
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _1
-[ASSIGN] i = _1
-[VAR $i]
+[ASSIGN i :-1 = _1]
+[VAR $i :-1]
 _4
-([VAR $i] < _4)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _4)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
-@4: print [VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
+@4: print [VAR $i :-1]
 ==== Program [2 statements] ====
 @1: VAR i = _0
-|   @2: [ASSIGN] i = _1
+|   @2: [ASSIGN i :-1 = _1]
 |   @2: FOR
-|   |   condition ([VAR $i] < _4)
-|   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   condition ([VAR $i :-1] < _4)
+|   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   body:
-|   |   |   @4: print [VAR $i]
+|   |   |   @4: print [VAR $i :-1]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
-@2: [ASSIGN] i = _1
-|   [ASSIGN] i = _1
-|   |   _1
+@2: [ASSIGN i :-1 = _1]
+|   :> [ASSIGN i :-1 = _1]
+|   |   :> _1
 |   |   assign i = 1
 @2: FOR
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _4
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :-1] < _4)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _4
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _4
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :-1] < _4)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _4
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 2
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 2
+|   |   |   :> _1
 |   |   assign i = 3
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _4
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 3
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 3
-|   |   |   _1
+|   :> ([VAR $i :-1] < _4)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _4
+@4: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 3
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 3
+|   |   |   :> _1
 |   |   assign i = 4
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 4
-|   |   _4
+|   :> ([VAR $i :-1] < _4)
+|   |   |   envget [VAR $i :-1] => 4
+|   |   :> _4
 [RESULT] : 1;2;3;
 [PASS]
 
@@ -706,84 +630,64 @@ SOURCE: var i = 0; for (; i < 3; i = i + 1) {print i;}
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _3
-([VAR $i] < _3)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _3)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
-@3: print [VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
+@3: print [VAR $i :-1]
 ==== Program [2 statements] ====
 @1: VAR i = _0
 @2: FOR
-|   condition ([VAR $i] < _3)
-|   increment [ASSIGN] i = ([VAR $i] + _1)
+|   condition ([VAR $i :-1] < _3)
+|   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   body:
-|   |   @3: print [VAR $i]
+|   |   @3: print [VAR $i :-1]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: FOR
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 0
+|   |   :> _3
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 0
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _3
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _3
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 2
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 2
+|   |   |   :> _1
 |   |   assign i = 3
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _3
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -792,85 +696,68 @@ SOURCE: for (var i = 0; i < 3;) { print i; i = i + 1; }
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _3
-([VAR $i] < _3)
-[VAR $i]
-@3: print [VAR $i]
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _3)
+[VAR $i :-1]
+@3: print [VAR $i :-1]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 ==== Program [1 statements] ====
 |   @1: VAR i = _0
 |   @1: FOR
-|   |   condition ([VAR $i] < _3)
+|   |   condition ([VAR $i :-1] < _3)
 |   |   increment : none
 |   |   body:
-|   |   |   @3: print [VAR $i]
-|   |   |   @4: [ASSIGN] i = ([VAR $i] + _1)
+|   |   |   @3: print [VAR $i :-1]
+|   |   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @1: FOR
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 0
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 0
+@4: [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   :> [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   |   :> ([VAR $i :1] + _1)
+|   |   |   |   envget [VAR $i :1] => 0
+|   |   |   :> _1
+|   |   assignAt i = 1
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 1
+@4: [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   :> [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   |   :> ([VAR $i :1] + _1)
+|   |   |   |   envget [VAR $i :1] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _3
+@3: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 2
+@4: [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   :> [ASSIGN i :1 = ([VAR $i :1] + _1)]
+|   |   :> ([VAR $i :1] + _1)
+|   |   |   |   envget [VAR $i :1] => 2
+|   |   |   :> _1
+|   |   assignAt i = 3
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :0] < _3)
+|   |   |   envget [VAR $i :0] => 3
+|   |   :> _3
 [RESULT] : 0;1;2;
 [PASS]
 
@@ -881,76 +768,62 @@ _100
 @1: VAR i = _100
 _0
 @2: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _2
-([VAR $i] < _2)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _2)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
-@4: print [VAR $i]
-[VAR $i]
-@5: print [VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
+@4: print [VAR $i :-1]
+[VAR $i :-1]
+@5: print [VAR $i :-1]
 ==== Program [3 statements] ====
 @1: VAR i = _100
 |   @2: VAR i = _0
 |   @2: FOR
-|   |   condition ([VAR $i] < _2)
-|   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   condition ([VAR $i :-1] < _2)
+|   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   body:
-|   |   |   @4: print [VAR $i]
-@5: print [VAR $i]
+|   |   |   @4: print [VAR $i :-1]
+@5: print [VAR $i :-1]
 =================
 @1: VAR i = _100
-|   _100
+|   :> _100
 |   define i = 100
 @2: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: FOR
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _2
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 0
+|   |   :> _2
+@4: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 0
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 0
+|   |   |   :> _1
+|   |   assignAt i = 1
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _2
+@4: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 1
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
-@5: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 100
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _2
+@5: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 100
 [RESULT] : 0;1;100;
 [PASS]
 
@@ -959,172 +832,132 @@ SOURCE: for (var i = 0; i < 2; i = i + 1) {for (var j = 0; j < 2; j = j + 1) {pr
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _2
-([VAR $i] < _2)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _2)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 _0
 @3: VAR j = _0
-[VAR $j]
+[VAR $j :-1]
 _2
-([VAR $j] < _2)
-[VAR $j]
-[VAR $j]
+([VAR $j :-1] < _2)
+[VAR $j :-1]
+[VAR $j :-1]
 _1
-([VAR $j] + _1)
-[ASSIGN] j = ([VAR $j] + _1)
-[VAR $i]
-[VAR $j]
-([VAR $i] + [VAR $j])
-@5: print ([VAR $i] + [VAR $j])
+([VAR $j :-1] + _1)
+[ASSIGN j :-1 = ([VAR $j :-1] + _1)]
+[VAR $i :-1]
+[VAR $j :-1]
+([VAR $i :-1] + [VAR $j :-1])
+@5: print ([VAR $i :-1] + [VAR $j :-1])
 ==== Program [1 statements] ====
 |   @1: VAR i = _0
 |   @1: FOR
-|   |   condition ([VAR $i] < _2)
-|   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   condition ([VAR $i :-1] < _2)
+|   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   body:
 |   |   |   |   @3: VAR j = _0
 |   |   |   |   @3: FOR
-|   |   |   |   |   condition ([VAR $j] < _2)
-|   |   |   |   |   increment [ASSIGN] j = ([VAR $j] + _1)
+|   |   |   |   |   condition ([VAR $j :-1] < _2)
+|   |   |   |   |   increment [ASSIGN j :-1 = ([VAR $j :-1] + _1)]
 |   |   |   |   |   body:
-|   |   |   |   |   |   @5: print ([VAR $i] + [VAR $j])
+|   |   |   |   |   |   @5: print ([VAR $i :-1] + [VAR $j :-1])
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @1: FOR
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _2
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 0
+|   |   :> _2
 @3: VAR j = _0
-|   _0
+|   :> _0
 |   define j = 0
 @3: FOR
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 0
-|   |   _2
-@5: print ([VAR $i] + [VAR $j])
-|   ([VAR $i] + [VAR $j])
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 0
-|   [ASSIGN] j = ([VAR $j] + _1)
-|   |   ([VAR $j] + _1)
-|   |   |   [VAR $j]
-|   |   |   [VAR $j]
-|   |   |   |   envget [VAR $j] => 0
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 0
+|   |   :> _2
+@5: print ([VAR $i :3] + [VAR $j :1])
+|   :> ([VAR $i :3] + [VAR $j :1])
+|   |   |   envget [VAR $i :3] => 0
+|   |   |   envget [VAR $j :1] => 0
+|   :> [ASSIGN j :0 = ([VAR $j :0] + _1)]
+|   |   :> ([VAR $j :0] + _1)
+|   |   |   |   envget [VAR $j :0] => 0
+|   |   |   :> _1
+|   |   assignAt j = 1
 ---
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 1
-|   |   _2
-@5: print ([VAR $i] + [VAR $j])
-|   ([VAR $i] + [VAR $j])
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 1
-|   [ASSIGN] j = ([VAR $j] + _1)
-|   |   ([VAR $j] + _1)
-|   |   |   [VAR $j]
-|   |   |   [VAR $j]
-|   |   |   |   envget [VAR $j] => 1
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 1
+|   |   :> _2
+@5: print ([VAR $i :3] + [VAR $j :1])
+|   :> ([VAR $i :3] + [VAR $j :1])
+|   |   |   envget [VAR $i :3] => 0
+|   |   |   envget [VAR $j :1] => 1
+|   :> [ASSIGN j :0 = ([VAR $j :0] + _1)]
+|   |   :> ([VAR $j :0] + _1)
+|   |   |   |   envget [VAR $j :0] => 1
+|   |   |   :> _1
+|   |   assignAt j = 2
 ---
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 2
-|   |   _2
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 2
+|   |   :> _2
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 0
+|   |   |   :> _1
+|   |   assignAt i = 1
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _2
 @3: VAR j = _0
-|   _0
+|   :> _0
 |   define j = 0
 @3: FOR
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 0
-|   |   _2
-@5: print ([VAR $i] + [VAR $j])
-|   ([VAR $i] + [VAR $j])
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 0
-|   [ASSIGN] j = ([VAR $j] + _1)
-|   |   ([VAR $j] + _1)
-|   |   |   [VAR $j]
-|   |   |   [VAR $j]
-|   |   |   |   envget [VAR $j] => 0
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 0
+|   |   :> _2
+@5: print ([VAR $i :3] + [VAR $j :1])
+|   :> ([VAR $i :3] + [VAR $j :1])
+|   |   |   envget [VAR $i :3] => 1
+|   |   |   envget [VAR $j :1] => 0
+|   :> [ASSIGN j :0 = ([VAR $j :0] + _1)]
+|   |   :> ([VAR $j :0] + _1)
+|   |   |   |   envget [VAR $j :0] => 0
+|   |   |   :> _1
+|   |   assignAt j = 1
 ---
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 1
-|   |   _2
-@5: print ([VAR $i] + [VAR $j])
-|   ([VAR $i] + [VAR $j])
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 1
-|   [ASSIGN] j = ([VAR $j] + _1)
-|   |   ([VAR $j] + _1)
-|   |   |   [VAR $j]
-|   |   |   [VAR $j]
-|   |   |   |   envget [VAR $j] => 1
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 1
+|   |   :> _2
+@5: print ([VAR $i :3] + [VAR $j :1])
+|   :> ([VAR $i :3] + [VAR $j :1])
+|   |   |   envget [VAR $i :3] => 1
+|   |   |   envget [VAR $j :1] => 1
+|   :> [ASSIGN j :0 = ([VAR $j :0] + _1)]
+|   |   :> ([VAR $j :0] + _1)
+|   |   |   |   envget [VAR $j :0] => 1
+|   |   |   :> _1
+|   |   assignAt j = 2
 ---
-|   ([VAR $j] < _2)
-|   |   [VAR $j]
-|   |   [VAR $j]
-|   |   |   envget [VAR $j] => 2
-|   |   _2
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $j :0] < _2)
+|   |   |   envget [VAR $j :0] => 2
+|   |   :> _2
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _2
 [RESULT] : 0;1;1;2;
 [PASS]
 
@@ -1133,65 +966,53 @@ SOURCE: { for (var i = 0; i < 2; i = i + 1) {print i;} }
 =================
 _0
 @2: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _2
-([VAR $i] < _2)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _2)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
-@4: print [VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
+@4: print [VAR $i :-1]
 ==== Program [1 statements] ====
 |   |   @2: VAR i = _0
 |   |   @2: FOR
-|   |   |   condition ([VAR $i] < _2)
-|   |   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   |   condition ([VAR $i :-1] < _2)
+|   |   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   |   body:
-|   |   |   |   @4: print [VAR $i]
+|   |   |   |   @4: print [VAR $i :-1]
 =================
 @2: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: FOR
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _2
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 0
+|   |   :> _2
+@4: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 0
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 0
+|   |   |   :> _1
+|   |   assignAt i = 1
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@4: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _2
+@4: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 1
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :0] < _2)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _2
 [RESULT] : 0;1;
 [PASS]
 
@@ -1200,89 +1021,71 @@ SOURCE: var i = 0; for (;;){ print i; i = i + 1; if (i == 3) {break;} }
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
-@3: print [VAR $i]
-[VAR $i]
-[VAR $i]
+[VAR $i :-1]
+@3: print [VAR $i :-1]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
 _3
-([VAR $i] == _3)
+([VAR $i :-1] == _3)
 ==== Program [2 statements] ====
 @1: VAR i = _0
 @2: FOR
 |   condition : none
 |   increment : none
 |   body:
-|   |   @3: print [VAR $i]
-|   |   @4: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @3: print [VAR $i :-1]
+|   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   @5: IF
-|   |   |   condition ([VAR $i] == _3)
+|   |   |   condition ([VAR $i :-1] == _3)
 |   |   |   then:
 |   |   |   |   @7: BREAK
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: FOR
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 0
+@4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 @5: IF
-|   ([VAR $i] == _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
+|   :> ([VAR $i :-1] == _3)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _3
 ---
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
+@4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 @5: IF
-|   ([VAR $i] == _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
+|   :> ([VAR $i :-1] == _3)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _3
 ---
-@3: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 2
-@4: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+@3: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 2
+@4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 2
+|   |   |   :> _1
 |   |   assign i = 3
 @5: IF
-|   ([VAR $i] == _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :-1] == _3)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _3
 @7: BREAK
 [RESULT] : 0;1;2;
 [PASS]
@@ -1294,96 +1097,82 @@ _0
 @1: VAR i = _0
 _0
 @2: VAR j = _0
-[VAR $i]
+[VAR $i :-1]
 _2
-([VAR $i] < _2)
-[VAR $j]
+([VAR $i :-1] < _2)
+[VAR $j :-1]
 _0
-[ASSIGN] j = _0
+[ASSIGN j :-1 = _0]
 _true
-[VAR $i]
-@8: print [VAR $i]
-[VAR $i]
-[VAR $i]
+[VAR $i :-1]
+@8: print [VAR $i :-1]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 ==== Program [3 statements] ====
 @1: VAR i = _0
 @2: VAR j = _0
 @3: WHILE
-|   condition ([VAR $i] < _2)
+|   condition ([VAR $i :-1] < _2)
 |   body:
-|   |   @5: [ASSIGN] j = _0
+|   |   @5: [ASSIGN j :-1 = _0]
 |   |   @6: WHILE
 |   |   |   condition _true
 |   |   |   body:
-|   |   |   |   @8: print [VAR $i]
+|   |   |   |   @8: print [VAR $i :-1]
 |   |   |   |   @9: BREAK
-|   |   @10: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @10: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: VAR j = _0
-|   _0
+|   :> _0
 |   define j = 0
 @3: WHILE
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _2
-@5: [ASSIGN] j = _0
-|   [ASSIGN] j = _0
-|   |   _0
+|   :> ([VAR $i :-1] < _2)
+|   |   |   envget [VAR $i :-1] => 0
+|   |   :> _2
+@5: [ASSIGN j :-1 = _0]
+|   :> [ASSIGN j :-1 = _0]
+|   |   :> _0
 |   |   assign j = 0
 @6: WHILE
-|   _true
-@8: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
+|   :> _true
+@8: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 0
 @9: BREAK
-@10: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+@10: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@5: [ASSIGN] j = _0
-|   [ASSIGN] j = _0
-|   |   _0
+|   :> ([VAR $i :-1] < _2)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _2
+@5: [ASSIGN j :-1 = _0]
+|   :> [ASSIGN j :-1 = _0]
+|   |   :> _0
 |   |   assign j = 0
 @6: WHILE
-|   _true
-@8: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
+|   :> _true
+@8: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
 @9: BREAK
-@10: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+@10: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 ---
-|   ([VAR $i] < _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :-1] < _2)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _2
 [RESULT] : 0;1;
 [PASS]
 
@@ -1393,79 +1182,65 @@ SOURCE: var i = 0; while (true) { { if (i == 2) {break;} } print i; i=i+1;}
 _0
 @1: VAR i = _0
 _true
-[VAR $i]
+[VAR $i :-1]
 _2
-([VAR $i] == _2)
-[VAR $i]
-@8: print [VAR $i]
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] == _2)
+[VAR $i :-1]
+@8: print [VAR $i :-1]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 ==== Program [2 statements] ====
 @1: VAR i = _0
 @2: WHILE
 |   condition _true
 |   body:
 |   |   |   @5: IF
-|   |   |   |   condition ([VAR $i] == _2)
+|   |   |   |   condition ([VAR $i :-1] == _2)
 |   |   |   |   then:
 |   |   |   |   |   @7: BREAK
-|   |   @8: print [VAR $i]
-|   |   @9: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @8: print [VAR $i :-1]
+|   |   @9: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: WHILE
-|   _true
+|   :> _true
 @5: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _2
-@8: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 0
-@9: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 0
+|   |   :> _2
+@8: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 0
+@9: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 ---
-|   _true
+|   :> _true
 @5: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@8: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-@9: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _2
+@8: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
+@9: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 ---
-|   _true
+|   :> _true
 @5: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _2
 @7: BREAK
 [RESULT] : 0;1;
 [PASS]
@@ -1475,109 +1250,85 @@ SOURCE: var i = 0; while (i < 3) { { i = i + 1; if (i == 2) {continue;} print i;
 =================
 _0
 @1: VAR i = _0
-[VAR $i]
+[VAR $i :-1]
 _3
-([VAR $i] < _3)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _3)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
 _2
-([VAR $i] == _2)
-[VAR $i]
-@9: print [VAR $i]
+([VAR $i :-1] == _2)
+[VAR $i :-1]
+@9: print [VAR $i :-1]
 ==== Program [2 statements] ====
 @1: VAR i = _0
 @2: WHILE
-|   condition ([VAR $i] < _3)
+|   condition ([VAR $i :-1] < _3)
 |   body:
-|   |   |   @5: [ASSIGN] i = ([VAR $i] + _1)
+|   |   |   @5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   |   @6: IF
-|   |   |   |   condition ([VAR $i] == _2)
+|   |   |   |   condition ([VAR $i :-1] == _2)
 |   |   |   |   then:
 |   |   |   |   |   @8: CONTINUE
-|   |   |   @9: print [VAR $i]
+|   |   |   @9: print [VAR $i :-1]
 =================
 @1: VAR i = _0
-|   _0
+|   :> _0
 |   define i = 0
 @2: WHILE
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 0
-|   |   _3
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 0
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 0
+|   |   :> _3
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 0
+|   |   |   :> _1
 |   |   assign i = 1
 @6: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@9: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _2
+@9: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 1
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _3
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 1
+|   |   :> _3
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 1
+|   |   |   :> _1
 |   |   assign i = 2
 @6: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _2
 @8: CONTINUE
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _3
-@5: [ASSIGN] i = ([VAR $i] + _1)
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 2
+|   |   :> _3
+@5: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   :> [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+|   |   :> ([VAR $i :-1] + _1)
+|   |   |   |   envget [VAR $i :-1] => 2
+|   |   |   :> _1
 |   |   assign i = 3
 @6: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _2
-@9: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 3
+|   :> ([VAR $i :-1] == _2)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _2
+@9: print [VAR $i :-1]
+|   |   envget [VAR $i :-1] => 3
 ---
-|   ([VAR $i] < _3)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _3
+|   :> ([VAR $i :-1] < _3)
+|   |   |   envget [VAR $i :-1] => 3
+|   |   :> _3
 [RESULT] : 1;3;
 [PASS]
 
@@ -1586,103 +1337,82 @@ SOURCE: for (var i = 1; i < 4; i = i + 1) { if (i == 2) {continue;} print i; }
 =================
 _1
 @1: VAR i = _1
-[VAR $i]
+[VAR $i :-1]
 _4
-([VAR $i] < _4)
-[VAR $i]
-[VAR $i]
+([VAR $i :-1] < _4)
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
 _2
-([VAR $i] == _2)
-[VAR $i]
-@6: print [VAR $i]
+([VAR $i :-1] == _2)
+[VAR $i :-1]
+@6: print [VAR $i :-1]
 ==== Program [1 statements] ====
 |   @1: VAR i = _1
 |   @1: FOR
-|   |   condition ([VAR $i] < _4)
-|   |   increment [ASSIGN] i = ([VAR $i] + _1)
+|   |   condition ([VAR $i :-1] < _4)
+|   |   increment [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   body:
 |   |   |   @3: IF
-|   |   |   |   condition ([VAR $i] == _2)
+|   |   |   |   condition ([VAR $i :-1] == _2)
 |   |   |   |   then:
 |   |   |   |   |   @5: CONTINUE
-|   |   |   @6: print [VAR $i]
+|   |   |   @6: print [VAR $i :-1]
 =================
 @1: VAR i = _1
-|   _1
+|   :> _1
 |   define i = 1
 @1: FOR
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _4
+|   :> ([VAR $i :0] < _4)
+|   |   |   envget [VAR $i :0] => 1
+|   |   :> _4
 @3: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-|   |   _2
-@6: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 1
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 1
-|   |   |   _1
+|   :> ([VAR $i :1] == _2)
+|   |   |   envget [VAR $i :1] => 1
+|   |   :> _2
+@6: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 1
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 1
+|   |   |   :> _1
+|   |   assignAt i = 2
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _4
+|   :> ([VAR $i :0] < _4)
+|   |   |   envget [VAR $i :0] => 2
+|   |   :> _4
 @3: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
-|   |   _2
+|   :> ([VAR $i :1] == _2)
+|   |   |   envget [VAR $i :1] => 2
+|   |   :> _2
 @5: CONTINUE
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 2
-|   |   |   _1
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 2
+|   |   |   :> _1
+|   |   assignAt i = 3
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _4
+|   :> ([VAR $i :0] < _4)
+|   |   |   envget [VAR $i :0] => 3
+|   |   :> _4
 @3: IF
-|   ([VAR $i] == _2)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 3
-|   |   _2
-@6: print [VAR $i]
-|   [VAR $i]
-|   [VAR $i]
-|   |   envget [VAR $i] => 3
-|   [ASSIGN] i = ([VAR $i] + _1)
-|   |   ([VAR $i] + _1)
-|   |   |   [VAR $i]
-|   |   |   [VAR $i]
-|   |   |   |   envget [VAR $i] => 3
-|   |   |   _1
+|   :> ([VAR $i :1] == _2)
+|   |   |   envget [VAR $i :1] => 3
+|   |   :> _2
+@6: print [VAR $i :1]
+|   |   envget [VAR $i :1] => 3
+|   :> [ASSIGN i :0 = ([VAR $i :0] + _1)]
+|   |   :> ([VAR $i :0] + _1)
+|   |   |   |   envget [VAR $i :0] => 3
+|   |   |   :> _1
+|   |   assignAt i = 4
 ---
-|   ([VAR $i] < _4)
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 4
-|   |   _4
+|   :> ([VAR $i :0] < _4)
+|   |   |   envget [VAR $i :0] => 4
+|   |   :> _4
 [RESULT] : 1;3;
 [PASS]
 
@@ -1693,64 +1423,54 @@ _123
 @2: print _123
 @1: FN hello 
 |   @2: print _123
-[VAR $hello]
-[CALL [VAR $hello]()]
+[VAR $hello :-1]
+[CALL [VAR $hello :-1]()]
 ==== Program [2 statements] ====
 @1: FN hello 
 |   @2: print _123
-@3: [CALL [VAR $hello]()]
+@3: [CALL [VAR $hello :-1]()]
 =================
 @1: FN hello 
 |   define hello = <fn hello>
-@3: [CALL [VAR $hello]()]
-|   [CALL [VAR $hello]()]
-|   [CALL [VAR $hello]()]
-|   |   [VAR $hello]
-|   |   [VAR $hello]
-|   |   |   envget [VAR $hello] => <fn hello>
+@3: [CALL [VAR $hello :-1]()]
+|   [CALL [VAR $hello :-1]()]
+|   |   |   envget [VAR $hello :-1] => <fn hello>
 |   @2: print _123
-|   |   _123
+|   |   :> _123
 [RESULT] : 123;
 [PASS]
 
 SOURCE: fun add(a, b) { print a + b; } add(2, 3);
 |   define clock = <native fn>
 =================
-[VAR $a]
-[VAR $b]
-([VAR $a] + [VAR $b])
-@2: print ([VAR $a] + [VAR $b])
+[VAR $a :-1]
+[VAR $b :-1]
+([VAR $a :-1] + [VAR $b :-1])
+@2: print ([VAR $a :-1] + [VAR $b :-1])
 @1: FN add 
-a,b|   @2: print ([VAR $a] + [VAR $b])
-[VAR $add]
+a,b|   @2: print ([VAR $a :-1] + [VAR $b :-1])
+[VAR $add :-1]
 _2
 _3
-[CALL [VAR $add](_2,_3)]
+[CALL [VAR $add :-1](_2,_3)]
 ==== Program [2 statements] ====
 @1: FN add 
-a,b|   @2: print ([VAR $a] + [VAR $b])
-@3: [CALL [VAR $add](_2,_3)]
+a,b|   @2: print ([VAR $a :-1] + [VAR $b :-1])
+@3: [CALL [VAR $add :-1](_2,_3)]
 =================
 @1: FN add 
 |   define add = <fn add>
-@3: [CALL [VAR $add](_2,_3)]
-|   [CALL [VAR $add](_2,_3)]
-|   [CALL [VAR $add](_2,_3)]
-|   |   [VAR $add]
-|   |   [VAR $add]
-|   |   |   envget [VAR $add] => <fn add>
-|   |   _2
-|   |   _3
+@3: [CALL [VAR $add :-1](_2,_3)]
+|   [CALL [VAR $add :-1](_2,_3)]
+|   |   |   envget [VAR $add :-1] => <fn add>
+|   |   :> _2
+|   |   :> _3
 |   |   define a = 2
 |   |   define b = 3
-|   @2: print ([VAR $a] + [VAR $b])
-|   |   ([VAR $a] + [VAR $b])
-|   |   |   [VAR $a]
-|   |   |   [VAR $a]
-|   |   |   |   envget [VAR $a] => 2
-|   |   |   [VAR $b]
-|   |   |   [VAR $b]
-|   |   |   |   envget [VAR $b] => 3
+|   @2: print ([VAR $a :1] + [VAR $b :1])
+|   |   :> ([VAR $a :1] + [VAR $b :1])
+|   |   |   |   envget [VAR $a :1] => 2
+|   |   |   |   envget [VAR $b :1] => 3
 [RESULT] : 5;
 [PASS]
 
@@ -1759,50 +1479,42 @@ SOURCE: fun outer() { var x = 10; fun inner() { print x; } inner(); } outer();
 =================
 _10
 @2: VAR x = _10
-[VAR $x]
-@4: print [VAR $x]
+[VAR $x :-1]
+@4: print [VAR $x :-1]
 @1: FN inner 
-|   @4: print [VAR $x]
-[VAR $inner]
-[CALL [VAR $inner]()]
+|   @4: print [VAR $x :-1]
+[VAR $inner :-1]
+[CALL [VAR $inner :-1]()]
 @1: FN outer 
 |   @2: VAR x = _10
 |   @1: FN inner 
-|   |   @4: print [VAR $x]
-|   @5: [CALL [VAR $inner]()]
-[VAR $outer]
-[CALL [VAR $outer]()]
+|   |   @4: print [VAR $x :-1]
+|   @5: [CALL [VAR $inner :-1]()]
+[VAR $outer :-1]
+[CALL [VAR $outer :-1]()]
 ==== Program [2 statements] ====
 @1: FN outer 
 |   @2: VAR x = _10
 |   @1: FN inner 
-|   |   @4: print [VAR $x]
-|   @5: [CALL [VAR $inner]()]
-@6: [CALL [VAR $outer]()]
+|   |   @4: print [VAR $x :-1]
+|   @5: [CALL [VAR $inner :-1]()]
+@6: [CALL [VAR $outer :-1]()]
 =================
 @1: FN outer 
 |   define outer = <fn outer>
-@6: [CALL [VAR $outer]()]
-|   [CALL [VAR $outer]()]
-|   [CALL [VAR $outer]()]
-|   |   [VAR $outer]
-|   |   [VAR $outer]
-|   |   |   envget [VAR $outer] => <fn outer>
+@6: [CALL [VAR $outer :-1]()]
+|   [CALL [VAR $outer :-1]()]
+|   |   |   envget [VAR $outer :-1] => <fn outer>
 |   @2: VAR x = _10
-|   |   _10
+|   |   :> _10
 |   |   define x = 10
 |   @1: FN inner 
 |   |   define inner = <fn inner>
-|   @5: [CALL [VAR $inner]()]
-|   |   [CALL [VAR $inner]()]
-|   |   [CALL [VAR $inner]()]
-|   |   |   [VAR $inner]
-|   |   |   [VAR $inner]
-|   |   |   |   envget [VAR $inner] => <fn inner>
-|   |   @4: print [VAR $x]
-|   |   |   [VAR $x]
-|   |   |   [VAR $x]
-|   |   |   |   envget [VAR $x] => 10
+|   @5: [CALL [VAR $inner :0]()]
+|   |   [CALL [VAR $inner :0]()]
+|   |   |   |   envget [VAR $inner :0] => <fn inner>
+|   |   @4: print [VAR $x :2]
+|   |   |   |   envget [VAR $x :2] => 10
 [RESULT] : 10;
 [PASS]
 
@@ -1815,25 +1527,22 @@ _0
 @1: FN f 
 |   @1: RETURN
 |   @2: print _0
-[VAR $f]
-[CALL [VAR $f]()]
-@3: print [CALL [VAR $f]()]
+[VAR $f :-1]
+[CALL [VAR $f :-1]()]
+@3: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
 @1: FN f 
 |   @1: RETURN
 |   @2: print _0
-@3: print [CALL [VAR $f]()]
+@3: print [CALL [VAR $f :-1]()]
 =================
 @1: FN f 
 |   define f = <fn f>
-@3: print [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   |   [VAR $f]
-|   |   [VAR $f]
-|   |   |   envget [VAR $f] => <fn f>
+@3: print [CALL [VAR $f :-1]()]
+|   [CALL [VAR $f :-1]()]
+|   |   |   envget [VAR $f :-1] => <fn f>
 |   @1: RETURN
-|   |   _123
+|   |   :> _123
 [RESULT] : 123;
 [PASS]
 
@@ -1841,21 +1550,18 @@ SOURCE: fun f() {} print f();
 |   define clock = <native fn>
 =================
 @1: FN f 
-[VAR $f]
-[CALL [VAR $f]()]
-@2: print [CALL [VAR $f]()]
+[VAR $f :-1]
+[CALL [VAR $f :-1]()]
+@2: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
 @1: FN f 
-@2: print [CALL [VAR $f]()]
+@2: print [CALL [VAR $f :-1]()]
 =================
 @1: FN f 
 |   define f = <fn f>
-@2: print [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   |   [VAR $f]
-|   |   [VAR $f]
-|   |   |   envget [VAR $f] => <fn f>
+@2: print [CALL [VAR $f :-1]()]
+|   [CALL [VAR $f :-1]()]
+|   |   |   envget [VAR $f :-1] => <fn f>
 [RESULT] : nil;
 [PASS]
 
@@ -1871,9 +1577,9 @@ _2
 |   |   then:
 |   |   |   @1: RETURN
 |   @1: RETURN
-[VAR $f]
-[CALL [VAR $f]()]
-@4: print [CALL [VAR $f]()]
+[VAR $f :-1]
+[CALL [VAR $f :-1]()]
+@4: print [CALL [VAR $f :-1]()]
 ==== Program [2 statements] ====
 @1: FN f 
 |   @2: IF
@@ -1881,162 +1587,118 @@ _2
 |   |   then:
 |   |   |   @1: RETURN
 |   @1: RETURN
-@4: print [CALL [VAR $f]()]
+@4: print [CALL [VAR $f :-1]()]
 =================
 @1: FN f 
 |   define f = <fn f>
-@4: print [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   [CALL [VAR $f]()]
-|   |   [VAR $f]
-|   |   [VAR $f]
-|   |   |   envget [VAR $f] => <fn f>
+@4: print [CALL [VAR $f :-1]()]
+|   [CALL [VAR $f :-1]()]
+|   |   |   envget [VAR $f :-1] => <fn f>
 |   @2: IF
-|   |   _true
+|   |   :> _true
 |   @1: RETURN
-|   |   _1
+|   |   :> _1
 [RESULT] : 1;
 [PASS]
 
 SOURCE: fun fact(n) { if (n <= 1) {return 1;} return n * fact(n - 1); } print fact(5);
 |   define clock = <native fn>
 =================
-[VAR $n]
+[VAR $n :-1]
 _1
-([VAR $n] <= _1)
+([VAR $n :-1] <= _1)
 _1
-[VAR $n]
-[VAR $fact]
-[VAR $n]
+[VAR $n :-1]
+[VAR $fact :-1]
+[VAR $n :-1]
 _1
-([VAR $n] - _1)
-[CALL [VAR $fact](([VAR $n] - _1))]
-([VAR $n] * [CALL [VAR $fact](([VAR $n] - _1))])
+([VAR $n :-1] - _1)
+[CALL [VAR $fact :-1](([VAR $n :-1] - _1))]
+([VAR $n :-1] * [CALL [VAR $fact :-1](([VAR $n :-1] - _1))])
 @1: FN fact 
 n|   @2: IF
-|   |   condition ([VAR $n] <= _1)
+|   |   condition ([VAR $n :-1] <= _1)
 |   |   then:
 |   |   |   @1: RETURN
 |   @1: RETURN
-[VAR $fact]
+[VAR $fact :-1]
 _5
-[CALL [VAR $fact](_5)]
-@4: print [CALL [VAR $fact](_5)]
+[CALL [VAR $fact :-1](_5)]
+@4: print [CALL [VAR $fact :-1](_5)]
 ==== Program [2 statements] ====
 @1: FN fact 
 n|   @2: IF
-|   |   condition ([VAR $n] <= _1)
+|   |   condition ([VAR $n :-1] <= _1)
 |   |   then:
 |   |   |   @1: RETURN
 |   @1: RETURN
-@4: print [CALL [VAR $fact](_5)]
+@4: print [CALL [VAR $fact :-1](_5)]
 =================
 @1: FN fact 
 |   define fact = <fn fact>
-@4: print [CALL [VAR $fact](_5)]
-|   [CALL [VAR $fact](_5)]
-|   [CALL [VAR $fact](_5)]
-|   |   [VAR $fact]
-|   |   [VAR $fact]
-|   |   |   envget [VAR $fact] => <fn fact>
-|   |   _5
+@4: print [CALL [VAR $fact :-1](_5)]
+|   [CALL [VAR $fact :-1](_5)]
+|   |   |   envget [VAR $fact :-1] => <fn fact>
+|   |   :> _5
 |   |   define n = 5
 |   @2: IF
-|   |   ([VAR $n] <= _1)
-|   |   |   [VAR $n]
-|   |   |   [VAR $n]
-|   |   |   |   envget [VAR $n] => 5
-|   |   |   _1
+|   |   :> ([VAR $n :1] <= _1)
+|   |   |   |   envget [VAR $n :1] => 5
+|   |   |   :> _1
 |   @1: RETURN
-|   |   ([VAR $n] * [CALL [VAR $fact](([VAR $n] - _1))])
-|   |   |   [VAR $n]
-|   |   |   [VAR $n]
-|   |   |   |   envget [VAR $n] => 5
-|   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   [VAR $fact]
-|   |   |   |   [VAR $fact]
-|   |   |   |   |   envget [VAR $fact] => <fn fact>
-|   |   |   |   ([VAR $n] - _1)
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   envget [VAR $n] => 5
-|   |   |   |   |   _1
+|   |   :> ([VAR $n :1] * [CALL [VAR $fact :-1](([VAR $n :1] - _1))])
+|   |   |   |   envget [VAR $n :1] => 5
+|   |   |   [CALL [VAR $fact :-1](([VAR $n :1] - _1))]
+|   |   |   |   |   envget [VAR $fact :-1] => <fn fact>
+|   |   |   |   :> ([VAR $n :1] - _1)
+|   |   |   |   |   |   envget [VAR $n :1] => 5
+|   |   |   |   |   :> _1
 |   |   |   |   define n = 4
 |   |   |   @2: IF
-|   |   |   |   ([VAR $n] <= _1)
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   envget [VAR $n] => 4
-|   |   |   |   |   _1
+|   |   |   |   :> ([VAR $n :1] <= _1)
+|   |   |   |   |   |   envget [VAR $n :1] => 4
+|   |   |   |   |   :> _1
 |   |   |   @1: RETURN
-|   |   |   |   ([VAR $n] * [CALL [VAR $fact](([VAR $n] - _1))])
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   envget [VAR $n] => 4
-|   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   |   envget [VAR $fact] => <fn fact>
-|   |   |   |   |   |   ([VAR $n] - _1)
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   envget [VAR $n] => 4
-|   |   |   |   |   |   |   _1
+|   |   |   |   :> ([VAR $n :1] * [CALL [VAR $fact :-1](([VAR $n :1] - _1))])
+|   |   |   |   |   |   envget [VAR $n :1] => 4
+|   |   |   |   |   [CALL [VAR $fact :-1](([VAR $n :1] - _1))]
+|   |   |   |   |   |   |   envget [VAR $fact :-1] => <fn fact>
+|   |   |   |   |   |   :> ([VAR $n :1] - _1)
+|   |   |   |   |   |   |   |   envget [VAR $n :1] => 4
+|   |   |   |   |   |   |   :> _1
 |   |   |   |   |   |   define n = 3
 |   |   |   |   |   @2: IF
-|   |   |   |   |   |   ([VAR $n] <= _1)
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   envget [VAR $n] => 3
-|   |   |   |   |   |   |   _1
+|   |   |   |   |   |   :> ([VAR $n :1] <= _1)
+|   |   |   |   |   |   |   |   envget [VAR $n :1] => 3
+|   |   |   |   |   |   |   :> _1
 |   |   |   |   |   @1: RETURN
-|   |   |   |   |   |   ([VAR $n] * [CALL [VAR $fact](([VAR $n] - _1))])
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   envget [VAR $n] => 3
-|   |   |   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   |   |   |   envget [VAR $fact] => <fn fact>
-|   |   |   |   |   |   |   |   ([VAR $n] - _1)
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   envget [VAR $n] => 3
-|   |   |   |   |   |   |   |   |   _1
+|   |   |   |   |   |   :> ([VAR $n :1] * [CALL [VAR $fact :-1](([VAR $n :1] - _1))])
+|   |   |   |   |   |   |   |   envget [VAR $n :1] => 3
+|   |   |   |   |   |   |   [CALL [VAR $fact :-1](([VAR $n :1] - _1))]
+|   |   |   |   |   |   |   |   |   envget [VAR $fact :-1] => <fn fact>
+|   |   |   |   |   |   |   |   :> ([VAR $n :1] - _1)
+|   |   |   |   |   |   |   |   |   |   envget [VAR $n :1] => 3
+|   |   |   |   |   |   |   |   |   :> _1
 |   |   |   |   |   |   |   |   define n = 2
 |   |   |   |   |   |   |   @2: IF
-|   |   |   |   |   |   |   |   ([VAR $n] <= _1)
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   envget [VAR $n] => 2
-|   |   |   |   |   |   |   |   |   _1
+|   |   |   |   |   |   |   |   :> ([VAR $n :1] <= _1)
+|   |   |   |   |   |   |   |   |   |   envget [VAR $n :1] => 2
+|   |   |   |   |   |   |   |   |   :> _1
 |   |   |   |   |   |   |   @1: RETURN
-|   |   |   |   |   |   |   |   ([VAR $n] * [CALL [VAR $fact](([VAR $n] - _1))])
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   envget [VAR $n] => 2
-|   |   |   |   |   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   |   |   |   |   [CALL [VAR $fact](([VAR $n] - _1))]
-|   |   |   |   |   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   |   |   |   |   [VAR $fact]
-|   |   |   |   |   |   |   |   |   |   |   envget [VAR $fact] => <fn fact>
-|   |   |   |   |   |   |   |   |   |   ([VAR $n] - _1)
-|   |   |   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   |   |   envget [VAR $n] => 2
-|   |   |   |   |   |   |   |   |   |   |   _1
+|   |   |   |   |   |   |   |   :> ([VAR $n :1] * [CALL [VAR $fact :-1](([VAR $n :1] - _1))])
+|   |   |   |   |   |   |   |   |   |   envget [VAR $n :1] => 2
+|   |   |   |   |   |   |   |   |   [CALL [VAR $fact :-1](([VAR $n :1] - _1))]
+|   |   |   |   |   |   |   |   |   |   |   envget [VAR $fact :-1] => <fn fact>
+|   |   |   |   |   |   |   |   |   |   :> ([VAR $n :1] - _1)
+|   |   |   |   |   |   |   |   |   |   |   |   envget [VAR $n :1] => 2
+|   |   |   |   |   |   |   |   |   |   |   :> _1
 |   |   |   |   |   |   |   |   |   |   define n = 1
 |   |   |   |   |   |   |   |   |   @2: IF
-|   |   |   |   |   |   |   |   |   |   ([VAR $n] <= _1)
-|   |   |   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   |   [VAR $n]
-|   |   |   |   |   |   |   |   |   |   |   |   envget [VAR $n] => 1
-|   |   |   |   |   |   |   |   |   |   |   _1
+|   |   |   |   |   |   |   |   |   |   :> ([VAR $n :1] <= _1)
+|   |   |   |   |   |   |   |   |   |   |   |   envget [VAR $n :1] => 1
+|   |   |   |   |   |   |   |   |   |   |   :> _1
 |   |   |   |   |   |   |   |   |   @1: RETURN
-|   |   |   |   |   |   |   |   |   |   _1
+|   |   |   |   |   |   |   |   |   |   :> _1
 [RESULT] : 120;
 [PASS]
 
@@ -2045,113 +1707,93 @@ SOURCE: fun makeCounter() { var i = 0; fun count() { i = i + 1; return i; } retu
 =================
 _0
 @2: VAR i = _0
-[VAR $i]
-[VAR $i]
+[VAR $i :-1]
+[VAR $i :-1]
 _1
-([VAR $i] + _1)
-[ASSIGN] i = ([VAR $i] + _1)
-[VAR $i]
+([VAR $i :-1] + _1)
+[ASSIGN i :-1 = ([VAR $i :-1] + _1)]
+[VAR $i :-1]
 @1: FN count 
-|   @4: [ASSIGN] i = ([VAR $i] + _1)
+|   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   @1: RETURN
-[VAR $count]
+[VAR $count :-1]
 @1: FN makeCounter 
 |   @2: VAR i = _0
 |   @1: FN count 
-|   |   @4: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   @1: RETURN
 |   @1: RETURN
-[VAR $makeCounter]
-[CALL [VAR $makeCounter]()]
-@5: VAR c = [CALL [VAR $makeCounter]()]
-[VAR $c]
-[CALL [VAR $c]()]
-@6: print [CALL [VAR $c]()]
-[VAR $c]
-[CALL [VAR $c]()]
-@7: print [CALL [VAR $c]()]
+[VAR $makeCounter :-1]
+[CALL [VAR $makeCounter :-1]()]
+@5: VAR c = [CALL [VAR $makeCounter :-1]()]
+[VAR $c :-1]
+[CALL [VAR $c :-1]()]
+@6: print [CALL [VAR $c :-1]()]
+[VAR $c :-1]
+[CALL [VAR $c :-1]()]
+@7: print [CALL [VAR $c :-1]()]
 ==== Program [4 statements] ====
 @1: FN makeCounter 
 |   @2: VAR i = _0
 |   @1: FN count 
-|   |   @4: [ASSIGN] i = ([VAR $i] + _1)
+|   |   @4: [ASSIGN i :-1 = ([VAR $i :-1] + _1)]
 |   |   @1: RETURN
 |   @1: RETURN
-@5: VAR c = [CALL [VAR $makeCounter]()]
-@6: print [CALL [VAR $c]()]
-@7: print [CALL [VAR $c]()]
+@5: VAR c = [CALL [VAR $makeCounter :-1]()]
+@6: print [CALL [VAR $c :-1]()]
+@7: print [CALL [VAR $c :-1]()]
 =================
 @1: FN makeCounter 
 |   define makeCounter = <fn makeCounter>
-@5: VAR c = [CALL [VAR $makeCounter]()]
-|   [CALL [VAR $makeCounter]()]
-|   [CALL [VAR $makeCounter]()]
-|   |   [VAR $makeCounter]
-|   |   [VAR $makeCounter]
-|   |   |   envget [VAR $makeCounter] => <fn makeCounter>
+@5: VAR c = [CALL [VAR $makeCounter :-1]()]
+|   [CALL [VAR $makeCounter :-1]()]
+|   |   |   envget [VAR $makeCounter :-1] => <fn makeCounter>
 |   @2: VAR i = _0
-|   |   _0
+|   |   :> _0
 |   |   define i = 0
 |   @1: FN count 
 |   |   define count = <fn count>
 |   @1: RETURN
-|   |   [VAR $count]
-|   |   [VAR $count]
-|   |   |   envget [VAR $count] => <fn count>
+|   |   |   envget [VAR $count :0] => <fn count>
 |   define c = <fn count>
-@6: print [CALL [VAR $c]()]
-|   [CALL [VAR $c]()]
-|   [CALL [VAR $c]()]
-|   |   [VAR $c]
-|   |   [VAR $c]
-|   |   |   envget [VAR $c] => <fn count>
-|   @4: [ASSIGN] i = ([VAR $i] + _1)
-|   |   [ASSIGN] i = ([VAR $i] + _1)
-|   |   |   ([VAR $i] + _1)
-|   |   |   |   [VAR $i]
-|   |   |   |   [VAR $i]
-|   |   |   |   |   envget [VAR $i] => 0
-|   |   |   |   _1
+@6: print [CALL [VAR $c :-1]()]
+|   [CALL [VAR $c :-1]()]
+|   |   |   envget [VAR $c :-1] => <fn count>
+|   @4: [ASSIGN i :2 = ([VAR $i :2] + _1)]
+|   |   :> [ASSIGN i :2 = ([VAR $i :2] + _1)]
+|   |   |   :> ([VAR $i :2] + _1)
+|   |   |   |   |   envget [VAR $i :2] => 0
+|   |   |   |   :> _1
+|   |   |   assignAt i = 1
 |   @1: RETURN
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 1
-@7: print [CALL [VAR $c]()]
-|   [CALL [VAR $c]()]
-|   [CALL [VAR $c]()]
-|   |   [VAR $c]
-|   |   [VAR $c]
-|   |   |   envget [VAR $c] => <fn count>
-|   @4: [ASSIGN] i = ([VAR $i] + _1)
-|   |   [ASSIGN] i = ([VAR $i] + _1)
-|   |   |   ([VAR $i] + _1)
-|   |   |   |   [VAR $i]
-|   |   |   |   [VAR $i]
-|   |   |   |   |   envget [VAR $i] => 1
-|   |   |   |   _1
+|   |   |   envget [VAR $i :2] => 1
+@7: print [CALL [VAR $c :-1]()]
+|   [CALL [VAR $c :-1]()]
+|   |   |   envget [VAR $c :-1] => <fn count>
+|   @4: [ASSIGN i :2 = ([VAR $i :2] + _1)]
+|   |   :> [ASSIGN i :2 = ([VAR $i :2] + _1)]
+|   |   |   :> ([VAR $i :2] + _1)
+|   |   |   |   |   envget [VAR $i :2] => 1
+|   |   |   |   :> _1
+|   |   |   assignAt i = 2
 |   @1: RETURN
-|   |   [VAR $i]
-|   |   [VAR $i]
-|   |   |   envget [VAR $i] => 2
+|   |   |   envget [VAR $i :2] => 2
 [RESULT] : 1;2;
 [PASS]
 
 SOURCE: print clock();
 |   define clock = <native fn>
 =================
-[VAR $clock]
-[CALL [VAR $clock]()]
-@1: print [CALL [VAR $clock]()]
+[VAR $clock :-1]
+[CALL [VAR $clock :-1]()]
+@1: print [CALL [VAR $clock :-1]()]
 ==== Program [1 statements] ====
-@1: print [CALL [VAR $clock]()]
+@1: print [CALL [VAR $clock :-1]()]
 =================
-@1: print [CALL [VAR $clock]()]
-|   [CALL [VAR $clock]()]
-|   [CALL [VAR $clock]()]
-|   |   [VAR $clock]
-|   |   [VAR $clock]
-|   |   |   envget [VAR $clock] => <native fn>
-[RESULT] : 0.00318;
+@1: print [CALL [VAR $clock :-1]()]
+|   [CALL [VAR $clock :-1]()]
+|   |   |   envget [VAR $clock :-1] => <native fn>
+[RESULT] : 0.003187;
 [INFO] no expected output
 
 SOURCE: var a = 0; var a = 1;
@@ -2166,10 +1808,10 @@ _1
 @2: VAR a = _1
 =================
 @1: VAR a = _0
-|   _0
+|   :> _0
 |   define a = 0
 @2: VAR a = _1
-|   _1
+|   :> _1
 |   overwrite a = 1
 [RESULT] : 
 [FAIL] expected error
@@ -2195,94 +1837,75 @@ SOURCE: var a=0; { fun A(){print a;} A(); a=6; A(); var a=4; A(); print a; }
 =================
 _0
 @1: VAR a = _0
-[VAR $a]
-@4: print [VAR $a]
+[VAR $a :-1]
+@4: print [VAR $a :-1]
 @1: FN A 
-|   @4: print [VAR $a]
-[VAR $A]
-[CALL [VAR $A]()]
-[VAR $a]
+|   @4: print [VAR $a :-1]
+[VAR $A :-1]
+[CALL [VAR $A :-1]()]
+[VAR $a :-1]
 _6
-[ASSIGN] a = _6
-[VAR $A]
-[CALL [VAR $A]()]
+[ASSIGN a :-1 = _6]
+[VAR $A :-1]
+[CALL [VAR $A :-1]()]
 _4
 @8: VAR a = _4
-[VAR $A]
-[CALL [VAR $A]()]
-[VAR $a]
-@10: print [VAR $a]
+[VAR $A :-1]
+[CALL [VAR $A :-1]()]
+[VAR $a :-1]
+@10: print [VAR $a :-1]
 ==== Program [2 statements] ====
 @1: VAR a = _0
 |   @1: FN A 
-|   |   @4: print [VAR $a]
-|   @5: [CALL [VAR $A]()]
-|   @6: [ASSIGN] a = _6
-|   @7: [CALL [VAR $A]()]
+|   |   @4: print [VAR $a :-1]
+|   @5: [CALL [VAR $A :-1]()]
+|   @6: [ASSIGN a :-1 = _6]
+|   @7: [CALL [VAR $A :-1]()]
 |   @8: VAR a = _4
-|   @9: [CALL [VAR $A]()]
-|   @10: print [VAR $a]
+|   @9: [CALL [VAR $A :-1]()]
+|   @10: print [VAR $a :-1]
 =================
 @1: VAR a = _0
-|   _0
+|   :> _0
 |   define a = 0
 @1: FN A 
 |   define A = <fn A>
-@5: [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   |   [VAR $A]
-|   |   [VAR $A]
-|   |   |   envget [VAR $A] => <fn A>
-|   @4: print [VAR $a]
-|   |   [VAR $a]
-|   |   [VAR $a]
-|   |   |   envget [VAR $a] => 0
-@6: [ASSIGN] a = _6
-|   [ASSIGN] a = _6
-|   |   _6
+@5: [CALL [VAR $A :0]()]
+|   [CALL [VAR $A :0]()]
+|   |   |   envget [VAR $A :0] => <fn A>
+|   @4: print [VAR $a :-1]
+|   |   |   envget [VAR $a :-1] => 0
+@6: [ASSIGN a :-1 = _6]
+|   :> [ASSIGN a :-1 = _6]
+|   |   :> _6
 |   |   assign a = 6
-@7: [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   |   [VAR $A]
-|   |   [VAR $A]
-|   |   |   envget [VAR $A] => <fn A>
-|   @4: print [VAR $a]
-|   |   [VAR $a]
-|   |   [VAR $a]
-|   |   |   envget [VAR $a] => 6
+@7: [CALL [VAR $A :0]()]
+|   [CALL [VAR $A :0]()]
+|   |   |   envget [VAR $A :0] => <fn A>
+|   @4: print [VAR $a :-1]
+|   |   |   envget [VAR $a :-1] => 6
 @8: VAR a = _4
-|   _4
+|   :> _4
 |   define a = 4
-@9: [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   [CALL [VAR $A]()]
-|   |   [VAR $A]
-|   |   [VAR $A]
-|   |   |   envget [VAR $A] => <fn A>
-|   @4: print [VAR $a]
-|   |   [VAR $a]
-|   |   [VAR $a]
-|   |   |   envget [VAR $a] => 6
-@10: print [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
-|   |   envget [VAR $a] => 4
+@9: [CALL [VAR $A :0]()]
+|   [CALL [VAR $A :0]()]
+|   |   |   envget [VAR $A :0] => <fn A>
+|   @4: print [VAR $a :-1]
+|   |   |   envget [VAR $a :-1] => 6
+@10: print [VAR $a :0]
+|   |   envget [VAR $a :0] => 4
 [RESULT] : 0;6;6;4;
 [PASS]
 
 SOURCE: var a = a;
 |   define clock = <native fn>
 =================
-[VAR $a]
-@1: VAR a = [VAR $a]
+[VAR $a :-1]
+@1: VAR a = [VAR $a :-1]
 ==== Program [1 statements] ====
-@1: VAR a = [VAR $a]
+@1: VAR a = [VAR $a :-1]
 =================
-@1: VAR a = [VAR $a]
-|   [VAR $a]
-|   [VAR $a]
+@1: VAR a = [VAR $a :-1]
 |   |   [line 1] RuntimeError at 'a': Undefined variable
 [RESULT] : 
 [PassError]
@@ -2317,21 +1940,19 @@ SOURCE: class Foo {} print Foo;
 =================
 @1: Class Foo 
 --------
-[VAR $Foo]
-@1: print [VAR $Foo]
+[VAR $Foo :-1]
+@1: print [VAR $Foo :-1]
 ==== Program [2 statements] ====
 @1: Class Foo 
 --------
-@1: print [VAR $Foo]
+@1: print [VAR $Foo :-1]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   assign Foo = <class Foo>
 ---
-@1: print [VAR $Foo]
-|   [VAR $Foo]
-|   [VAR $Foo]
-|   |   envget [VAR $Foo] => <class Foo>
+@1: print [VAR $Foo :-1]
+|   |   envget [VAR $Foo :-1] => <class Foo>
 [RESULT] : <class Foo>;
 [PASS]
 
@@ -2340,32 +1961,28 @@ SOURCE: class Foo {} var f = Foo(); print f;
 =================
 @1: Class Foo 
 --------
-[VAR $Foo]
-[CALL [VAR $Foo]()]
-@1: VAR f = [CALL [VAR $Foo]()]
-[VAR $f]
-@2: print [VAR $f]
+[VAR $Foo :-1]
+[CALL [VAR $Foo :-1]()]
+@1: VAR f = [CALL [VAR $Foo :-1]()]
+[VAR $f :-1]
+@2: print [VAR $f :-1]
 ==== Program [3 statements] ====
 @1: Class Foo 
 --------
-@1: VAR f = [CALL [VAR $Foo]()]
-@2: print [VAR $f]
+@1: VAR f = [CALL [VAR $Foo :-1]()]
+@2: print [VAR $f :-1]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   assign Foo = <class Foo>
 ---
-@1: VAR f = [CALL [VAR $Foo]()]
-|   [CALL [VAR $Foo]()]
-|   [CALL [VAR $Foo]()]
-|   |   [VAR $Foo]
-|   |   [VAR $Foo]
-|   |   |   envget [VAR $Foo] => <class Foo>
+@1: VAR f = [CALL [VAR $Foo :-1]()]
+|   [CALL [VAR $Foo :-1]()]
+|   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   envget init = UNDEFINED
 |   define f = <instance Foo>
-@2: print [VAR $f]
-|   [VAR $f]
-|   [VAR $f]
-|   |   envget [VAR $f] => <instance Foo>
+@2: print [VAR $f :-1]
+|   |   envget [VAR $f :-1] => <instance Foo>
 [RESULT] : <instance Foo>;
 [PASS]
 
@@ -2379,36 +1996,34 @@ _123
 |   @1: FN hello 
 |   |   @1: RETURN
 --------
-[VAR $Foo]
-[CALL [VAR $Foo]()]
-[GET [CALL [VAR $Foo]()].hello]
-[CALL [GET [CALL [VAR $Foo]()].hello]()]
-@2: print [CALL [GET [CALL [VAR $Foo]()].hello]()]
+[VAR $Foo :-1]
+[CALL [VAR $Foo :-1]()]
+[GET [CALL [VAR $Foo :-1]()].hello]
+[CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
+@2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN hello 
 |   |   @1: RETURN
 --------
-@2: print [CALL [GET [CALL [VAR $Foo]()].hello]()]
+@2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   define hello = <fn hello>
 |   assign Foo = <class Foo>
 ---
-@2: print [CALL [GET [CALL [VAR $Foo]()].hello]()]
-|   [CALL [GET [CALL [VAR $Foo]()].hello]()]
-|   [CALL [GET [CALL [VAR $Foo]()].hello]()]
-|   |   [GET [CALL [VAR $Foo]()].hello]
-|   |   [GET [CALL [VAR $Foo]()].hello]
-|   |   |   [CALL [VAR $Foo]()]
-|   |   |   [CALL [VAR $Foo]()]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   |   envget [VAR $Foo] => <class Foo>
+@2: print [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
+|   [CALL [GET [CALL [VAR $Foo :-1]()].hello]()]
+|   |   :> [GET [CALL [VAR $Foo :-1]()].hello]
+|   |   |   [CALL [VAR $Foo :-1]()]
+|   |   |   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   |   |   envget init = UNDEFINED
+|   |   |   envget hello = UNDEFINED
+|   |   |   envget hello = <fn hello>
 |   |   |   define this = <instance Foo>
 |   @1: RETURN
-|   |   _123
+|   |   :> _123
 [RESULT] : 123;
 [PASS]
 
@@ -2416,36 +2031,36 @@ SOURCE: class Foo { init(x){ this.x = x; } hello(){ return this.x; } } var f = F
 |   define clock = <native fn>
 =================
 [GET [THIS].x]
-[VAR $x]
-[SET [THIS].x = [VAR $x]]
+[VAR $x :-1]
+[SET [THIS].x = [VAR $x :-1]]
 @1: FN init 
-x|   @2: [SET [THIS].x = [VAR $x]]
+x|   @2: [SET [THIS].x = [VAR $x :-1]]
 [GET [THIS].x]
 @1: FN hello 
 |   @1: RETURN
 @1: Class Foo 
 |   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x]]
+x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   @1: FN hello 
 |   |   @1: RETURN
 --------
-[VAR $Foo]
+[VAR $Foo :-1]
 _42
-[CALL [VAR $Foo](_42)]
-@4: VAR f = [CALL [VAR $Foo](_42)]
-[VAR $f]
-[GET [VAR $f].hello]
-[CALL [GET [VAR $f].hello]()]
-@5: print [CALL [GET [VAR $f].hello]()]
+[CALL [VAR $Foo :-1](_42)]
+@4: VAR f = [CALL [VAR $Foo :-1](_42)]
+[VAR $f :-1]
+[GET [VAR $f :-1].hello]
+[CALL [GET [VAR $f :-1].hello]()]
+@5: print [CALL [GET [VAR $f :-1].hello]()]
 ==== Program [3 statements] ====
 @1: Class Foo 
 |   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x]]
+x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   @1: FN hello 
 |   |   @1: RETURN
 --------
-@4: VAR f = [CALL [VAR $Foo](_42)]
-@5: print [CALL [GET [VAR $f].hello]()]
+@4: VAR f = [CALL [VAR $Foo :-1](_42)]
+@5: print [CALL [GET [VAR $f :-1].hello]()]
 =================
 @1: Class Foo 
 |   define Foo = nil
@@ -2453,40 +2068,32 @@ x|   |   @2: [SET [THIS].x = [VAR $x]]
 |   define hello = <fn hello>
 |   assign Foo = <class Foo>
 ---
-@4: VAR f = [CALL [VAR $Foo](_42)]
-|   [CALL [VAR $Foo](_42)]
-|   [CALL [VAR $Foo](_42)]
-|   |   [VAR $Foo]
-|   |   [VAR $Foo]
-|   |   |   envget [VAR $Foo] => <class Foo>
+@4: VAR f = [CALL [VAR $Foo :-1](_42)]
+|   [CALL [VAR $Foo :-1](_42)]
+|   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   envget init = <fn init>
 |   |   define this = <instance Foo>
 |   [CALL _<fn init>(_42)]
-|   |   _<fn init>
-|   |   _42
+|   |   :> _<fn init>
+|   |   :> _42
 |   |   define x = 42
-|   @2: [SET [THIS].x = [VAR $x]]
-|   |   [SET [THIS].x = [VAR $x]]
-|   |   [EVAL_SET] [SET [THIS].x = [VAR $x]]
-|   |   |   [THIS]
-|   |   |   [VAR $x]
-|   |   |   [VAR $x]
-|   |   |   |   envget [VAR $x] => 42
+|   @2: [SET [THIS].x = [VAR $x :1]]
+|   |   :> [SET [THIS].x = [VAR $x :1]]
+|   |   |   :> [THIS]
+|   |   |   |   envget [VAR $x :1] => 42
 |   |   |   define x = 42
 |   define f = <instance Foo>
-@5: print [CALL [GET [VAR $f].hello]()]
-|   [CALL [GET [VAR $f].hello]()]
-|   [CALL [GET [VAR $f].hello]()]
-|   |   [GET [VAR $f].hello]
-|   |   [GET [VAR $f].hello]
-|   |   |   [VAR $f]
-|   |   |   [VAR $f]
-|   |   |   |   envget [VAR $f] => <instance Foo>
+@5: print [CALL [GET [VAR $f :-1].hello]()]
+|   [CALL [GET [VAR $f :-1].hello]()]
+|   |   :> [GET [VAR $f :-1].hello]
+|   |   |   |   envget [VAR $f :-1] => <instance Foo>
+|   |   |   envget hello = UNDEFINED
+|   |   |   envget hello = <fn hello>
 |   |   |   define this = <instance Foo>
 |   @1: RETURN
-|   |   [GET [THIS].x]
-|   |   [GET [THIS].x]
-|   |   |   [THIS]
-|   |   [EVAL_GET] [GET [THIS].x] => 42
+|   |   :> [GET [THIS].x]
+|   |   |   :> [THIS]
+|   |   |   envget x = 42
 [RESULT] : 42;
 [PASS]
 
@@ -2500,32 +2107,30 @@ _123
 |   @1: FN init 
 |   |   @1: RETURN
 --------
-[VAR $Foo]
-[CALL [VAR $Foo]()]
-@2: print [CALL [VAR $Foo]()]
+[VAR $Foo :-1]
+[CALL [VAR $Foo :-1]()]
+@2: print [CALL [VAR $Foo :-1]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init 
 |   |   @1: RETURN
 --------
-@2: print [CALL [VAR $Foo]()]
+@2: print [CALL [VAR $Foo :-1]()]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 ---
-@2: print [CALL [VAR $Foo]()]
-|   [CALL [VAR $Foo]()]
-|   [CALL [VAR $Foo]()]
-|   |   [VAR $Foo]
-|   |   [VAR $Foo]
-|   |   |   envget [VAR $Foo] => <class Foo>
+@2: print [CALL [VAR $Foo :-1]()]
+|   [CALL [VAR $Foo :-1]()]
+|   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   envget init = <fn init>
 |   |   define this = <instance Foo>
 |   [CALL _<fn init>()]
-|   |   _<fn init>
+|   |   :> _<fn init>
 |   @1: RETURN
-|   |   _123
+|   |   :> _123
 |   |   [line 1] RuntimeError at 'return': Can't return a value from an initializer.
 [RESULT] : nil;
 [PassError]
@@ -2536,24 +2141,21 @@ SOURCE: fun init() { return 123; } print init();
 _123
 @1: FN init 
 |   @1: RETURN
-[VAR $init]
-[CALL [VAR $init]()]
-@2: print [CALL [VAR $init]()]
+[VAR $init :-1]
+[CALL [VAR $init :-1]()]
+@2: print [CALL [VAR $init :-1]()]
 ==== Program [2 statements] ====
 @1: FN init 
 |   @1: RETURN
-@2: print [CALL [VAR $init]()]
+@2: print [CALL [VAR $init :-1]()]
 =================
 @1: FN init 
 |   define init = <fn init>
-@2: print [CALL [VAR $init]()]
-|   [CALL [VAR $init]()]
-|   [CALL [VAR $init]()]
-|   |   [VAR $init]
-|   |   [VAR $init]
-|   |   |   envget [VAR $init] => <fn init>
+@2: print [CALL [VAR $init :-1]()]
+|   [CALL [VAR $init :-1]()]
+|   |   |   envget [VAR $init :-1] => <fn init>
 |   @1: RETURN
-|   |   _123
+|   |   :> _123
 [RESULT] : 123;
 [PASS]
 
@@ -2561,10 +2163,10 @@ SOURCE: class Foo { init(x){ this.x = x; } inc(){ this.x = this.x + 1; return th
 |   define clock = <native fn>
 =================
 [GET [THIS].x]
-[VAR $x]
-[SET [THIS].x = [VAR $x]]
+[VAR $x :-1]
+[SET [THIS].x = [VAR $x :-1]]
 @1: FN init 
-x|   @2: [SET [THIS].x = [VAR $x]]
+x|   @2: [SET [THIS].x = [VAR $x :-1]]
 [GET [THIS].x]
 [GET [THIS].x]
 _1
@@ -2576,26 +2178,26 @@ _1
 |   @1: RETURN
 @1: Class Foo 
 |   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x]]
+x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   @1: FN inc 
 |   |   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
 |   |   @1: RETURN
 --------
-[VAR $Foo]
+[VAR $Foo :-1]
 _42
-[CALL [VAR $Foo](_42)]
-[GET [CALL [VAR $Foo](_42)].inc]
-[CALL [GET [CALL [VAR $Foo](_42)].inc]()]
-@5: print [CALL [GET [CALL [VAR $Foo](_42)].inc]()]
+[CALL [VAR $Foo :-1](_42)]
+[GET [CALL [VAR $Foo :-1](_42)].inc]
+[CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
+@5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init 
-x|   |   @2: [SET [THIS].x = [VAR $x]]
+x|   |   @2: [SET [THIS].x = [VAR $x :-1]]
 |   @1: FN inc 
 |   |   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
 |   |   @1: RETURN
 --------
-@5: print [CALL [GET [CALL [VAR $Foo](_42)].inc]()]
+@5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
 =================
 @1: Class Foo 
 |   define Foo = nil
@@ -2603,46 +2205,38 @@ x|   |   @2: [SET [THIS].x = [VAR $x]]
 |   define inc = <fn inc>
 |   assign Foo = <class Foo>
 ---
-@5: print [CALL [GET [CALL [VAR $Foo](_42)].inc]()]
-|   [CALL [GET [CALL [VAR $Foo](_42)].inc]()]
-|   [CALL [GET [CALL [VAR $Foo](_42)].inc]()]
-|   |   [GET [CALL [VAR $Foo](_42)].inc]
-|   |   [GET [CALL [VAR $Foo](_42)].inc]
-|   |   |   [CALL [VAR $Foo](_42)]
-|   |   |   [CALL [VAR $Foo](_42)]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   |   envget [VAR $Foo] => <class Foo>
+@5: print [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
+|   [CALL [GET [CALL [VAR $Foo :-1](_42)].inc]()]
+|   |   :> [GET [CALL [VAR $Foo :-1](_42)].inc]
+|   |   |   [CALL [VAR $Foo :-1](_42)]
+|   |   |   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   |   |   envget init = <fn init>
 |   |   |   |   define this = <instance Foo>
 |   |   |   [CALL _<fn init>(_42)]
-|   |   |   |   _<fn init>
-|   |   |   |   _42
+|   |   |   |   :> _<fn init>
+|   |   |   |   :> _42
 |   |   |   |   define x = 42
-|   |   |   @2: [SET [THIS].x = [VAR $x]]
-|   |   |   |   [SET [THIS].x = [VAR $x]]
-|   |   |   |   [EVAL_SET] [SET [THIS].x = [VAR $x]]
-|   |   |   |   |   [THIS]
-|   |   |   |   |   [VAR $x]
-|   |   |   |   |   [VAR $x]
-|   |   |   |   |   |   envget [VAR $x] => 42
+|   |   |   @2: [SET [THIS].x = [VAR $x :1]]
+|   |   |   |   :> [SET [THIS].x = [VAR $x :1]]
+|   |   |   |   |   :> [THIS]
+|   |   |   |   |   |   envget [VAR $x :1] => 42
 |   |   |   |   |   define x = 42
+|   |   |   envget inc = UNDEFINED
+|   |   |   envget inc = <fn inc>
 |   |   |   define this = <instance Foo>
 |   @4: [SET [THIS].x = ([GET [THIS].x] + _1)]
-|   |   [SET [THIS].x = ([GET [THIS].x] + _1)]
-|   |   [EVAL_SET] [SET [THIS].x = ([GET [THIS].x] + _1)]
-|   |   |   [THIS]
-|   |   |   ([GET [THIS].x] + _1)
-|   |   |   |   [GET [THIS].x]
-|   |   |   |   [GET [THIS].x]
-|   |   |   |   |   [THIS]
-|   |   |   |   [EVAL_GET] [GET [THIS].x] => 42
-|   |   |   |   _1
+|   |   :> [SET [THIS].x = ([GET [THIS].x] + _1)]
+|   |   |   :> [THIS]
+|   |   |   :> ([GET [THIS].x] + _1)
+|   |   |   |   :> [GET [THIS].x]
+|   |   |   |   |   :> [THIS]
+|   |   |   |   |   envget x = 42
+|   |   |   |   :> _1
 |   |   |   overwrite x = 43
 |   @1: RETURN
-|   |   [GET [THIS].x]
-|   |   [GET [THIS].x]
-|   |   |   [THIS]
-|   |   [EVAL_GET] [GET [THIS].x] => 43
+|   |   :> [GET [THIS].x]
+|   |   |   :> [THIS]
+|   |   |   envget x = 43
 [RESULT] : 43;
 [PASS]
 
@@ -2651,26 +2245,23 @@ SOURCE: class Foo {} print Foo.x;
 =================
 @1: Class Foo 
 --------
-[VAR $Foo]
-[GET [VAR $Foo].x]
-@1: print [GET [VAR $Foo].x]
+[VAR $Foo :-1]
+[GET [VAR $Foo :-1].x]
+@1: print [GET [VAR $Foo :-1].x]
 ==== Program [2 statements] ====
 @1: Class Foo 
 --------
-@1: print [GET [VAR $Foo].x]
+@1: print [GET [VAR $Foo :-1].x]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   assign Foo = <class Foo>
 ---
-@1: print [GET [VAR $Foo].x]
-|   [GET [VAR $Foo].x]
-|   [GET [VAR $Foo].x]
-|   |   [VAR $Foo]
-|   |   [VAR $Foo]
-|   |   |   envget [VAR $Foo] => <class Foo>
+@1: print [GET [VAR $Foo :-1].x]
+|   :> [GET [VAR $Foo :-1].x]
+|   |   |   envget [VAR $Foo :-1] => <class Foo>
 |   |   [line 1] RuntimeError at 'x': Only instances have properties, Invalid access
-[RESULT] : >> Only instances have properties, Invalid access;
+[RESULT] : Only instances have properties, Invalid access;
 [PassError]
 
 SOURCE: class Foo {} print Foo().x;
@@ -2678,29 +2269,28 @@ SOURCE: class Foo {} print Foo().x;
 =================
 @1: Class Foo 
 --------
-[VAR $Foo]
-[CALL [VAR $Foo]()]
-[GET [CALL [VAR $Foo]()].x]
-@1: print [GET [CALL [VAR $Foo]()].x]
+[VAR $Foo :-1]
+[CALL [VAR $Foo :-1]()]
+[GET [CALL [VAR $Foo :-1]()].x]
+@1: print [GET [CALL [VAR $Foo :-1]()].x]
 ==== Program [2 statements] ====
 @1: Class Foo 
 --------
-@1: print [GET [CALL [VAR $Foo]()].x]
+@1: print [GET [CALL [VAR $Foo :-1]()].x]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   assign Foo = <class Foo>
 ---
-@1: print [GET [CALL [VAR $Foo]()].x]
-|   [GET [CALL [VAR $Foo]()].x]
-|   [GET [CALL [VAR $Foo]()].x]
-|   |   [CALL [VAR $Foo]()]
-|   |   [CALL [VAR $Foo]()]
-|   |   |   [VAR $Foo]
-|   |   |   [VAR $Foo]
-|   |   |   |   envget [VAR $Foo] => <class Foo>
+@1: print [GET [CALL [VAR $Foo :-1]()].x]
+|   :> [GET [CALL [VAR $Foo :-1]()].x]
+|   |   [CALL [VAR $Foo :-1]()]
+|   |   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   |   envget init = UNDEFINED
+|   |   envget x = UNDEFINED
+|   |   envget x = UNDEFINED
 |   |   [line 1] RuntimeError at 'x': Undefined property
-[RESULT] : >> Undefined property;
+[RESULT] : Undefined property;
 [PassError]
 
 SOURCE: class Foo { init() { this.x = 123; } } print Foo().x();
@@ -2715,45 +2305,40 @@ _123
 |   @1: FN init 
 |   |   @2: [SET [THIS].x = _123]
 --------
-[VAR $Foo]
-[CALL [VAR $Foo]()]
-[GET [CALL [VAR $Foo]()].x]
-[CALL [GET [CALL [VAR $Foo]()].x]()]
-@3: print [CALL [GET [CALL [VAR $Foo]()].x]()]
+[VAR $Foo :-1]
+[CALL [VAR $Foo :-1]()]
+[GET [CALL [VAR $Foo :-1]()].x]
+[CALL [GET [CALL [VAR $Foo :-1]()].x]()]
+@3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init 
 |   |   @2: [SET [THIS].x = _123]
 --------
-@3: print [CALL [GET [CALL [VAR $Foo]()].x]()]
+@3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 ---
-@3: print [CALL [GET [CALL [VAR $Foo]()].x]()]
-|   [CALL [GET [CALL [VAR $Foo]()].x]()]
-|   [CALL [GET [CALL [VAR $Foo]()].x]()]
-|   |   [GET [CALL [VAR $Foo]()].x]
-|   |   [GET [CALL [VAR $Foo]()].x]
-|   |   |   [CALL [VAR $Foo]()]
-|   |   |   [CALL [VAR $Foo]()]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   [VAR $Foo]
-|   |   |   |   |   envget [VAR $Foo] => <class Foo>
+@3: print [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
+|   [CALL [GET [CALL [VAR $Foo :-1]()].x]()]
+|   |   :> [GET [CALL [VAR $Foo :-1]()].x]
+|   |   |   [CALL [VAR $Foo :-1]()]
+|   |   |   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   |   |   envget init = <fn init>
 |   |   |   |   define this = <instance Foo>
 |   |   |   [CALL _<fn init>()]
-|   |   |   |   _<fn init>
+|   |   |   |   :> _<fn init>
 |   |   |   @2: [SET [THIS].x = _123]
-|   |   |   |   [SET [THIS].x = _123]
-|   |   |   |   [EVAL_SET] [SET [THIS].x = _123]
-|   |   |   |   |   [THIS]
-|   |   |   |   |   _123
+|   |   |   |   :> [SET [THIS].x = _123]
+|   |   |   |   |   :> [THIS]
+|   |   |   |   |   :> _123
 |   |   |   |   |   define x = 123
-|   |   [EVAL_GET] [GET [CALL [VAR $Foo]()].x] => 123
+|   |   |   envget x = 123
 |   |   [line 1] RuntimeError: Can only call functions and classes
-[RESULT] : >> Can only call functions and classes;
+[RESULT] : Can only call functions and classes;
 [PassError]
 
 SOURCE: class Foo { init(a) { } } print Foo(3,4);
@@ -2763,33 +2348,31 @@ SOURCE: class Foo { init(a) { } } print Foo(3,4);
 a@1: Class Foo 
 |   @1: FN init 
 a--------
-[VAR $Foo]
+[VAR $Foo :-1]
 _3
 _4
-[CALL [VAR $Foo](_3,_4)]
-@2: print [CALL [VAR $Foo](_3,_4)]
+[CALL [VAR $Foo :-1](_3,_4)]
+@2: print [CALL [VAR $Foo :-1](_3,_4)]
 ==== Program [2 statements] ====
 @1: Class Foo 
 |   @1: FN init 
 a--------
-@2: print [CALL [VAR $Foo](_3,_4)]
+@2: print [CALL [VAR $Foo :-1](_3,_4)]
 =================
 @1: Class Foo 
 |   define Foo = nil
 |   define init = <fn init>
 |   assign Foo = <class Foo>
 ---
-@2: print [CALL [VAR $Foo](_3,_4)]
-|   [CALL [VAR $Foo](_3,_4)]
-|   [CALL [VAR $Foo](_3,_4)]
-|   |   [VAR $Foo]
-|   |   [VAR $Foo]
-|   |   |   envget [VAR $Foo] => <class Foo>
+@2: print [CALL [VAR $Foo :-1](_3,_4)]
+|   [CALL [VAR $Foo :-1](_3,_4)]
+|   |   |   envget [VAR $Foo :-1] => <class Foo>
+|   |   envget init = <fn init>
 |   |   define this = <instance Foo>
 |   [CALL _<fn init>(_3,_4)]
-|   |   _<fn init>
+|   |   :> _<fn init>
 |   |   [line 1] RuntimeError: Expected 1 arguments but got 2
-[RESULT] : >> Expected 1 arguments but got 2;
+[RESULT] : Expected 1 arguments but got 2;
 [PassError]
 
 SOURCE: class A {} super.foo();
@@ -2811,23 +2394,21 @@ Resolve error. No execution
 SOURCE: class B < A {} class A {}
 |   define clock = <native fn>
 =================
-[EXPR_SUP] [VAR $A]
+[EXPR_SUP] [VAR $A :-1]
 @1: Class B 
-> [VAR $A]
+> [VAR $A :-1]
 --------
 @1: Class A 
 --------
 ==== Program [2 statements] ====
 @1: Class B 
-> [VAR $A]
+> [VAR $A :-1]
 --------
 @1: Class A 
 --------
 =================
 @1: Class B 
 |   define B = nil
-|   [VAR $A]
-|   [VAR $A]
 |   |   [line 1] RuntimeError at 'A': Undefined variable
 |   [line 1] RuntimeError at 'A': Superclass must be a class.
 [RESULT] : 
@@ -2839,7 +2420,7 @@ SOURCE: class A {} class B < 123 {}
 @1: Class A 
 --------
 [line 1] Error at '123': Expect superclass name.
-[EXPR_SUP] [VAR $123]
+[EXPR_SUP] [VAR $123 :-1]
 [line 1] Error at '123': Expect '{' before class body.
 [line 1] Error at '123': Expect function name.
 [line 1] Error at '123': Expect '(' after function name.
@@ -2853,14 +2434,14 @@ _123
 @1: FN 123 
 123[line 1] Error at EOF: Expect '}' after class body.
 @1: Class B 
-> [VAR $123]
+> [VAR $123 :-1]
 |   @1: FN 123 
 123--------
 ==== Program [2 statements] ====
 @1: Class A 
 --------
 @1: Class B 
-> [VAR $123]
+> [VAR $123 :-1]
 |   @1: FN 123 
 123--------
 =================
@@ -2885,19 +2466,19 @@ _Hello world
 |   |   @2: print (_1 + _0)
 |   |   @3: print _Hello world
 --------
-[EXPR_SUP] [VAR $A]
+[EXPR_SUP] [VAR $A :-1]
 [CALL [SUPER]()]
 @1: FN bar 
 |   @5: [CALL [SUPER]()]
 @1: Class B 
-> [VAR $A]
+> [VAR $A :-1]
 |   @1: FN bar 
 |   |   @5: [CALL [SUPER]()]
 --------
-[VAR $B]
-[CALL [VAR $B]()]
-[GET [CALL [VAR $B]()].bar]
-[CALL [GET [CALL [VAR $B]()].bar]()]
+[VAR $B :-1]
+[CALL [VAR $B :-1]()]
+[GET [CALL [VAR $B :-1]()].bar]
+[CALL [GET [CALL [VAR $B :-1]()].bar]()]
 ==== Program [3 statements] ====
 @1: Class A 
 |   @1: FN foo 
@@ -2905,11 +2486,11 @@ _Hello world
 |   |   @3: print _Hello world
 --------
 @1: Class B 
-> [VAR $A]
+> [VAR $A :-1]
 |   @1: FN bar 
 |   |   @5: [CALL [SUPER]()]
 --------
-@6: [CALL [GET [CALL [VAR $B]()].bar]()]
+@6: [CALL [GET [CALL [VAR $B :-1]()].bar]()]
 =================
 @1: Class A 
 |   define A = nil
@@ -2918,37 +2499,31 @@ _Hello world
 ---
 @1: Class B 
 |   define B = nil
-|   [VAR $A]
-|   [VAR $A]
-|   |   envget [VAR $A] => <class A>
+|   |   envget [VAR $A :-1] => <class A>
 |   define super = <class A>
 |   define bar = <fn bar>
 |   assign B = <class B>
 ---
-@6: [CALL [GET [CALL [VAR $B]()].bar]()]
-|   [CALL [GET [CALL [VAR $B]()].bar]()]
-|   [CALL [GET [CALL [VAR $B]()].bar]()]
-|   |   [GET [CALL [VAR $B]()].bar]
-|   |   [GET [CALL [VAR $B]()].bar]
-|   |   |   [CALL [VAR $B]()]
-|   |   |   [CALL [VAR $B]()]
-|   |   |   |   [VAR $B]
-|   |   |   |   [VAR $B]
-|   |   |   |   |   envget [VAR $B] => <class B>
+@6: [CALL [GET [CALL [VAR $B :-1]()].bar]()]
+|   [CALL [GET [CALL [VAR $B :-1]()].bar]()]
+|   |   :> [GET [CALL [VAR $B :-1]()].bar]
+|   |   |   [CALL [VAR $B :-1]()]
+|   |   |   |   |   envget [VAR $B :-1] => <class B>
+|   |   |   |   envget init = UNDEFINED
+|   |   |   envget bar = UNDEFINED
+|   |   |   envget bar = <fn bar>
 |   |   |   define this = <instance B>
 |   @5: [CALL [SUPER]()]
 |   |   [CALL [SUPER]()]
-|   |   [CALL [SUPER]()]
-|   |   |   [SUPER]
-|   |   |   [> EVAL_SUPER] [SUPER]
+|   |   |   :> [SUPER]
+|   |   |   |   envget foo = <fn foo>
 |   |   |   |   define this = <instance B>
-|   |   |   [EVAL_SUPER] [SUPER] => <fn foo>
 |   |   @2: print (_1 + _0)
-|   |   |   (_1 + _0)
-|   |   |   |   _1
-|   |   |   |   _0
+|   |   |   :> (_1 + _0)
+|   |   |   |   :> _1
+|   |   |   |   :> _0
 |   |   @3: print _Hello world
-|   |   |   _Hello world
+|   |   |   :> _Hello world
 [RESULT] : 1;Hello world;
 [PASS]
 
