@@ -9,7 +9,7 @@ SRC       = src/main.c src/arena.c src/lox.c src/helper.c src/debug.c src/native
 TEST_TARGET = build/test
 TEST_SRC  = src/test.c src/arena.c src/lox.c src/helper.c src/debug.c src/native.c src/parser.c src/scanner.c src/stmt.c src/eval.c src/exec.c src/env.c
 
-.PHONY: all run clean test
+.PHONY: all run clean test clean_vm test_vm
 
 clean:
 	rm -f $(TARGET) $(TEST_TARGET)
@@ -33,4 +33,21 @@ test: ${clean} $(TEST_TARGET)
 	@mkdir -p test
 	./$(TEST_TARGET) > test/test.txt || { echo "Tests failed!"; exit 1; }
 	grep -oiE '\b(passerror|pass|fail)\b' test/test.txt | sort | uniq -c
+	
+
+TEST_VM_TARGET = build/test_vm
+TEST_VM_SRC  = src/vm/test_vm.c src/vm/array.c src/vm/value.c src/vm/chunk.c
+
+clean_vm:
+	rm -f $(TARGET) $(TEST_TARGET)
+	rm test/test.txt
+
+$(TEST_VM_TARGET): $(TEST_VM_SRC)
+	@mkdir -p build
+	$(CC) $(CFLAGS_DEBUG) -o $(TEST_VM_TARGET) $(TEST_VM_SRC) || { echo "Test build failed! Exiting..."; exit 1; }
+
+test_vm: ${clean_vm} $(TEST_VM_TARGET)
+	@mkdir -p test
+	./$(TEST_VM_TARGET) > test/test_vm.txt || { echo "Tests failed!"; exit 1; }
+	grep -oiE '\b(passerror|pass|fail)\b' test/test_vm.txt | sort | uniq -c
 	

@@ -10,7 +10,7 @@ SOURCE: print clock();
 @1: print [CALL [VAR $clock :-1]()]
 |   [CALL [VAR $clock :-1]()]
 |   |   |   envget [VAR $clock :-1] => <native fn>
-[RESULT] : 0.00198;
+[RESULT] : 0.00146;
 [INFO] no expected output
 
 SOURCE: print 1 = !true;
