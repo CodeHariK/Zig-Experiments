@@ -9,6 +9,15 @@
       "args": [],
       "cwd": "/Users/Shared/Code/Zig-Experiments/craftinginterpreters",
       "stopOnEntry": false
+    },
+    {
+      "name": "Clox",
+      "type": "lldb",
+      "request": "launch",
+      "program": "/Users/Shared/Code/Zig-Experiments/craftinginterpreters/build/test_vm",
+      "args": [],
+      "cwd": "/Users/Shared/Code/Zig-Experiments/craftinginterpreters",
+      "stopOnEntry": false
     }
   ]
 }

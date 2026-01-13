@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define STACK_MAX 256
+
 typedef uint32_t u32;
 typedef int32_t i32;
 typedef uint8_t u8;
@@ -26,6 +28,11 @@ void arrayFree(Array *array);
 
 typedef enum {
   OP_CONSTANT,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_NEGATE,
   OP_RETURN,
 } OpCode;
 
@@ -36,6 +43,12 @@ typedef struct {
 void initValueArray(ValueArray *array);
 void writeValueArray(ValueArray *array, Value value);
 void freeValueArray(ValueArray *array);
+
+typedef enum {
+  INTERPRET_OK,
+  INTERPRET_COMPILE_ERROR,
+  INTERPRET_RUNTIME_ERROR
+} InterpretResult;
 
 typedef struct {
   Array code;
@@ -50,6 +63,22 @@ void chunkDisassemble(Chunk *chunk, const char *name);
 u32 instructionDisassemble(Chunk *chunk, u32 offset);
 u32 addConstant(Chunk *chunk, Value value);
 
+Value getChunkConstant(Chunk *chunk, u32 offset);
+u8 getChunkInstruction(Chunk *chunk, u32 offset);
+u32 getChunkLine(Chunk *chunk, u32 offset);
+
+typedef struct {
+  Chunk *chunk;
+  u8 *ip;
+
+  Value stack[STACK_MAX];
+  Value *stackTop;
+} VM;
+
+InterpretResult interpret(VM *vm, Chunk *chunk);
+
 void printValue(Value value);
+
+void traceExecution(VM *vm);
 
 #endif

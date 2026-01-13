@@ -1,5 +1,17 @@
 #include "clox.h"
 
+inline u8 getChunkInstruction(Chunk *chunk, u32 offset) {
+  return ((u8 *)chunk->code.data)[offset];
+}
+
+inline Value getChunkConstant(Chunk *chunk, u32 offset) {
+  return ((Value *)chunk->constants.values.data)[offset];
+}
+
+inline u32 getChunkLine(Chunk *chunk, u32 offset) {
+  return ((u32 *)chunk->lines.data)[offset];
+}
+
 void chunkInit(Chunk *chunk) {
   arrayInit(&chunk->code, sizeof(u8));
   arrayInit(&chunk->lines, sizeof(u32));
@@ -23,14 +35,12 @@ static u32 simpleInstruction(const char *name, u32 offset) {
 }
 
 static u32 constantInstruction(const char *name, Chunk *chunk, u32 offset) {
-  u8 constant = ((u8 *)chunk->code.data)[offset + 1];
-  printf("%-16s %4d '", name, constant);
-  printValue(((Value *)chunk->constants.values.data)[constant]);
+  u8 constantOffset = getChunkInstruction(chunk, offset + 1);
+  printf("%-16s %4d '", name, constantOffset);
+  printValue(getChunkConstant(chunk, constantOffset));
   printf("'\n");
   return offset + 2;
 }
-
-void printValue(Value value) { printf("%g", value); }
 
 void chunkDisassemble(Chunk *chunk, const char *name) {
   printf("== %s ==\n", name);
@@ -43,18 +53,28 @@ void chunkDisassemble(Chunk *chunk, const char *name) {
 u32 instructionDisassemble(Chunk *chunk, u32 offset) {
   printf("%04u ", offset);
 
-  u32 *linesArray = (u32 *)chunk->lines.data;
-  if (offset > 0 && linesArray[offset] == linesArray[offset - 1]) {
+  if (offset > 0 &&
+      getChunkLine(chunk, offset) == getChunkLine(chunk, offset - 1)) {
     printf("   | ");
   } else {
-    printf("%4d ", linesArray[offset]);
+    printf("%4d ", getChunkLine(chunk, offset));
   }
 
-  u8 instruction = ((u8 *)chunk->code.data)[offset];
+  u8 instruction = getChunkInstruction(chunk, offset);
 
   switch (instruction) {
   case OP_CONSTANT:
     return constantInstruction("OP_CONSTANT", chunk, offset);
+  case OP_ADD:
+    return simpleInstruction("OP_ADD", offset);
+  case OP_SUBTRACT:
+    return simpleInstruction("OP_SUBTRACT", offset);
+  case OP_MULTIPLY:
+    return simpleInstruction("OP_MULTIPLY", offset);
+  case OP_DIVIDE:
+    return simpleInstruction("OP_DIVIDE", offset);
+  case OP_NEGATE:
+    return simpleInstruction("OP_NEGATE", offset);
   case OP_RETURN:
     return simpleInstruction("OP_RETURN", offset);
   default:
