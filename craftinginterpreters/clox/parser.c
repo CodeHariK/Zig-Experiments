@@ -4,6 +4,7 @@ void parseNumber(VM *vm);
 void parseUnary(VM *vm);
 void parseGrouping(VM *vm);
 void parseBinary(VM *vm);
+static void parseLiteral(VM *vm);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
@@ -17,31 +18,31 @@ ParseRule rules[] = {
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, parseBinary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, parseBinary, PREC_FACTOR},
-    [TOKEN_BANG] = {NULL, NULL, PREC_NONE},
-    [TOKEN_BANG_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_NOT] = {parseUnary, NULL, PREC_NONE},
+    [TOKEN_NOT_EQUAL] = {NULL, parseBinary, PREC_EQUALITY},
     [TOKEN_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_EQUAL_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EQUAL_EQUAL] = {NULL, parseBinary, PREC_EQUALITY},
+    [TOKEN_GREATER] = {NULL, parseBinary, PREC_COMPARISON},
+    [TOKEN_GREATER_EQUAL] = {NULL, parseBinary, PREC_COMPARISON},
+    [TOKEN_LESS] = {NULL, parseBinary, PREC_COMPARISON},
+    [TOKEN_LESS_EQUAL] = {NULL, parseBinary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
     [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {parseNumber, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
     [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
-    [TOKEN_FALSE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_FALSE] = {parseLiteral, NULL, PREC_NONE},
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
     [TOKEN_FUN] = {NULL, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
-    [TOKEN_NIL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_NIL] = {parseLiteral, NULL, PREC_NONE},
     [TOKEN_OR] = {NULL, NULL, PREC_NONE},
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
     [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
     [TOKEN_THIS] = {NULL, NULL, PREC_NONE},
-    [TOKEN_TRUE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_TRUE] = {parseLiteral, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE] = {NULL, NULL, PREC_NONE},
     [TOKEN_ERROR] = {NULL, NULL, PREC_NONE},
@@ -173,15 +174,31 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
   debugExitParsePrecedence(precedence);
 }
 
-static void expression(VM *vm) { parsePrecedence(vm, PREC_ASSIGNMENT); }
+static void parseExpression(VM *vm) { parsePrecedence(vm, PREC_ASSIGNMENT); }
+
+static void parseLiteral(VM *vm) {
+  switch (vm->parser->previous.type) {
+  case TOKEN_FALSE:
+    emitByte(vm, OP_FALSE);
+    break;
+  case TOKEN_NIL:
+    emitByte(vm, OP_NIL);
+    break;
+  case TOKEN_TRUE:
+    emitByte(vm, OP_TRUE);
+    break;
+  default:
+    return; // Unreachable.
+  }
+}
 
 void parseNumber(VM *vm) {
   double value = strtod(vm->parser->previous.start, NULL);
-  emitConstant(vm, value);
+  emitConstant(vm, NUMBER_VAL(value));
 }
 
 void parseGrouping(VM *vm) {
-  expression(vm);
+  parseExpression(vm);
   consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
@@ -196,6 +213,9 @@ void parseUnary(VM *vm) {
   case TOKEN_MINUS:
     emitByte(vm, OP_NEGATE);
     break;
+  case TOKEN_NOT:
+    emitByte(vm, OP_NOT);
+    break;
   default:
     return; // Unreachable.
   }
@@ -207,6 +227,24 @@ void parseBinary(VM *vm) {
   parsePrecedence(vm, (Precedence)(rule->precedence + 1));
 
   switch (operatorType) {
+  case TOKEN_NOT_EQUAL:
+    emitBytes(vm, OP_EQUAL, OP_NOT);
+    break;
+  case TOKEN_EQUAL_EQUAL:
+    emitByte(vm, OP_EQUAL);
+    break;
+  case TOKEN_GREATER:
+    emitByte(vm, OP_GREATER);
+    break;
+  case TOKEN_GREATER_EQUAL:
+    emitBytes(vm, OP_LESS, OP_NOT);
+    break;
+  case TOKEN_LESS:
+    emitByte(vm, OP_LESS);
+    break;
+  case TOKEN_LESS_EQUAL:
+    emitBytes(vm, OP_GREATER, OP_NOT);
+    break;
   case TOKEN_PLUS:
     emitByte(vm, OP_ADD);
     break;
@@ -227,7 +265,7 @@ void parseBinary(VM *vm) {
 bool compile(VM *vm) {
 
   advance(vm);
-  expression(vm);
+  parseExpression(vm);
   consume(vm, TOKEN_EOF, "Expect end of expression.");
   endCompiler(vm);
   return !vm->parser->hadError;

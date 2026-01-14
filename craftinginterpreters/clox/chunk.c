@@ -1,16 +1,12 @@
 #include "clox.h"
 
-inline u8 getChunkInstruction(Chunk *chunk, u32 offset) {
-  return ((u8 *)chunk->code.data)[offset];
+inline u8 *getCodeArr(Chunk *chunk) { return ((u8 *)chunk->code.data); }
+
+inline Value *getConstantArr(Chunk *chunk) {
+  return ((Value *)chunk->constants.values.data);
 }
 
-inline Value getChunkConstant(Chunk *chunk, u32 offset) {
-  return ((Value *)chunk->constants.values.data)[offset];
-}
-
-inline u32 getChunkLine(Chunk *chunk, u32 offset) {
-  return ((u32 *)chunk->lines.data)[offset];
-}
+inline u32 *getLineArr(Chunk *chunk) { return ((u32 *)chunk->lines.data); }
 
 void chunkInit(Chunk *chunk) {
   arrayInit(&chunk->code, sizeof(u8));
@@ -35,9 +31,9 @@ static u32 simpleInstruction(const char *name, u32 offset) {
 }
 
 static u32 constantInstruction(const char *name, Chunk *chunk, u32 offset) {
-  u8 constantOffset = getChunkInstruction(chunk, offset + 1);
+  u8 constantOffset = getCodeArr(chunk)[offset + 1];
   printf("%-16s %4d '", name, constantOffset);
-  printValue(getChunkConstant(chunk, constantOffset));
+  printValue(getConstantArr(chunk)[constantOffset]);
   printf("'\n");
   return offset + 2;
 }
@@ -54,17 +50,38 @@ u32 instructionDisassemble(Chunk *chunk, u32 offset) {
   printf("%04u ", offset);
 
   if (offset > 0 &&
-      getChunkLine(chunk, offset) == getChunkLine(chunk, offset - 1)) {
+      getLineArr(chunk)[offset] == getLineArr(chunk)[offset - 1]) {
     printf("   | ");
   } else {
-    printf("%4d ", getChunkLine(chunk, offset));
+    printf("%4d ", getLineArr(chunk)[offset]);
   }
 
-  u8 instruction = getChunkInstruction(chunk, offset);
+  u8 instruction = getCodeArr(chunk)[offset];
 
   switch (instruction) {
   case OP_CONSTANT:
     return constantInstruction("OP_CONSTANT", chunk, offset);
+
+  case OP_NIL:
+    return simpleInstruction("OP_NIL", offset);
+  case OP_TRUE:
+    return simpleInstruction("OP_TRUE", offset);
+  case OP_FALSE:
+    return simpleInstruction("OP_FALSE", offset);
+
+  case OP_EQUAL:
+    return simpleInstruction("OP_EQUAL", offset);
+  case OP_NOT_EQUAL:
+    return simpleInstruction("OP_NOT_EQUAL", offset);
+  case OP_GREATER:
+    return simpleInstruction("OP_GREATER", offset);
+  case OP_LESS:
+    return simpleInstruction("OP_LESS", offset);
+  case OP_GREATER_EQUAL:
+    return simpleInstruction("OP_GREATER_EQUAL", offset);
+  case OP_LESS_EQUAL:
+    return simpleInstruction("OP_LESS_EQUAL", offset);
+
   case OP_ADD:
     return simpleInstruction("OP_ADD", offset);
   case OP_SUBTRACT:
@@ -73,8 +90,12 @@ u32 instructionDisassemble(Chunk *chunk, u32 offset) {
     return simpleInstruction("OP_MULTIPLY", offset);
   case OP_DIVIDE:
     return simpleInstruction("OP_DIVIDE", offset);
+
+  case OP_NOT:
+    return simpleInstruction("OP_NOT", offset);
   case OP_NEGATE:
     return simpleInstruction("OP_NEGATE", offset);
+
   case OP_RETURN:
     return simpleInstruction("OP_RETURN", offset);
   default:

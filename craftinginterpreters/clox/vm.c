@@ -1,8 +1,26 @@
 #include "clox.h"
+#include <stdarg.h>
+
+static bool isFalsey(Value value) {
+  return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
 
 static inline u8 readByte(VM *vm) { return *vm->ip++; }
 
 static void resetStack(VM *vm) { vm->stackTop = vm->stack; }
+
+static void runtimeError(VM *vm, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  u32 instruction = vm->ip - getCodeArr(vm->chunk) - 1;
+  int line = getLineArr(vm->chunk)[instruction];
+  fprintf(stderr, "[line %d] in script\n", line);
+  resetStack(vm);
+}
 
 void vmInit(VM *vm) {
   vm->chunk = NULL;
@@ -24,6 +42,10 @@ Value pop(VM *vm) {
   return *vm->stackTop;
 }
 
+static inline Value peek(VM *vm, int distance) {
+  return vm->stackTop[-1 - distance];
+}
+
 static InterpretResult run(VM *vm) {
 
   for (;;) {
@@ -33,38 +55,95 @@ static InterpretResult run(VM *vm) {
     uint8_t instruction;
     switch (instruction = readByte(vm)) {
     case OP_CONSTANT: {
-      Value constant = getChunkConstant(vm->chunk, readByte(vm));
+      Value constant = getConstantArr(vm->chunk)[readByte(vm)];
       push(vm, constant);
       break;
     }
+    case OP_NIL:
+      push(vm, NIL_VAL);
+      break;
+    case OP_TRUE:
+      push(vm, BOOL_VAL(true));
+      break;
+    case OP_FALSE:
+      push(vm, BOOL_VAL(false));
+      break;
+
+    case OP_EQUAL: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(VAL_EQUAL(a, b)));
+      break;
+    }
+    case OP_NOT_EQUAL: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(!VAL_EQUAL(a, b)));
+      break;
+    }
+    case OP_GREATER: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(AS_NUMBER(a) > AS_NUMBER(b)));
+      break;
+    }
+    case OP_LESS: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(AS_NUMBER(a) < AS_NUMBER(b)));
+      break;
+    }
+    case OP_GREATER_EQUAL: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(AS_NUMBER(a) >= AS_NUMBER(b)));
+      break;
+    }
+    case OP_LESS_EQUAL: {
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, BOOL_VAL(AS_NUMBER(a) <= AS_NUMBER(b)));
+      break;
+    }
+
     case OP_ADD: {
-      double b = pop(vm);
-      double a = pop(vm);
-      push(vm, a + b);
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, NUMBER_VAL(AS_NUMBER(a) + AS_NUMBER(b)));
       break;
     }
     case OP_SUBTRACT: {
-      double b = pop(vm);
-      double a = pop(vm);
-      push(vm, a - b);
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, NUMBER_VAL(AS_NUMBER(a) - AS_NUMBER(b)));
       break;
     }
     case OP_MULTIPLY: {
-      double b = pop(vm);
-      double a = pop(vm);
-      push(vm, a * b);
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, NUMBER_VAL(AS_NUMBER(a) * AS_NUMBER(b)));
       break;
     }
     case OP_DIVIDE: {
-      double b = pop(vm);
-      double a = pop(vm);
-      push(vm, a / b);
+      Value b = pop(vm);
+      Value a = pop(vm);
+      push(vm, NUMBER_VAL(AS_NUMBER(a) / AS_NUMBER(b)));
+      break;
+    }
+
+    case OP_NOT: {
+      push(vm, BOOL_VAL(isFalsey(pop(vm))));
       break;
     }
     case OP_NEGATE: {
-      push(vm, -pop(vm));
+      if (!IS_NUMBER(peek(vm, 0))) {
+        runtimeError(vm, "Operand must be a number.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm))));
       break;
     }
+
     case OP_RETURN: {
       printValue(pop(vm));
       printf("\n");

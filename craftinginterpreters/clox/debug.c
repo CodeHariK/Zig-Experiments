@@ -75,10 +75,10 @@ static const char *tokenTypeName(TokenType type) {
     return "SLASH";
   case TOKEN_STAR:
     return "STAR";
-  case TOKEN_BANG:
-    return "BANG";
-  case TOKEN_BANG_EQUAL:
-    return "BANG_EQUAL";
+  case TOKEN_NOT:
+    return "NOT";
+  case TOKEN_NOT_EQUAL:
+    return "NOT_EQUAL";
   case TOKEN_EQUAL:
     return "EQUAL";
   case TOKEN_EQUAL_EQUAL:

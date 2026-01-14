@@ -13,7 +13,19 @@ typedef uint32_t u32;
 typedef int32_t i32;
 typedef uint8_t u8;
 
-typedef double Value;
+typedef enum {
+  VAL_BOOL,
+  VAL_NIL,
+  VAL_NUMBER,
+} ValueType;
+
+typedef struct {
+  ValueType type;
+  union {
+    bool boolean;
+    double number;
+  } as;
+} Value;
 
 typedef struct {
   u32 count;
@@ -28,11 +40,30 @@ void arrayFree(Array *array);
 
 typedef enum {
   OP_CONSTANT,
+
+  // Literals
+  OP_NIL,
+  OP_TRUE,
+  OP_FALSE,
+
+  // Comparison operators
+  OP_EQUAL,
+  OP_NOT_EQUAL,
+  OP_GREATER,
+  OP_LESS,
+  OP_GREATER_EQUAL,
+  OP_LESS_EQUAL,
+
+  // Binary operators
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
   OP_DIVIDE,
+
+  // Unary operators
+  OP_NOT,
   OP_NEGATE,
+
   OP_RETURN,
 } OpCode;
 
@@ -63,9 +94,9 @@ void chunkDisassemble(Chunk *chunk, const char *name);
 u32 instructionDisassemble(Chunk *chunk, u32 offset);
 u32 addConstant(Chunk *chunk, Value value);
 
-Value getChunkConstant(Chunk *chunk, u32 offset);
-u8 getChunkInstruction(Chunk *chunk, u32 offset);
-u32 getChunkLine(Chunk *chunk, u32 offset);
+Value *getConstantArr(Chunk *chunk);
+u8 *getCodeArr(Chunk *chunk);
+u32 *getLineArr(Chunk *chunk);
 
 typedef enum {
   // Single-character tokens.
@@ -81,8 +112,8 @@ typedef enum {
   TOKEN_SLASH,
   TOKEN_STAR,
   // One or two character tokens.
-  TOKEN_BANG,
-  TOKEN_BANG_EQUAL,
+  TOKEN_NOT,
+  TOKEN_NOT_EQUAL,
   TOKEN_EQUAL,
   TOKEN_EQUAL_EQUAL,
   TOKEN_GREATER,
@@ -178,6 +209,16 @@ Token scanToken(Scanner *scanner);
 bool compile(VM *vm);
 
 void printValue(Value value);
+
+extern Value NIL_VAL;
+Value BOOL_VAL(bool value);
+Value NUMBER_VAL(double value);
+bool AS_BOOL(Value value);
+double AS_NUMBER(Value value);
+bool IS_BOOL(Value value);
+bool IS_NIL(Value value);
+bool IS_NUMBER(Value value);
+bool VAL_EQUAL(Value a, Value b);
 
 void traceExecution(VM *vm);
 

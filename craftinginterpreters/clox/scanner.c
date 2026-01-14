@@ -229,7 +229,7 @@ Token scanToken(Scanner *scanner) {
     return makeToken(scanner, TOKEN_STAR);
   case '!':
     return makeToken(scanner,
-                     match(scanner, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+                     match(scanner, '=') ? TOKEN_NOT_EQUAL : TOKEN_NOT);
   case '=':
     return makeToken(scanner,
                      match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
