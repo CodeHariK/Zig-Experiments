@@ -4,6 +4,14 @@ static inline u8 readByte(VM *vm) { return *vm->ip++; }
 
 static void resetStack(VM *vm) { vm->stackTop = vm->stack; }
 
+void vmInit(VM *vm) {
+  vm->chunk = NULL;
+  vm->ip = NULL;
+  vm->stackTop = vm->stack;
+}
+
+void vmFree(VM *vm) {}
+
 void push(VM *vm, Value value) {
   if (vm->stackTop < vm->stack + STACK_MAX) {
     *vm->stackTop = value;
@@ -66,9 +74,31 @@ static InterpretResult run(VM *vm) {
   }
 }
 
-InterpretResult interpret(VM *vm, Chunk *chunk) {
-  vm->chunk = chunk;
+InterpretResult interpret(VM *vm, const char *source) {
+
+  Chunk chunk;
+  chunkInit(&chunk);
+
+  vm->chunk = &chunk;
   vm->ip = vm->chunk->code.data;
-  resetStack(vm);
-  return run(vm);
+
+  Scanner scanner;
+  initScanner(&scanner, source);
+  vm->scanner = &scanner;
+
+  Parser parser;
+  parser.hadError = false;
+  parser.panicMode = false;
+  vm->parser = &parser;
+
+  if (!compile(vm)) {
+    chunkFree(&chunk);
+    return INTERPRET_COMPILE_ERROR;
+  }
+
+  vm->ip = vm->chunk->code.data;
+  InterpretResult result = run(vm);
+
+  chunkFree(&chunk);
+  return result;
 }

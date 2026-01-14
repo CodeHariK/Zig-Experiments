@@ -3,7 +3,7 @@ CFLAGS_RELEASE = -std=c23 -O2 -DNDEBUG -fno-omit-frame-pointer
 
 CFLAGS_DEBUG = -std=c23 -Wall -Wextra -Wpedantic -Og -g \
 -fsanitize=address,undefined -fno-omit-frame-pointer \
--DDEBUG_TRACE_EXECUTION
+-DDEBUG_TRACE_EXECUTION -DDEBUG_PARSER
 
 TARGET  = build/lox
 SRC       = src/main.c src/arena.c src/lox.c src/helper.c src/debug.c src/native.c src/parser.c src/scanner.c src/stmt.c src/eval.c src/exec.c src/env.c
@@ -37,7 +37,7 @@ test: ${clean} $(TEST_TARGET)
 	
 
 TEST_VM_TARGET = build/test_vm
-TEST_VM_SRC  = clox/test_vm.c clox/debug.c clox/array.c clox/value.c clox/chunk.c clox/vm.c
+TEST_VM_SRC  = clox/test_vm.c clox/debug.c clox/array.c clox/value.c clox/chunk.c clox/parser.c clox/scanner.c clox/vm.c
 
 clean_vm:
 	rm -f $(TEST_VM_TARGET)
