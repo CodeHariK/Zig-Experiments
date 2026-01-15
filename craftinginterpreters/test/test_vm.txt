@@ -1,4 +1,4 @@
-[PARSER] Advanced: previous='dy4l¯' (UNKNOWN), current='1' (NUMBER)
+[PARSER] Advanced: previous='' (UNKNOWN), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='+' (PLUS)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE

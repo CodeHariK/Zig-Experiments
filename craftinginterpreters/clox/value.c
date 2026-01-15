@@ -6,23 +6,46 @@ Obj *allocateObject(VM *vm, size_t size, ObjType type) {
   return ALLOCATE_OBJ(vm, size, type);
 }
 
+static uint32_t hashString(const char *key, int length) {
+  uint32_t hash = 2166136261u;
+  for (int i = 0; i < length; i++) {
+    hash ^= (uint8_t)key[i];
+    hash *= 16777619;
+  }
+  return hash;
+}
+
 ObjString *copyString(VM *vm, const char *chars, i32 length) {
+  u32 hash = hashString(chars, length);
+  ObjString *interned = tableFindString(&vm->strings, chars, length, hash);
+  if (interned != NULL)
+    return interned;
+
   char *heapChars = (char *)ALLOCATE(length + 1, sizeof(char));
   memcpy(heapChars, chars, length);
   heapChars[length] = '\0';
-  return allocateString(vm, heapChars, length);
+  return allocateString(vm, heapChars, length, hash);
 }
 
-ObjString *allocateString(VM *vm, char *chars, i32 length) {
+ObjString *allocateString(VM *vm, char *chars, i32 length, u32 hash) {
   ObjString *string =
       (ObjString *)ALLOCATE_OBJ(vm, sizeof(ObjString), OBJ_STRING);
   string->length = length;
   string->chars = chars;
+  string->hash = hash;
+  tableSet(&vm->strings, string, NIL_VAL);
   return string;
 }
 
 ObjString *takeString(VM *vm, char *chars, i32 length) {
-  return allocateString(vm, chars, length);
+  u32 hash = hashString(chars, length);
+  ObjString *interned = tableFindString(&vm->strings, chars, length, hash);
+  if (interned != NULL) {
+    FREE_ARRAY(length + 1, sizeof(char), chars);
+    return interned;
+  }
+
+  return allocateString(vm, chars, length, hash);
 }
 
 void concatenate(VM *vm) {
@@ -83,12 +106,8 @@ bool VAL_EQUAL(Value a, Value b) {
     return true;
   case VAL_NUMBER:
     return AS_NUMBER(a) == AS_NUMBER(b);
-  case VAL_OBJ: {
-    ObjString *aString = AS_STRING(a);
-    ObjString *bString = AS_STRING(b);
-    return aString->length == bString->length &&
-           memcmp(aString->chars, bString->chars, aString->length) == 0;
-  }
+  case VAL_OBJ:
+    return AS_OBJ(a) == AS_OBJ(b);
   default:
     return false; // Unreachable.
   }

@@ -33,6 +33,7 @@ typedef struct {
   Obj obj;
   i32 length;
   char *chars;
+  u32 hash;
 } ObjString;
 
 typedef struct {
@@ -43,6 +44,28 @@ typedef struct {
     Obj *obj;
   } as;
 } Value;
+
+typedef struct {
+  ObjString *key;
+  Value value;
+} Entry;
+
+typedef struct {
+  int count;
+  int capacity;
+  Entry *entries;
+} Table;
+
+#define ARRAY_MAX_LOAD 0.75
+
+void initTable(Table *table);
+void freeTable(Table *table);
+bool tableGet(Table *table, ObjString *key, Value *value);
+bool tableSet(Table *table, ObjString *key, Value value);
+bool tableDelete(Table *table, ObjString *key);
+void tableAddAll(Table *from, Table *to);
+ObjString *tableFindString(Table *table, const char *chars, int length,
+                           uint32_t hash);
 
 typedef struct {
   size_t count;
@@ -190,6 +213,7 @@ typedef struct {
   Value stack[STACK_MAX];
   Value *stackTop;
 
+  Table strings;
   Obj *objects;
 
   Parser *parser;
@@ -230,7 +254,7 @@ Token scanToken(Scanner *scanner);
 bool compile(VM *vm);
 
 ObjString *copyString(VM *vm, const char *chars, i32 length);
-ObjString *allocateString(VM *vm, char *chars, i32 length);
+ObjString *allocateString(VM *vm, char *chars, i32 length, u32 hash);
 ObjString *takeString(VM *vm, char *chars, i32 length);
 void concatenate(VM *vm);
 
@@ -269,7 +293,6 @@ void freeTypeArray(void *pointer, size_t count, size_t elementSize);
 // Memory management - wrappers
 void *allocate(size_t size);
 void freePtr(void *pointer);
-void *freeArray(void *pointer, size_t count, size_t elementSize);
 
 // Memory allocation helpers
 void *ALLOCATE(size_t count, size_t elementSize);

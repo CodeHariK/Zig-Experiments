@@ -26,9 +26,13 @@ void vmInit(VM *vm) {
   vm->ip = NULL;
   vm->stackTop = vm->stack;
   vm->objects = NULL;
+  initTable(&vm->strings);
 }
 
-void vmFree(VM *vm) { freeObjects(vm); }
+void vmFree(VM *vm) {
+  freeTable(&vm->strings);
+  freeObjects(vm);
+}
 
 void push(VM *vm, Value value) {
   if (vm->stackTop < vm->stack + STACK_MAX) {
