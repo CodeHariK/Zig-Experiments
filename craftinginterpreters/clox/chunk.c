@@ -25,12 +25,12 @@ void chunkFree(Chunk *chunk) {
   freeValueArray(&chunk->constants);
 }
 
-static u32 simpleInstruction(const char *name, u32 offset) {
+static size_t simpleInstruction(const char *name, size_t offset) {
   printf("%s\n", name);
   return offset + 1;
 }
 
-static u32 constantInstruction(const char *name, Chunk *chunk, u32 offset) {
+static size_t constantInstruction(const char *name, Chunk *chunk, size_t offset) {
   u8 constantOffset = getCodeArr(chunk)[offset + 1];
   printf("%-16s %4d '", name, constantOffset);
   printValue(getConstantArr(chunk)[constantOffset]);
@@ -41,13 +41,13 @@ static u32 constantInstruction(const char *name, Chunk *chunk, u32 offset) {
 void chunkDisassemble(Chunk *chunk, const char *name) {
   printf("== %s ==\n", name);
 
-  for (u32 offset = 0; offset < chunk->code.count;) {
+  for (size_t offset = 0; offset < chunk->code.count;) {
     offset = instructionDisassemble(chunk, offset);
   }
 }
 
-u32 instructionDisassemble(Chunk *chunk, u32 offset) {
-  printf("%04u ", offset);
+size_t instructionDisassemble(Chunk *chunk, size_t offset) {
+  printf("%04zu ", offset);
 
   if (offset > 0 &&
       getLineArr(chunk)[offset] == getLineArr(chunk)[offset - 1]) {
@@ -104,7 +104,7 @@ u32 instructionDisassemble(Chunk *chunk, u32 offset) {
   }
 }
 
-u32 addConstant(Chunk *chunk, Value value) {
+size_t addConstant(Chunk *chunk, Value value) {
   writeValueArray(&chunk->constants, value);
   return chunk->constants.values.count - 1;
 }

@@ -14,7 +14,8 @@ static void printStack(VM *vm) {
 
 void traceExecution(VM *vm) {
   printStack(vm);
-  instructionDisassemble(vm->chunk, (u32)(vm->ip - (u8 *)vm->chunk->code.data));
+  instructionDisassemble(vm->chunk,
+                         (size_t)(vm->ip - (u8 *)vm->chunk->code.data));
 }
 #else
 void traceExecution(VM *vm) { (void)vm; }
@@ -144,7 +145,7 @@ static void printToken(Token *token) {
   } else if (token->type == TOKEN_ERROR) {
     printf("ERROR");
   } else {
-    printf("'%.*s'", (int)token->length, token->start);
+    printf("'%.*s'", (i32)token->length, token->start);
   }
 }
 

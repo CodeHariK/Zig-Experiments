@@ -1,13 +1,12 @@
 #include "clox.h"
 #include <stdarg.h>
 
-static bool isFalsey(Value value) {
-  return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+static inline u8 READ_BYTE(VM *vm) { return *vm->ip++; }
+
+static void resetStack(VM *vm) {
+  vm->stackTop = vm->stack;
+  vm->objects = NULL;
 }
-
-static inline u8 readByte(VM *vm) { return *vm->ip++; }
-
-static void resetStack(VM *vm) { vm->stackTop = vm->stack; }
 
 static void runtimeError(VM *vm, const char *format, ...) {
   va_list args;
@@ -16,8 +15,8 @@ static void runtimeError(VM *vm, const char *format, ...) {
   va_end(args);
   fputs("\n", stderr);
 
-  u32 instruction = vm->ip - getCodeArr(vm->chunk) - 1;
-  int line = getLineArr(vm->chunk)[instruction];
+  size_t instruction = vm->ip - getCodeArr(vm->chunk) - 1;
+  i32 line = getLineArr(vm->chunk)[instruction];
   fprintf(stderr, "[line %d] in script\n", line);
   resetStack(vm);
 }
@@ -26,9 +25,10 @@ void vmInit(VM *vm) {
   vm->chunk = NULL;
   vm->ip = NULL;
   vm->stackTop = vm->stack;
+  vm->objects = NULL;
 }
 
-void vmFree(VM *vm) {}
+void vmFree(VM *vm) { freeObjects(vm); }
 
 void push(VM *vm, Value value) {
   if (vm->stackTop < vm->stack + STACK_MAX) {
@@ -42,7 +42,7 @@ Value pop(VM *vm) {
   return *vm->stackTop;
 }
 
-static inline Value peek(VM *vm, int distance) {
+static inline Value peek(VM *vm, i32 distance) {
   return vm->stackTop[-1 - distance];
 }
 
@@ -53,9 +53,9 @@ static InterpretResult run(VM *vm) {
     traceExecution(vm);
 
     uint8_t instruction;
-    switch (instruction = readByte(vm)) {
+    switch (instruction = READ_BYTE(vm)) {
     case OP_CONSTANT: {
-      Value constant = getConstantArr(vm->chunk)[readByte(vm)];
+      Value constant = getConstantArr(vm->chunk)[READ_BYTE(vm)];
       push(vm, constant);
       break;
     }
@@ -107,9 +107,16 @@ static InterpretResult run(VM *vm) {
     }
 
     case OP_ADD: {
-      Value b = pop(vm);
-      Value a = pop(vm);
-      push(vm, NUMBER_VAL(AS_NUMBER(a) + AS_NUMBER(b)));
+      if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
+        concatenate(vm);
+      } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
+        double b = AS_NUMBER(pop(vm));
+        double a = AS_NUMBER(pop(vm));
+        push(vm, NUMBER_VAL(a + b));
+      } else {
+        runtimeError(vm, "Operands must be two numbers or two strings.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
       break;
     }
     case OP_SUBTRACT: {

@@ -1,4 +1,4 @@
-[PARSER] Advanced: previous='' (UNKNOWN), current='1' (NUMBER)
+[PARSER] Advanced: previous='dy4l¯' (UNKNOWN), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='+' (PLUS)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -352,3 +352,51 @@ STACK | false |
 STACK | true |
 0015    | OP_RETURN
 true
+[PARSER] Advanced: previous=EOF (EOF), current='"hello"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"hello"' (STRING), current='+' (PLUS)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='" "' (STRING)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='" "' (STRING), current='+' (PLUS)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=FACTOR, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='"world"' (STRING)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='"world"' (STRING), current=EOF (EOF)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=FACTOR, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         0 'hello'
+0002    | OP_CONSTANT         1 ' '
+0004    | OP_ADD
+0005    | OP_CONSTANT         2 'world'
+0007    | OP_ADD
+0008    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         0 'hello'
+STACK | hello |
+0002    | OP_CONSTANT         1 ' '
+STACK | hello |   |
+0004    | OP_ADD
+STACK | hello  |
+0005    | OP_CONSTANT         2 'world'
+STACK | hello  | world |
+0007    | OP_ADD
+STACK | hello world |
+0008    | OP_RETURN
+hello world

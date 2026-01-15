@@ -1,10 +1,11 @@
 #include "clox.h"
 
-void parseNumber(VM *vm);
-void parseUnary(VM *vm);
-void parseGrouping(VM *vm);
-void parseBinary(VM *vm);
+static void parseNumber(VM *vm);
+static void parseUnary(VM *vm);
+static void parseGrouping(VM *vm);
+static void parseBinary(VM *vm);
 static void parseLiteral(VM *vm);
+static void parseString(VM *vm);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
@@ -27,7 +28,7 @@ ParseRule rules[] = {
     [TOKEN_LESS] = {NULL, parseBinary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {NULL, parseBinary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
+    [TOKEN_STRING] = {parseString, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {parseNumber, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
@@ -61,7 +62,7 @@ static void errorAt(Parser *parser, Token *token, const char *message) {
   } else if (token->type == TOKEN_ERROR) {
     // Nothing.
   } else {
-    fprintf(stderr, " at '%.*s'", token->length, token->start);
+    fprintf(stderr, " at '%.*s'", (i32)token->length, token->start);
   }
 
   fprintf(stderr, ": %s\n", message);
@@ -109,7 +110,7 @@ static void emitBytes(VM *vm, u8 byte1, u8 byte2) {
 }
 
 static u8 makeConstant(VM *vm, Value value) {
-  u32 constant = addConstant(vm->chunk, value);
+  size_t constant = addConstant(vm->chunk, value);
   if (constant > UINT8_MAX) {
     error(vm->parser, "Too many constants in one chunk.");
     return 0;
@@ -260,6 +261,11 @@ void parseBinary(VM *vm) {
   default:
     return; // Unreachable.
   }
+}
+
+static void parseString(VM *vm) {
+  emitConstant(vm, OBJ_VAL((Obj *)copyString(vm, vm->parser->previous.start + 1,
+                                             vm->parser->previous.length - 2)));
 }
 
 bool compile(VM *vm) {

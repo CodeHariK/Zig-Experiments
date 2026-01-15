@@ -46,7 +46,7 @@ static Token makeToken(Scanner *scanner, TokenType type) {
   Token token;
   token.type = type;
   token.start = scanner->start;
-  token.length = (u32)(scanner->current - scanner->start);
+  token.length = (size_t)(scanner->current - scanner->start);
   token.line = scanner->line;
   return token;
 }
@@ -55,7 +55,7 @@ static Token errorToken(Scanner *scanner, const char *message) {
   Token token;
   token.type = TOKEN_ERROR;
   token.start = message;
-  token.length = (u32)strlen(message);
+  token.length = strlen(message);
   token.line = scanner->line;
   return token;
 }
@@ -119,9 +119,9 @@ static Token scanNumber(Scanner *scanner) {
   return makeToken(scanner, TOKEN_NUMBER);
 }
 
-static TokenType checkKeyword(Scanner *scanner, u32 start, u32 length,
+static TokenType checkKeyword(Scanner *scanner, size_t start, size_t length,
                               const char *rest, TokenType type) {
-  if (scanner->current - scanner->start == start + length &&
+  if ((size_t)(scanner->current - scanner->start) == start + length &&
       memcmp(scanner->start + start, rest, length) == 0) {
     return type;
   }

@@ -1,5 +1,65 @@
 #include "clox.h"
 
+Value NIL_VAL = {VAL_NIL, {.boolean = false}};
+
+Obj *allocateObject(VM *vm, size_t size, ObjType type) {
+  return ALLOCATE_OBJ(vm, size, type);
+}
+
+ObjString *copyString(VM *vm, const char *chars, i32 length) {
+  char *heapChars = (char *)ALLOCATE(length + 1, sizeof(char));
+  memcpy(heapChars, chars, length);
+  heapChars[length] = '\0';
+  return allocateString(vm, heapChars, length);
+}
+
+ObjString *allocateString(VM *vm, char *chars, i32 length) {
+  ObjString *string =
+      (ObjString *)ALLOCATE_OBJ(vm, sizeof(ObjString), OBJ_STRING);
+  string->length = length;
+  string->chars = chars;
+  return string;
+}
+
+ObjString *takeString(VM *vm, char *chars, i32 length) {
+  return allocateString(vm, chars, length);
+}
+
+void concatenate(VM *vm) {
+  ObjString *b = AS_STRING(pop(vm));
+  ObjString *a = AS_STRING(pop(vm));
+
+  i32 length = a->length + b->length;
+  char *chars = (char *)ALLOCATE(length + 1, sizeof(char));
+  memcpy(chars, a->chars, a->length);
+  memcpy(chars + a->length, b->chars, b->length);
+  chars[length] = '\0';
+
+  ObjString *result = takeString(vm, chars, length);
+  push(vm, OBJ_VAL((Obj *)result));
+}
+
+static void freeObject(VM *vm, Obj *object) {
+  (void)vm; // May be needed for future garbage collection
+  switch (object->type) {
+  case OBJ_STRING: {
+    ObjString *string = (ObjString *)object;
+    FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
+    FREE(sizeof(ObjString), object);
+    break;
+  }
+  }
+}
+
+void freeObjects(VM *vm) {
+  Obj *object = vm->objects;
+  while (object != NULL) {
+    Obj *next = object->next;
+    freeObject(vm, object);
+    object = next;
+  }
+}
+
 void initValueArray(ValueArray *array) {
   arrayInit(&array->values, sizeof(Value));
 }
@@ -23,8 +83,22 @@ bool VAL_EQUAL(Value a, Value b) {
     return true;
   case VAL_NUMBER:
     return AS_NUMBER(a) == AS_NUMBER(b);
+  case VAL_OBJ: {
+    ObjString *aString = AS_STRING(a);
+    ObjString *bString = AS_STRING(b);
+    return aString->length == bString->length &&
+           memcmp(aString->chars, bString->chars, aString->length) == 0;
+  }
   default:
     return false; // Unreachable.
+  }
+}
+
+void printObject(Value value) {
+  switch (OBJ_TYPE(value)) {
+  case OBJ_STRING:
+    printf("%s", AS_CSTRING(value));
+    break;
   }
 }
 
@@ -38,6 +112,9 @@ void printValue(Value value) {
     break;
   case VAL_NUMBER:
     printf("%g", AS_NUMBER(value));
+    break;
+  case VAL_OBJ:
+    printObject(value);
     break;
   default:
     printf("nil");

@@ -17,24 +17,41 @@ typedef enum {
   VAL_BOOL,
   VAL_NIL,
   VAL_NUMBER,
+  VAL_OBJ,
 } ValueType;
+
+typedef enum {
+  OBJ_STRING,
+} ObjType;
+
+typedef struct Obj {
+  ObjType type;
+  struct Obj *next;
+} Obj;
+
+typedef struct {
+  Obj obj;
+  i32 length;
+  char *chars;
+} ObjString;
 
 typedef struct {
   ValueType type;
   union {
     bool boolean;
     double number;
+    Obj *obj;
   } as;
 } Value;
 
 typedef struct {
-  u32 count;
-  u32 capacity;
-  u32 elementSize;
+  size_t count;
+  size_t capacity;
+  size_t elementSize;
   void *data;
 } Array;
 
-void arrayInit(Array *array, u32 elementSize);
+void arrayInit(Array *array, size_t elementSize);
 void arrayWrite(Array *array, const void *element);
 void arrayFree(Array *array);
 
@@ -91,8 +108,8 @@ void chunkInit(Chunk *chunk);
 void chunkWrite(Chunk *chunk, u8 byte, u32 line);
 void chunkFree(Chunk *chunk);
 void chunkDisassemble(Chunk *chunk, const char *name);
-u32 instructionDisassemble(Chunk *chunk, u32 offset);
-u32 addConstant(Chunk *chunk, Value value);
+size_t instructionDisassemble(Chunk *chunk, size_t offset);
+size_t addConstant(Chunk *chunk, Value value);
 
 Value *getConstantArr(Chunk *chunk);
 u8 *getCodeArr(Chunk *chunk);
@@ -149,7 +166,7 @@ typedef enum {
 typedef struct {
   TokenType type;
   const char *start;
-  u32 length;
+  size_t length;
   u32 line;
 } Token;
 
@@ -172,6 +189,8 @@ typedef struct {
 
   Value stack[STACK_MAX];
   Value *stackTop;
+
+  Obj *objects;
 
   Parser *parser;
   Scanner *scanner;
@@ -201,6 +220,8 @@ typedef struct {
 
 void vmInit(VM *vm);
 void vmFree(VM *vm);
+Value pop(VM *vm);
+void push(VM *vm, Value value);
 InterpretResult interpret(VM *vm, const char *source);
 
 void initScanner(Scanner *scanner, const char *source);
@@ -208,9 +229,18 @@ Token scanToken(Scanner *scanner);
 
 bool compile(VM *vm);
 
+ObjString *copyString(VM *vm, const char *chars, i32 length);
+ObjString *allocateString(VM *vm, char *chars, i32 length);
+ObjString *takeString(VM *vm, char *chars, i32 length);
+void concatenate(VM *vm);
+
 void printValue(Value value);
 
 extern Value NIL_VAL;
+
+bool VAL_EQUAL(Value a, Value b);
+
+// Value constructors and accessors
 Value BOOL_VAL(bool value);
 Value NUMBER_VAL(double value);
 bool AS_BOOL(Value value);
@@ -218,10 +248,36 @@ double AS_NUMBER(Value value);
 bool IS_BOOL(Value value);
 bool IS_NIL(Value value);
 bool IS_NUMBER(Value value);
-bool VAL_EQUAL(Value a, Value b);
+Value OBJ_VAL(Obj *obj);
+bool IS_OBJ(Value value);
+Obj *AS_OBJ(Value value);
+ObjType OBJ_TYPE(Value value);
+bool IS_OBJ_TYPE(Value value, ObjType type);
+bool IS_STRING(Value value);
+ObjString *AS_STRING(Value value);
+char *AS_CSTRING(Value value);
+bool isFalsey(Value value);
+
+void freeObjects(VM *vm);
+
+// Memory management - regular functions (implemented in helper.c)
+void *reallocate(void *pointer, size_t oldSize, size_t newSize);
+void *allocateType(size_t count, size_t elementSize);
+void freeType(void *pointer, size_t size);
+void freeTypeArray(void *pointer, size_t count, size_t elementSize);
+
+// Memory management - wrappers
+void *allocate(size_t size);
+void freePtr(void *pointer);
+void *freeArray(void *pointer, size_t count, size_t elementSize);
+
+// Memory allocation helpers
+void *ALLOCATE(size_t count, size_t elementSize);
+void *ALLOCATE_OBJ(VM *vm, size_t size, ObjType type);
+void FREE(size_t size, void *pointer);
+void FREE_ARRAY(size_t count, size_t elementSize, void *pointer);
 
 void traceExecution(VM *vm);
-
 void debugTokenAdvance(Parser *parser, Token *newToken);
 void debugParsePrecedence(Precedence minPrec, TokenType tokenType,
                           Precedence tokenPrec, bool isPrefix);

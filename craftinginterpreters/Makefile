@@ -37,7 +37,7 @@ test: ${clean} $(TEST_TARGET)
 	
 
 TEST_VM_TARGET = build/test_vm
-TEST_VM_SRC  = clox/test_vm.c clox/debug.c clox/helper.c clox/array.c clox/value.c clox/chunk.c clox/parser.c clox/scanner.c clox/vm.c
+TEST_VM_SRC  = clox/test_vm.c clox/debug.c clox/helper.c clox/value.c clox/chunk.c clox/parser.c clox/scanner.c clox/vm.c
 
 clean_vm:
 	rm -f $(TEST_VM_TARGET)
