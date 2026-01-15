@@ -1,4 +1,5 @@
 #include "clox.h"
+#include <stdio.h>
 
 Value NIL_VAL = {VAL_NIL, {.boolean = false}};
 
@@ -138,4 +139,45 @@ void printValue(Value value) {
   default:
     printf("nil");
   }
+}
+
+void printValueToBuffer(VM *vm, Value value) {
+  char temp[256];
+  size_t len = 0;
+
+  switch (value.type) {
+  case VAL_BOOL:
+    len = snprintf(temp, sizeof(temp), "%s", AS_BOOL(value) ? "true" : "false");
+    break;
+  case VAL_NIL:
+    len = snprintf(temp, sizeof(temp), "nil");
+    break;
+  case VAL_NUMBER:
+    len = snprintf(temp, sizeof(temp), "%g", AS_NUMBER(value));
+    break;
+  case VAL_OBJ:
+    switch (OBJ_TYPE(value)) {
+    case OBJ_STRING:
+      len = snprintf(temp, sizeof(temp), "%s", AS_CSTRING(value));
+      break;
+    }
+    break;
+  default:
+    len = snprintf(temp, sizeof(temp), "nil");
+    break;
+  }
+
+  // Append to buffer
+  if (vm->printBufferLen + len < sizeof(vm->printBuffer) - 1) {
+    memcpy(vm->printBuffer + vm->printBufferLen, temp, len);
+    vm->printBufferLen += len;
+    vm->printBuffer[vm->printBufferLen] = '\0';
+  }
+}
+
+const char *vmGetPrintBuffer(VM *vm) { return vm->printBuffer; }
+
+void vmClearPrintBuffer(VM *vm) {
+  vm->printBuffer[0] = '\0';
+  vm->printBufferLen = 0;
 }

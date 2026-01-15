@@ -8,6 +8,7 @@
 #include <string.h>
 
 #define STACK_MAX 256
+#define UINT8_COUNT (UINT8_MAX + 1)
 
 typedef uint32_t u32;
 typedef int32_t i32;
@@ -110,6 +111,8 @@ typedef enum {
   OP_GET_GLOBAL,
   OP_SET_GLOBAL,
   OP_DEFINE_GLOBAL,
+  OP_GET_LOCAL,
+  OP_SET_LOCAL,
 
   OP_RETURN,
 } OpCode;
@@ -214,6 +217,17 @@ typedef struct {
 } Parser;
 
 typedef struct {
+  Token name;
+  i32 depth;
+} Local;
+
+typedef struct {
+  Local locals[UINT8_COUNT];
+  i32 localCount;
+  i32 scopeDepth;
+} Compiler;
+
+typedef struct {
   Chunk *chunk;
   u8 *ip;
 
@@ -226,6 +240,11 @@ typedef struct {
 
   Parser *parser;
   Scanner *scanner;
+  Compiler *compiler;
+
+  // Print output buffer for testing
+  char printBuffer[4096];
+  size_t printBufferLen;
 } VM;
 
 typedef enum {
@@ -267,6 +286,9 @@ ObjString *takeString(VM *vm, char *chars, i32 length);
 void concatenate(VM *vm);
 
 void printValue(Value value);
+void printValueToBuffer(VM *vm, Value value);
+const char *vmGetPrintBuffer(VM *vm);
+void vmClearPrintBuffer(VM *vm);
 
 extern Value NIL_VAL;
 

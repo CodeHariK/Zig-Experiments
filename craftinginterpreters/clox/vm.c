@@ -36,6 +36,8 @@ void vmInit(VM *vm) {
   vm->objects = NULL;
   initTable(&vm->globals);
   initTable(&vm->strings);
+  vm->printBuffer[0] = '\0';
+  vm->printBufferLen = 0;
 }
 
 void vmFree(VM *vm) {
@@ -170,8 +172,25 @@ static InterpretResult run(VM *vm) {
       break;
 
     case OP_PRINT: {
-      printValue(pop(vm));
-      printf("\n");
+      printValueToBuffer(vm, pop(vm));
+      size_t len = vm->printBufferLen;
+      if (len < sizeof(vm->printBuffer) - 1) {
+        vm->printBuffer[len] = '\n';
+        vm->printBuffer[len + 1] = '\0';
+        vm->printBufferLen++;
+      }
+      break;
+    }
+
+    case OP_GET_LOCAL: {
+      u8 slot = READ_BYTE(vm);
+      push(vm, vm->stack[slot]);
+      break;
+    }
+
+    case OP_SET_LOCAL: {
+      u8 slot = READ_BYTE(vm);
+      vm->stack[slot] = peek(vm, 0);
       break;
     }
 

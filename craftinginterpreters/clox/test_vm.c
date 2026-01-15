@@ -1,23 +1,121 @@
 #include "clox.h"
+#include <string.h>
+
+typedef struct {
+  const char *source;
+  const char *expected;
+  bool expectError;
+} TestCase;
+
+static void replaceNewlinesWithSemicolons(char *str) {
+  for (char *p = str; *p; p++) {
+    if (*p == '\n') {
+      *p = ';';
+    }
+  }
+}
+
+TestCase tests[] = {
+    {"print 1 + 2 * 3;", "7;", false},
+    {"print 1 == 2;", "false;", false},
+    {"print 1 != 2;", "true;", false},
+    {"print 1 > 2;", "false;", false},
+    {"print 1 < 2;", "true;", false},
+    {"print 1 >= 2;", "false;", false},
+    {"print 1 <= 2;", "true;", false},
+    {"!(5 - 4 > 3 * 2 == !nil);", "", false},
+    {"print \"hello\" + \" \" + \"world\";", "hello world;", false},
+    {"var hello = \"hello\"; var world = \"world\"; "
+     "hello = hello + \" \" + world; print hello;",
+     "hello world;", false},
+
+    {"{ var a = 1; var a = 2; print a; }", "", true},
+    {"var a = 1; { var a = 2; print a; } print a;", "2;1;", false},
+    {"var a = 1; print (a = 2) + 3;", "5;", false},
+    {"var a = 1; print a = 2 == 2;", "true;", false},
+    {"var a = 1; { var a = 2; print a; } print a;", "2;1;", false},
+    {"var a = 1; { a = 2; } print a;", "2;", false},
+    {"var a = 1; { var a = 2; a = 3; } print a;", "1;", false},
+};
 
 int main(void) {
-  VM vm;
-  vmInit(&vm);
+  printf("Running %zu test cases...\n\n", sizeof(tests) / sizeof(tests[0]));
 
-  interpret(&vm, "1 + 2 * 3;");
-  interpret(&vm, "1 == 2;");
-  interpret(&vm, "1 != 2;");
-  interpret(&vm, "1 > 2;");
-  interpret(&vm, "1 < 2;");
-  interpret(&vm, "1 >= 2;");
-  interpret(&vm, "1 <= 2;");
-  interpret(&vm, "!(5 - 4 > 3 * 2 == !nil);");
-  interpret(&vm, "\"hello\" + \" \" + \"world\";");
-  interpret(&vm, "print 1 + 2 * 3;");
-  interpret(&vm, "print \"hello\" + \" \" + \"world\";");
-  interpret(&vm, "var hello = \"hello\"; var world = \"world\"; "
-                 "hello = hello + \" \" + world; print hello;");
+  int passCount = 0;
+  int failCount = 0;
+  int passErrorCount = 0;
 
-  vmFree(&vm);
-  return 0;
+  for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+    TestCase *test = &tests[i];
+
+    VM vm;
+    vmInit(&vm);
+    vmClearPrintBuffer(&vm);
+
+    InterpretResult result = interpret(&vm, test->source);
+
+    bool hadError = (result == INTERPRET_COMPILE_ERROR ||
+                     result == INTERPRET_RUNTIME_ERROR);
+
+    // Get actual output from print buffer
+    char actualOutput[4096];
+    strncpy(actualOutput, vmGetPrintBuffer(&vm), sizeof(actualOutput) - 1);
+    actualOutput[sizeof(actualOutput) - 1] = '\0';
+    replaceNewlinesWithSemicolons(actualOutput);
+
+    // Process expected output
+    char expectedOutput[4096];
+    if (test->expected) {
+      strncpy(expectedOutput, test->expected, sizeof(expectedOutput) - 1);
+      expectedOutput[sizeof(expectedOutput) - 1] = '\0';
+      replaceNewlinesWithSemicolons(expectedOutput);
+    } else {
+      expectedOutput[0] = '\0';
+    }
+
+    printf("TEST %zu: %s\n", i + 1, test->source);
+    printf("[RESULT]: %s\n", actualOutput);
+
+    bool passed = false;
+    if (test->expectError) {
+      if (hadError) {
+        printf("[PassError]\n");
+        passed = true;
+        passErrorCount++;
+      } else {
+        printf("[FAIL] Expected error but got success\n");
+        failCount++;
+      }
+    } else {
+      if (hadError) {
+        printf("[FAIL] Expected success but got error\n");
+        failCount++;
+      } else {
+        if (test->expected && strlen(test->expected) > 0) {
+          if (strcmp(actualOutput, expectedOutput) == 0) {
+            printf("[PASS]\n");
+            passed = true;
+            passCount++;
+          } else {
+            printf("[FAIL] Expected: '%s', Got: '%s'\n", expectedOutput,
+                   actualOutput);
+            failCount++;
+          }
+        } else {
+          printf("[PASS]\n");
+          passed = true;
+          passCount++;
+        }
+      }
+    }
+    printf("\n");
+
+    vmFree(&vm);
+    (void)passed; // Suppress unused warning
+  }
+
+  printf("Summary: %d passed, %d failed, %d passError\n", passCount, failCount,
+         passErrorCount);
+
+  return failCount > 0 ? 1 : 0;
 }

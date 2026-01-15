@@ -30,6 +30,12 @@ static size_t simpleInstruction(const char *name, size_t offset) {
   return offset + 1;
 }
 
+static size_t byteInstruction(const char *name, Chunk *chunk, size_t offset) {
+  u8 slot = getCodeArr(chunk)[offset + 1];
+  printf("%-16s %4d\n", name, slot);
+  return offset + 2;
+}
+
 static size_t constantInstruction(const char *name, Chunk *chunk,
                                   size_t offset) {
   u8 constantOffset = getCodeArr(chunk)[offset + 1];
@@ -102,6 +108,12 @@ size_t instructionDisassemble(Chunk *chunk, size_t offset) {
 
   case OP_PRINT:
     return simpleInstruction("OP_PRINT", offset);
+
+  case OP_GET_LOCAL:
+    return byteInstruction("OP_GET_LOCAL", chunk, offset);
+
+  case OP_SET_LOCAL:
+    return byteInstruction("OP_SET_LOCAL", chunk, offset);
 
   case OP_GET_GLOBAL:
     return constantInstruction("OP_GET_GLOBAL", chunk, offset);

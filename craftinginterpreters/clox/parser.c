@@ -7,6 +7,8 @@ static void parseBinary(VM *vm, bool canAssign);
 static void parseLiteral(VM *vm, bool canAssign);
 static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
+static void declaration(VM *vm);
+static void declareVariable(VM *vm);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
@@ -166,6 +168,11 @@ static void emitReturn(VM *vm) { emitByte(vm, OP_RETURN); }
 
 #define DEBUG_PRINT_CODE
 
+static void initCompiler(VM *vm) {
+  vm->compiler->localCount = 0;
+  vm->compiler->scopeDepth = 0;
+}
+
 static void endCompiler(VM *vm) {
   emitReturn(vm);
 
@@ -312,19 +319,65 @@ void parseBinary(VM *vm, bool canAssign) {
   }
 }
 
+static bool identifiersEqual(Token *a, Token *b) {
+  if (a->length != b->length)
+    return false;
+  return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static void addLocal(VM *vm, Token name) {
+  if (vm->compiler->localCount == UINT8_COUNT) {
+    error(vm->parser, "Too many local variables in function.");
+    return;
+  }
+  Local *local = &vm->compiler->locals[vm->compiler->localCount++];
+  local->name = name;
+  local->depth = -1;
+}
+
+static int resolveLocal(VM *vm, Token *name) {
+  for (int i = vm->compiler->localCount - 1; i >= 0; i--) {
+    Local *local = &vm->compiler->locals[i];
+    if (local->depth != -1 && local->depth < vm->compiler->scopeDepth) {
+      break;
+    }
+    if (identifiersEqual(name, &local->name)) {
+      if (local->depth == -1) {
+        error(vm->parser, "Can't read local variable in its own initializer.");
+      }
+      return i;
+    }
+  }
+  return -1;
+}
+
+static void markInitialized(VM *vm) {
+  vm->compiler->locals[vm->compiler->localCount - 1].depth =
+      vm->compiler->scopeDepth;
+}
+
 static u8 identifierConstant(VM *vm, Token *name) {
   return makeConstant(
       vm, OBJ_VAL((Obj *)copyString(vm, name->start, name->length)));
 }
 
 static void namedVariable(VM *vm, Token *name, bool canAssign) {
-  u8 arg = identifierConstant(vm, name);
+  u8 getOp, setOp;
+  int arg = resolveLocal(vm, name);
+  if (arg != -1) {
+    getOp = OP_GET_LOCAL;
+    setOp = OP_SET_LOCAL;
+  } else {
+    arg = identifierConstant(vm, name);
+    getOp = OP_GET_GLOBAL;
+    setOp = OP_SET_GLOBAL;
+  }
 
   if (canAssign && match(vm, TOKEN_EQUAL)) {
     parseExpression(vm);
-    emitBytes(vm, OP_SET_GLOBAL, arg);
+    emitBytes(vm, setOp, (u8)arg);
   } else {
-    emitBytes(vm, OP_GET_GLOBAL, arg);
+    emitBytes(vm, getOp, (u8)arg);
   }
 }
 
@@ -350,9 +403,34 @@ static void expressionStatement(VM *vm) {
   emitByte(vm, OP_POP);
 }
 
+static void block(VM *vm) {
+  while (!check(vm, TOKEN_RIGHT_BRACE) && !check(vm, TOKEN_EOF)) {
+    declaration(vm);
+  }
+
+  consume(vm, TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+static void beginScope(VM *vm) { vm->compiler->scopeDepth++; }
+
+static void endScope(VM *vm) {
+  vm->compiler->scopeDepth--;
+
+  while (vm->compiler->localCount > 0 &&
+         vm->compiler->locals[vm->compiler->localCount - 1].depth >
+             vm->compiler->scopeDepth) {
+    emitByte(vm, OP_POP);
+    vm->compiler->localCount--;
+  }
+}
+
 static void statement(VM *vm) {
   if (match(vm, TOKEN_PRINT)) {
     printStatement(vm);
+  } else if (match(vm, TOKEN_LEFT_BRACE)) {
+    beginScope(vm);
+    block(vm);
+    endScope(vm);
   } else {
     expressionStatement(vm);
   }
@@ -363,10 +441,39 @@ static void statement(VM *vm) {
 
 static u8 parseVariableDeclaration(VM *vm, const char *errorMessage) {
   consume(vm, TOKEN_IDENTIFIER, errorMessage);
+
+  declareVariable(vm);
+  if (vm->compiler->scopeDepth > 0)
+    return 0;
+
   return identifierConstant(vm, &vm->parser->previous);
 }
 
+static void declareVariable(VM *vm) {
+  if (vm->compiler->scopeDepth == 0)
+    return;
+
+  Token *name = &vm->parser->previous;
+  for (int i = vm->compiler->localCount - 1; i >= 0; i--) {
+    Local *local = &vm->compiler->locals[i];
+    if (local->depth != -1 && local->depth < vm->compiler->scopeDepth) {
+      break;
+    }
+
+    if (identifiersEqual(name, &local->name)) {
+      error(vm->parser, "Already a variable with this name in this scope.");
+    }
+  }
+
+  addLocal(vm, *name);
+}
+
 static void defineVariable(VM *vm, u8 global) {
+  if (vm->compiler->scopeDepth > 0) {
+    markInitialized(vm);
+    return;
+  }
+
   emitBytes(vm, OP_DEFINE_GLOBAL, global);
 }
 
@@ -395,6 +502,10 @@ static void declaration(VM *vm) {
 }
 
 bool compile(VM *vm) {
+  Compiler compiler;
+  vm->compiler = &compiler;
+  initCompiler(vm);
+
   advance(vm);
   while (!match(vm, TOKEN_EOF)) {
     declaration(vm);

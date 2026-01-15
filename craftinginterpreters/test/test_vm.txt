@@ -1,4 +1,7 @@
-[PARSER] Advanced: previous='' (LEFT_PAREN), current='1' (NUMBER)
+Running 17 test cases...
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='+' (PLUS)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -33,7 +36,7 @@
 0004    | OP_CONSTANT         2 '3'
 0006    | OP_MULTIPLY
 0007    | OP_ADD
-0008    | OP_POP
+0008    | OP_PRINT
 0009    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -46,10 +49,15 @@ STACK | 1 | 2 | 3 |
 STACK | 1 | 6 |
 0007    | OP_ADD
 STACK | 7 |
-0008    | OP_POP
+0008    | OP_PRINT
 STACK |
 0009    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 1: print 1 + 2 * 3;
+[RESULT]: 7;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='==' (EQUAL_EQUAL)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -72,7 +80,7 @@ STACK |
 0000    1 OP_CONSTANT         0 '1'
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_EQUAL
-0005    | OP_POP
+0005    | OP_PRINT
 0006    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -81,10 +89,15 @@ STACK | 1 |
 STACK | 1 | 2 |
 0004    | OP_EQUAL
 STACK | false |
-0005    | OP_POP
+0005    | OP_PRINT
 STACK |
 0006    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 2: print 1 == 2;
+[RESULT]: false;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='!=' (NOT_EQUAL)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -108,7 +121,7 @@ STACK |
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_EQUAL
 0005    | OP_NOT
-0006    | OP_POP
+0006    | OP_PRINT
 0007    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -119,10 +132,15 @@ STACK | 1 | 2 |
 STACK | false |
 0005    | OP_NOT
 STACK | true |
-0006    | OP_POP
+0006    | OP_PRINT
 STACK |
 0007    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 3: print 1 != 2;
+[RESULT]: true;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='>' (GREATER)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -145,7 +163,7 @@ STACK |
 0000    1 OP_CONSTANT         0 '1'
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_GREATER
-0005    | OP_POP
+0005    | OP_PRINT
 0006    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -154,10 +172,15 @@ STACK | 1 |
 STACK | 1 | 2 |
 0004    | OP_GREATER
 STACK | false |
-0005    | OP_POP
+0005    | OP_PRINT
 STACK |
 0006    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 4: print 1 > 2;
+[RESULT]: false;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='<' (LESS)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -180,7 +203,7 @@ STACK |
 0000    1 OP_CONSTANT         0 '1'
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_LESS
-0005    | OP_POP
+0005    | OP_PRINT
 0006    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -189,10 +212,15 @@ STACK | 1 |
 STACK | 1 | 2 |
 0004    | OP_LESS
 STACK | true |
-0005    | OP_POP
+0005    | OP_PRINT
 STACK |
 0006    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 5: print 1 < 2;
+[RESULT]: true;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='>=' (GREATER_EQUAL)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -216,7 +244,7 @@ STACK |
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_LESS
 0005    | OP_NOT
-0006    | OP_POP
+0006    | OP_PRINT
 0007    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -227,10 +255,15 @@ STACK | 1 | 2 |
 STACK | true |
 0005    | OP_NOT
 STACK | false |
-0006    | OP_POP
+0006    | OP_PRINT
 STACK |
 0007    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='1' (NUMBER)
+TEST 6: print 1 >= 2;
+[RESULT]: false;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='1' (NUMBER), current='<=' (LESS_EQUAL)
 [PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -254,7 +287,7 @@ STACK |
 0002    | OP_CONSTANT         1 '2'
 0004    | OP_GREATER
 0005    | OP_NOT
-0006    | OP_POP
+0006    | OP_PRINT
 0007    | OP_RETURN
 STACK |
 0000    1 OP_CONSTANT         0 '1'
@@ -265,10 +298,14 @@ STACK | 1 | 2 |
 STACK | false |
 0005    | OP_NOT
 STACK | true |
-0006    | OP_POP
+0006    | OP_PRINT
 STACK |
 0007    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='!' (NOT)
+TEST 7: print 1 <= 2;
+[RESULT]: true;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='!' (NOT)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='!' (NOT), current='(' (LEFT_PAREN)
 [PARSER] Rule lookup: token=NOT, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
@@ -376,111 +413,11 @@ STACK | true |
 0015    | OP_POP
 STACK |
 0016    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='"hello"' (STRING)
-[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
-[PARSER] Advanced: previous='"hello"' (STRING), current='+' (PLUS)
-[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=STRING
-[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
-[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
-[PARSER] Advanced: previous='+' (PLUS), current='" "' (STRING)
-[PARSER] Calling infix rule for token=PLUS
-[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
-[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
-[PARSER] Advanced: previous='" "' (STRING), current='+' (PLUS)
-[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=STRING
-[PARSER] parsePrecedence: minPrec=FACTOR, token=STRING, tokenPrec=NONE, isPrefix=true
-[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
-[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
-[PARSER] Advanced: previous='+' (PLUS), current='"world"' (STRING)
-[PARSER] Calling infix rule for token=PLUS
-[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
-[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
-[PARSER] Advanced: previous='"world"' (STRING), current=';' (SEMICOLON)
-[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=STRING
-[PARSER] parsePrecedence: minPrec=FACTOR, token=STRING, tokenPrec=NONE, isPrefix=true
-[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
-[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
-[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
-[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
-== code ==
-0000    1 OP_CONSTANT         0 'hello'
-0002    | OP_CONSTANT         1 ' '
-0004    | OP_ADD
-0005    | OP_CONSTANT         2 'world'
-0007    | OP_ADD
-0008    | OP_POP
-0009    | OP_RETURN
-STACK |
-0000    1 OP_CONSTANT         0 'hello'
-STACK | hello |
-0002    | OP_CONSTANT         1 ' '
-STACK | hello |   |
-0004    | OP_ADD
-STACK | hello  |
-0005    | OP_CONSTANT         2 'world'
-STACK | hello  | world |
-0007    | OP_ADD
-STACK | hello world |
-0008    | OP_POP
-STACK |
-0009    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='print' (PRINT)
-[PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
-[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
-[PARSER] Advanced: previous='1' (NUMBER), current='+' (PLUS)
-[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=NUMBER
-[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
-[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
-[PARSER] Advanced: previous='+' (PLUS), current='2' (NUMBER)
-[PARSER] Calling infix rule for token=PLUS
-[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
-[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
-[PARSER] Advanced: previous='2' (NUMBER), current='*' (STAR)
-[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=NUMBER
-[PARSER] parsePrecedence: minPrec=FACTOR, token=NUMBER, tokenPrec=NONE, isPrefix=true
-[PARSER] Precedence check: minPrec=FACTOR <= currentPrec=FACTOR (STAR) -> CONTINUE
-[PARSER] Advanced: previous='*' (STAR), current='3' (NUMBER)
-[PARSER] Calling infix rule for token=STAR
-[PARSER] parsePrecedence: minPrec=FACTOR, token=STAR, tokenPrec=FACTOR, isPrefix=false
-[PARSER] >>> Entering parsePrecedence with minPrec=UNARY
-[PARSER] Advanced: previous='3' (NUMBER), current=';' (SEMICOLON)
-[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
-[PARSER] Calling prefix rule for token=NUMBER
-[PARSER] parsePrecedence: minPrec=UNARY, token=NUMBER, tokenPrec=NONE, isPrefix=true
-[PARSER] <<< Exiting parsePrecedence with minPrec=UNARY
-[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
-[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
-[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
-[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
-== code ==
-0000    1 OP_CONSTANT         0 '1'
-0002    | OP_CONSTANT         1 '2'
-0004    | OP_CONSTANT         2 '3'
-0006    | OP_MULTIPLY
-0007    | OP_ADD
-0008    | OP_PRINT
-0009    | OP_RETURN
-STACK |
-0000    1 OP_CONSTANT         0 '1'
-STACK | 1 |
-0002    | OP_CONSTANT         1 '2'
-STACK | 1 | 2 |
-0004    | OP_CONSTANT         2 '3'
-STACK | 1 | 2 | 3 |
-0006    | OP_MULTIPLY
-STACK | 1 | 6 |
-0007    | OP_ADD
-STACK | 7 |
-0008    | OP_PRINT
-7
-STACK |
-0009    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='print' (PRINT)
+TEST 8: !(5 - 4 > 3 * 2 == !nil);
+[RESULT]: 
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='print' (PRINT)
 [PARSER] Advanced: previous='print' (PRINT), current='"hello"' (STRING)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='"hello"' (STRING), current='+' (PLUS)
@@ -530,10 +467,13 @@ STACK | hello  | world |
 0007    | OP_ADD
 STACK | hello world |
 0008    | OP_PRINT
-hello world
 STACK |
 0009    | OP_RETURN
-[PARSER] Advanced: previous=EOF (EOF), current='var' (VAR)
+TEST 9: print "hello" + " " + "world";
+[RESULT]: hello world;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
 [PARSER] Advanced: previous='var' (VAR), current='hello' (IDENTIFIER)
 [PARSER] Advanced: previous='hello' (IDENTIFIER), current='=' (EQUAL)
 [PARSER] Advanced: previous='=' (EQUAL), current='"hello"' (STRING)
@@ -638,6 +578,476 @@ STACK |
 0019    | OP_GET_GLOBAL       8 'hello'
 STACK | hello world |
 0021    | OP_PRINT
-hello world
 STACK |
 0022    | OP_RETURN
+TEST 10: var hello = "hello"; var world = "world"; hello = hello + " " + world; print hello;
+[RESULT]: hello world;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+======================Synchronizing======================
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+TEST 11: { var a = 1; var a = 2; print a; }
+[RESULT]: 
+[PassError]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         2 '2'
+0006    | OP_GET_LOCAL        0
+0008    | OP_PRINT
+0009    | OP_POP
+0010    | OP_GET_GLOBAL       3 'a'
+0012    | OP_PRINT
+0013    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         2 '2'
+STACK | 2 |
+0006    | OP_GET_LOCAL        0
+STACK | 2 | 2 |
+0008    | OP_PRINT
+STACK | 2 |
+0009    | OP_POP
+STACK |
+0010    | OP_GET_GLOBAL       3 'a'
+STACK | 1 |
+0012    | OP_PRINT
+STACK |
+0013    | OP_RETURN
+TEST 12: var a = 1; { var a = 2; print a; } print a;
+[RESULT]: 2;1;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='(' (LEFT_PAREN)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='a' (IDENTIFIER)
+[PARSER] Rule lookup: token=LEFT_PAREN, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=NONE, isPrefix=true
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='+' (PLUS)
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='3' (NUMBER)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='3' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=FACTOR, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         3 '2'
+0006    | OP_SET_GLOBAL       2 'a'
+0008    | OP_CONSTANT         4 '3'
+0010    | OP_ADD
+0011    | OP_PRINT
+0012    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         3 '2'
+STACK | 2 |
+0006    | OP_SET_GLOBAL       2 'a'
+STACK | 2 |
+0008    | OP_CONSTANT         4 '3'
+STACK | 2 | 3 |
+0010    | OP_ADD
+STACK | 5 |
+0011    | OP_PRINT
+STACK |
+0012    | OP_RETURN
+TEST 13: var a = 1; print (a = 2) + 3;
+[RESULT]: 5;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current='==' (EQUAL_EQUAL)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=EQUALITY (EQUAL_EQUAL) -> CONTINUE
+[PARSER] Advanced: previous='==' (EQUAL_EQUAL), current='2' (NUMBER)
+[PARSER] Calling infix rule for token=EQUAL_EQUAL
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=EQUAL_EQUAL, tokenPrec=EQUALITY, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=COMPARISON
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=COMPARISON, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=COMPARISON
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         3 '2'
+0006    | OP_CONSTANT         4 '2'
+0008    | OP_EQUAL
+0009    | OP_SET_GLOBAL       2 'a'
+0011    | OP_PRINT
+0012    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         3 '2'
+STACK | 2 |
+0006    | OP_CONSTANT         4 '2'
+STACK | 2 | 2 |
+0008    | OP_EQUAL
+STACK | true |
+0009    | OP_SET_GLOBAL       2 'a'
+STACK | true |
+0011    | OP_PRINT
+STACK |
+0012    | OP_RETURN
+TEST 14: var a = 1; print a = 2 == 2;
+[RESULT]: true;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         2 '2'
+0006    | OP_GET_LOCAL        0
+0008    | OP_PRINT
+0009    | OP_POP
+0010    | OP_GET_GLOBAL       3 'a'
+0012    | OP_PRINT
+0013    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         2 '2'
+STACK | 2 |
+0006    | OP_GET_LOCAL        0
+STACK | 2 | 2 |
+0008    | OP_PRINT
+STACK | 2 |
+0009    | OP_POP
+STACK |
+0010    | OP_GET_GLOBAL       3 'a'
+STACK | 1 |
+0012    | OP_PRINT
+STACK |
+0013    | OP_RETURN
+TEST 15: var a = 1; { var a = 2; print a; } print a;
+[RESULT]: 2;1;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         3 '2'
+0006    | OP_SET_GLOBAL       2 'a'
+0008    | OP_POP
+0009    | OP_GET_GLOBAL       4 'a'
+0011    | OP_PRINT
+0012    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         3 '2'
+STACK | 2 |
+0006    | OP_SET_GLOBAL       2 'a'
+STACK | 2 |
+0008    | OP_POP
+STACK |
+0009    | OP_GET_GLOBAL       4 'a'
+STACK | 2 |
+0011    | OP_PRINT
+STACK |
+0012    | OP_RETURN
+TEST 16: var a = 1; { a = 2; } print a;
+[RESULT]: 2;
+[PASS]
+
+[PARSER] Advanced: previous='' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='3' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='3' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='a' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== code ==
+0000    1 OP_CONSTANT         1 '1'
+0002    | OP_DEFINE_GLOBAL    0 'a'
+0004    | OP_CONSTANT         2 '2'
+0006    | OP_CONSTANT         3 '3'
+0008    | OP_SET_LOCAL        0
+0010    | OP_POP
+0011    | OP_POP
+0012    | OP_GET_GLOBAL       4 'a'
+0014    | OP_PRINT
+0015    | OP_RETURN
+STACK |
+0000    1 OP_CONSTANT         1 '1'
+STACK | 1 |
+0002    | OP_DEFINE_GLOBAL    0 'a'
+STACK |
+0004    | OP_CONSTANT         2 '2'
+STACK | 2 |
+0006    | OP_CONSTANT         3 '3'
+STACK | 2 | 3 |
+0008    | OP_SET_LOCAL        0
+STACK | 3 | 3 |
+0010    | OP_POP
+STACK | 3 |
+0011    | OP_POP
+STACK |
+0012    | OP_GET_GLOBAL       4 'a'
+STACK | 1 |
+0014    | OP_PRINT
+STACK |
+0015    | OP_RETURN
+TEST 17: var a = 1; { var a = 2; a = 3; } print a;
+[RESULT]: 1;
+[PASS]
+
+Summary: 16 passed, 0 failed, 1 passError
