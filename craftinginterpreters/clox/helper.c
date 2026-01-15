@@ -130,8 +130,8 @@ void freeTable(Table *table) {
   initTable(table);
 }
 
-static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
-  uint32_t index = key->hash % capacity;
+static Entry *findEntry(Entry *entries, i32 capacity, ObjString *key) {
+  u32 index = key->hash % capacity;
   Entry *tombstone = NULL;
 
   for (;;) {
@@ -155,16 +155,16 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
   }
 }
 
-static void adjustCapacity(Table *table, int capacity) {
+static void adjustCapacity(Table *table, i32 capacity) {
   Entry *entries = (Entry *)ALLOCATE(capacity, sizeof(Entry));
-  for (int i = 0; i < capacity; i++) {
+  for (i32 i = 0; i < capacity; i++) {
     entries[i].key = NULL;
     entries[i].value = NIL_VAL;
   }
 
   table->count = 0;
 
-  for (int i = 0; i < table->capacity; i++) {
+  for (i32 i = 0; i < table->capacity; i++) {
     Entry *entry = &table->entries[i];
     if (entry->key == NULL)
       continue;
@@ -196,7 +196,7 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
 
 bool tableSet(Table *table, ObjString *key, Value value) {
   if (table->count + 1 > table->capacity * ARRAY_MAX_LOAD) {
-    int capacity = table->capacity < 8 ? 8 : table->capacity * 2;
+    i32 capacity = table->capacity < 8 ? 8 : table->capacity * 2;
     adjustCapacity(table, capacity);
   }
 
@@ -213,7 +213,7 @@ bool tableSet(Table *table, ObjString *key, Value value) {
 }
 
 void tableAddAll(Table *from, Table *to) {
-  for (int i = 0; i < from->capacity; i++) {
+  for (i32 i = 0; i < from->capacity; i++) {
     Entry *entry = &from->entries[i];
     if (entry->key != NULL) {
       tableSet(to, entry->key, entry->value);
@@ -236,12 +236,12 @@ bool tableDelete(Table *table, ObjString *key) {
   return true;
 }
 
-ObjString *tableFindString(Table *table, const char *chars, int length,
-                           uint32_t hash) {
+ObjString *tableFindString(Table *table, const char *chars, i32 length,
+                           u32 hash) {
   if (table->count == 0)
     return NULL;
 
-  uint32_t index = hash % table->capacity;
+  u32 index = hash % table->capacity;
   for (;;) {
     Entry *entry = &table->entries[index];
     if (entry->key == NULL) {

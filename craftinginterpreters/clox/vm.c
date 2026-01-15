@@ -3,6 +3,14 @@
 
 static inline u8 READ_BYTE(VM *vm) { return *vm->ip++; }
 
+static inline Value READ_CONSTANT(VM *vm) {
+  return getConstantArr(vm->chunk)[READ_BYTE(vm)];
+}
+
+static inline ObjString *READ_STRING(VM *vm) {
+  return AS_STRING(READ_CONSTANT(vm));
+}
+
 static void resetStack(VM *vm) {
   vm->stackTop = vm->stack;
   vm->objects = NULL;
@@ -26,10 +34,12 @@ void vmInit(VM *vm) {
   vm->ip = NULL;
   vm->stackTop = vm->stack;
   vm->objects = NULL;
+  initTable(&vm->globals);
   initTable(&vm->strings);
 }
 
 void vmFree(VM *vm) {
+  freeTable(&vm->globals);
   freeTable(&vm->strings);
   freeObjects(vm);
 }
@@ -56,7 +66,7 @@ static InterpretResult run(VM *vm) {
 
     traceExecution(vm);
 
-    uint8_t instruction;
+    u8 instruction;
     switch (instruction = READ_BYTE(vm)) {
     case OP_CONSTANT: {
       Value constant = getConstantArr(vm->chunk)[READ_BYTE(vm)];
@@ -155,9 +165,48 @@ static InterpretResult run(VM *vm) {
       break;
     }
 
-    case OP_RETURN: {
+    case OP_POP:
+      pop(vm);
+      break;
+
+    case OP_PRINT: {
       printValue(pop(vm));
       printf("\n");
+      break;
+    }
+
+    case OP_GET_GLOBAL: {
+      ObjString *name = READ_STRING(vm);
+      Value value;
+      if (!tableGet(&vm->globals, name, &value)) {
+        runtimeError(vm, "Undefined variable '%.*s'.", (i32)name->length,
+                     name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(vm, value);
+      break;
+    }
+
+    case OP_SET_GLOBAL: {
+      ObjString *name = READ_STRING(vm);
+      if (tableSet(&vm->globals, name, peek(vm, 0))) {
+        tableDelete(&vm->globals, name);
+        runtimeError(vm, "Undefined variable '%.*s'.", (i32)name->length,
+                     name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      break;
+    }
+
+    case OP_DEFINE_GLOBAL: {
+      ObjString *name = READ_STRING(vm);
+      tableSet(&vm->globals, name, peek(vm, 0));
+      pop(vm);
+      break;
+    }
+
+    case OP_RETURN: {
+      // Exit interpreter.
       return INTERPRET_OK;
     }
     }

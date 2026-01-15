@@ -6,10 +6,10 @@ Obj *allocateObject(VM *vm, size_t size, ObjType type) {
   return ALLOCATE_OBJ(vm, size, type);
 }
 
-static uint32_t hashString(const char *key, int length) {
-  uint32_t hash = 2166136261u;
-  for (int i = 0; i < length; i++) {
-    hash ^= (uint8_t)key[i];
+static u32 hashString(const char *key, i32 length) {
+  u32 hash = 2166136261u;
+  for (i32 i = 0; i < length; i++) {
+    hash ^= (u8)key[i];
     hash *= 16777619;
   }
   return hash;

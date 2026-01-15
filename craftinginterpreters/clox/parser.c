@@ -1,11 +1,12 @@
 #include "clox.h"
 
-static void parseNumber(VM *vm);
-static void parseUnary(VM *vm);
-static void parseGrouping(VM *vm);
-static void parseBinary(VM *vm);
-static void parseLiteral(VM *vm);
-static void parseString(VM *vm);
+static void parseNumber(VM *vm, bool canAssign);
+static void parseUnary(VM *vm, bool canAssign);
+static void parseGrouping(VM *vm, bool canAssign);
+static void parseBinary(VM *vm, bool canAssign);
+static void parseLiteral(VM *vm, bool canAssign);
+static void parseString(VM *vm, bool canAssign);
+static void parseVariable(VM *vm, bool canAssign);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
@@ -27,7 +28,7 @@ ParseRule rules[] = {
     [TOKEN_GREATER_EQUAL] = {NULL, parseBinary, PREC_COMPARISON},
     [TOKEN_LESS] = {NULL, parseBinary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {NULL, parseBinary, PREC_COMPARISON},
-    [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IDENTIFIER] = {parseVariable, NULL, PREC_NONE},
     [TOKEN_STRING] = {parseString, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {parseNumber, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, NULL, PREC_NONE},
@@ -91,6 +92,17 @@ static void advance(VM *vm) {
   debugTokenAdvance(vm->parser, &vm->parser->current);
 }
 
+static bool check(VM *vm, TokenType type) {
+  return vm->parser->current.type == type;
+}
+
+static bool match(VM *vm, TokenType type) {
+  if (!check(vm, type))
+    return false;
+  advance(vm);
+  return true;
+}
+
 static void consume(VM *vm, TokenType type, const char *message) {
   if (vm->parser->current.type == type) {
     advance(vm);
@@ -98,6 +110,33 @@ static void consume(VM *vm, TokenType type, const char *message) {
   }
 
   errorAtCurrent(vm->parser, message);
+}
+
+static void synchronize(VM *vm) {
+  vm->parser->panicMode = false;
+
+  printf("======================Synchronizing======================\n");
+
+  while (vm->parser->current.type != TOKEN_EOF) {
+    if (vm->parser->previous.type == TOKEN_SEMICOLON)
+      return;
+    switch (vm->parser->current.type) {
+    case TOKEN_CLASS:
+    case TOKEN_FUN:
+    case TOKEN_VAR:
+    case TOKEN_FOR:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_PRINT:
+    case TOKEN_RETURN:
+      return;
+
+    default:; // Do nothing.
+    }
+
+    advance(vm);
+  }
+  // If we're at EOF, we've synchronized (nothing more to skip)
 }
 
 static void emitByte(VM *vm, u8 byte) {
@@ -153,10 +192,11 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
     return;
   }
 
+  bool canAssign = precedence <= PREC_ASSIGNMENT;
   debugPrefixCall(vm->parser->previous.type);
   debugParsePrecedence(precedence, vm->parser->previous.type, rule->precedence,
                        true);
-  prefixRule(vm);
+  prefixRule(vm, canAssign);
 
   while (precedence <= getRule(vm->parser->current.type)->precedence) {
     ParseRule *currentRule = getRule(vm->parser->current.type);
@@ -169,7 +209,11 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
     debugInfixCall(vm->parser->previous.type);
     debugParsePrecedence(precedence, vm->parser->previous.type,
                          infixRule->precedence, false);
-    infixRule->infix(vm);
+    infixRule->infix(vm, canAssign);
+  }
+
+  if (canAssign && match(vm, TOKEN_EQUAL)) {
+    error(vm->parser, "Invalid assignment target.");
   }
 
   debugExitParsePrecedence(precedence);
@@ -177,7 +221,8 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
 
 static void parseExpression(VM *vm) { parsePrecedence(vm, PREC_ASSIGNMENT); }
 
-static void parseLiteral(VM *vm) {
+static void parseLiteral(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   switch (vm->parser->previous.type) {
   case TOKEN_FALSE:
     emitByte(vm, OP_FALSE);
@@ -193,17 +238,20 @@ static void parseLiteral(VM *vm) {
   }
 }
 
-void parseNumber(VM *vm) {
+void parseNumber(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   double value = strtod(vm->parser->previous.start, NULL);
   emitConstant(vm, NUMBER_VAL(value));
 }
 
-void parseGrouping(VM *vm) {
+void parseGrouping(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   parseExpression(vm);
   consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-void parseUnary(VM *vm) {
+void parseUnary(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   TokenType operatorType = vm->parser->previous.type;
 
   // Compile the operand.
@@ -222,7 +270,8 @@ void parseUnary(VM *vm) {
   }
 }
 
-void parseBinary(VM *vm) {
+void parseBinary(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   TokenType operatorType = vm->parser->previous.type;
   ParseRule *rule = getRule(operatorType);
   parsePrecedence(vm, (Precedence)(rule->precedence + 1));
@@ -263,16 +312,93 @@ void parseBinary(VM *vm) {
   }
 }
 
-static void parseString(VM *vm) {
+static u8 identifierConstant(VM *vm, Token *name) {
+  return makeConstant(
+      vm, OBJ_VAL((Obj *)copyString(vm, name->start, name->length)));
+}
+
+static void namedVariable(VM *vm, Token *name, bool canAssign) {
+  u8 arg = identifierConstant(vm, name);
+
+  if (canAssign && match(vm, TOKEN_EQUAL)) {
+    parseExpression(vm);
+    emitBytes(vm, OP_SET_GLOBAL, arg);
+  } else {
+    emitBytes(vm, OP_GET_GLOBAL, arg);
+  }
+}
+
+static void parseVariable(VM *vm, bool canAssign) {
+  namedVariable(vm, &vm->parser->previous, canAssign);
+}
+
+static void parseString(VM *vm, bool canAssign) {
+  (void)canAssign; // Unused
   emitConstant(vm, OBJ_VAL((Obj *)copyString(vm, vm->parser->previous.start + 1,
                                              vm->parser->previous.length - 2)));
 }
 
-bool compile(VM *vm) {
-
-  advance(vm);
+static void printStatement(VM *vm) {
   parseExpression(vm);
-  consume(vm, TOKEN_EOF, "Expect end of expression.");
+  consume(vm, TOKEN_SEMICOLON, "Expect ';' after value.");
+  emitByte(vm, OP_PRINT);
+}
+
+static void expressionStatement(VM *vm) {
+  parseExpression(vm);
+  consume(vm, TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emitByte(vm, OP_POP);
+}
+
+static void statement(VM *vm) {
+  if (match(vm, TOKEN_PRINT)) {
+    printStatement(vm);
+  } else {
+    expressionStatement(vm);
+  }
+
+  if (vm->parser->panicMode)
+    synchronize(vm);
+}
+
+static u8 parseVariableDeclaration(VM *vm, const char *errorMessage) {
+  consume(vm, TOKEN_IDENTIFIER, errorMessage);
+  return identifierConstant(vm, &vm->parser->previous);
+}
+
+static void defineVariable(VM *vm, u8 global) {
+  emitBytes(vm, OP_DEFINE_GLOBAL, global);
+}
+
+static void varDeclaration(VM *vm) {
+  u8 global = parseVariableDeclaration(vm, "Expect variable name.");
+
+  if (match(vm, TOKEN_EQUAL)) {
+    parseExpression(vm);
+  } else {
+    emitByte(vm, OP_NIL);
+  }
+  consume(vm, TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+  defineVariable(vm, global);
+}
+
+static void declaration(VM *vm) {
+  if (match(vm, TOKEN_VAR)) {
+    varDeclaration(vm);
+  } else {
+    statement(vm);
+  }
+
+  if (vm->parser->panicMode)
+    synchronize(vm);
+}
+
+bool compile(VM *vm) {
+  advance(vm);
+  while (!match(vm, TOKEN_EOF)) {
+    declaration(vm);
+  }
   endCompiler(vm);
   return !vm->parser->hadError;
 }

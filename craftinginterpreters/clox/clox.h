@@ -51,8 +51,8 @@ typedef struct {
 } Entry;
 
 typedef struct {
-  int count;
-  int capacity;
+  i32 count;
+  i32 capacity;
   Entry *entries;
 } Table;
 
@@ -64,8 +64,8 @@ bool tableGet(Table *table, ObjString *key, Value *value);
 bool tableSet(Table *table, ObjString *key, Value value);
 bool tableDelete(Table *table, ObjString *key);
 void tableAddAll(Table *from, Table *to);
-ObjString *tableFindString(Table *table, const char *chars, int length,
-                           uint32_t hash);
+ObjString *tableFindString(Table *table, const char *chars, i32 length,
+                           u32 hash);
 
 typedef struct {
   size_t count;
@@ -103,6 +103,13 @@ typedef enum {
   // Unary operators
   OP_NOT,
   OP_NEGATE,
+
+  OP_POP,
+  OP_PRINT,
+
+  OP_GET_GLOBAL,
+  OP_SET_GLOBAL,
+  OP_DEFINE_GLOBAL,
 
   OP_RETURN,
 } OpCode;
@@ -213,6 +220,7 @@ typedef struct {
   Value stack[STACK_MAX];
   Value *stackTop;
 
+  Table globals;
   Table strings;
   Obj *objects;
 
@@ -234,7 +242,7 @@ typedef enum {
   PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(VM *vm);
+typedef void (*ParseFn)(VM *vm, bool canAssign);
 
 typedef struct {
   ParseFn prefix;

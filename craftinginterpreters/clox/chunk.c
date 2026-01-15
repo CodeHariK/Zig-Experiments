@@ -30,7 +30,8 @@ static size_t simpleInstruction(const char *name, size_t offset) {
   return offset + 1;
 }
 
-static size_t constantInstruction(const char *name, Chunk *chunk, size_t offset) {
+static size_t constantInstruction(const char *name, Chunk *chunk,
+                                  size_t offset) {
   u8 constantOffset = getCodeArr(chunk)[offset + 1];
   printf("%-16s %4d '", name, constantOffset);
   printValue(getConstantArr(chunk)[constantOffset]);
@@ -95,6 +96,21 @@ size_t instructionDisassemble(Chunk *chunk, size_t offset) {
     return simpleInstruction("OP_NOT", offset);
   case OP_NEGATE:
     return simpleInstruction("OP_NEGATE", offset);
+
+  case OP_POP:
+    return simpleInstruction("OP_POP", offset);
+
+  case OP_PRINT:
+    return simpleInstruction("OP_PRINT", offset);
+
+  case OP_GET_GLOBAL:
+    return constantInstruction("OP_GET_GLOBAL", chunk, offset);
+
+  case OP_SET_GLOBAL:
+    return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+
+  case OP_DEFINE_GLOBAL:
+    return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
 
   case OP_RETURN:
     return simpleInstruction("OP_RETURN", offset);
