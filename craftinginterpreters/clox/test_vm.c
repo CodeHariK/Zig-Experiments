@@ -120,6 +120,16 @@ TestCase tests[] = {
     // Error cases
     {"return 1;", "", true},            // Can't return from top-level
     {"fun foo() {} foo(1);", "", true}, // Wrong arity
+
+    // Classes and instances
+    {"class Foo {} print Foo;", "Foo\n", false},
+    {"class Foo {} var foo = Foo(); print foo;", "Foo instance\n", false},
+    {"class Foo {} var foo = Foo(); foo.bar = 42; print foo.bar;", "42\n",
+     false},
+    {"class Foo {} var foo = Foo(); foo.x = 1; foo.y = 2; print foo.x + foo.y;",
+     "3\n", false},
+    {"class Foo {} var foo = Foo(); foo.bar = \"baz\"; print foo.bar;", "baz\n",
+     false},
 };
 
 int main(void) {

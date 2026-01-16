@@ -22,6 +22,8 @@ typedef struct ObjString ObjString;
 typedef struct ObjFunction ObjFunction;
 typedef struct ObjClosure ObjClosure;
 typedef struct ObjUpvalue ObjUpvalue;
+typedef struct ObjClass ObjClass;
+typedef struct ObjInstance ObjInstance;
 
 typedef enum {
   VAL_BOOL,
@@ -102,6 +104,11 @@ typedef enum {
   OP_CALL,
   OP_CLOSURE,
   OP_CLOSE_UPVALUE,
+
+  OP_CLASS,
+  OP_GET_PROPERTY,
+  OP_SET_PROPERTY,
+
   OP_RETURN,
 } OpCode;
 
@@ -112,8 +119,10 @@ typedef struct {
 } Chunk;
 
 typedef enum {
+  OBJ_CLASS,
   OBJ_CLOSURE,
   OBJ_FUNCTION,
+  OBJ_INSTANCE,
   OBJ_NATIVE,
   OBJ_STRING,
   OBJ_UPVALUE,
@@ -171,6 +180,17 @@ typedef struct {
   i32 capacity;
   Entry *entries;
 } Table;
+
+struct ObjClass {
+  Obj obj;
+  ObjString *name;
+};
+
+struct ObjInstance {
+  Obj obj;
+  ObjClass *klass;
+  Table fields;
+};
 
 #define ARRAY_MAX_LOAD 0.75
 
@@ -399,11 +419,17 @@ bool IS_NATIVE(Value value);
 NativeFn AS_NATIVE(Value value);
 bool IS_CLOSURE(Value value);
 ObjClosure *AS_CLOSURE(Value value);
+bool IS_CLASS(Value value);
+ObjClass *AS_CLASS(Value value);
+bool IS_INSTANCE(Value value);
+ObjInstance *AS_INSTANCE(Value value);
 
 ObjFunction *newFunction(VM *vm);
 ObjNative *newNative(VM *vm, NativeFn function);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
+ObjClass *newClass(VM *vm, ObjString *name);
+ObjInstance *newInstance(VM *vm, ObjClass *klass);
 
 void freeObjects(VM *vm);
 void collectGarbage(VM *vm);

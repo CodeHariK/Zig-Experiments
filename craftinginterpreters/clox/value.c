@@ -48,6 +48,20 @@ ObjUpvalue *newUpvalue(VM *vm, Value *slot) {
   return upvalue;
 }
 
+ObjClass *newClass(VM *vm, ObjString *name) {
+  ObjClass *klass = (ObjClass *)ALLOCATE_OBJ(vm, sizeof(ObjClass), OBJ_CLASS);
+  klass->name = name;
+  return klass;
+}
+
+ObjInstance *newInstance(VM *vm, ObjClass *klass) {
+  ObjInstance *instance =
+      (ObjInstance *)ALLOCATE_OBJ(vm, sizeof(ObjInstance), OBJ_INSTANCE);
+  instance->klass = klass;
+  initTable(&instance->fields);
+  return instance;
+}
+
 static u32 hashString(const char *key, i32 length) {
   u32 hash = 2166136261u;
   for (i32 i = 0; i < length; i++) {
@@ -120,6 +134,10 @@ void freeObjects(VM *vm) {
     // Use the freeObject from helper.c via sweep's pattern
     // Actually, just inline the freeing here for non-GC cleanup
     switch (object->type) {
+    case OBJ_CLASS: {
+      FREE(sizeof(ObjClass), object);
+      break;
+    }
     case OBJ_CLOSURE: {
       ObjClosure *closure = (ObjClosure *)object;
       FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *),
@@ -131,6 +149,12 @@ void freeObjects(VM *vm) {
       ObjFunction *function = (ObjFunction *)object;
       chunkFree(&function->chunk);
       FREE(sizeof(ObjFunction), object);
+      break;
+    }
+    case OBJ_INSTANCE: {
+      ObjInstance *instance = (ObjInstance *)object;
+      freeTable(&instance->fields);
+      FREE(sizeof(ObjInstance), object);
       break;
     }
     case OBJ_NATIVE: {
@@ -194,11 +218,17 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
+  case OBJ_CLASS:
+    printf("%s", AS_CLASS(value)->name->chars);
+    break;
   case OBJ_CLOSURE:
     printFunction(AS_CLOSURE(value)->function);
     break;
   case OBJ_FUNCTION:
     printFunction(AS_FUNCTION(value));
+    break;
+  case OBJ_INSTANCE:
+    printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
     break;
   case OBJ_NATIVE:
     printf("<native fn>");
@@ -247,6 +277,9 @@ void printValueToBuffer(VM *vm, Value value) {
     break;
   case VAL_OBJ:
     switch (OBJ_TYPE(value)) {
+    case OBJ_CLASS:
+      len = snprintf(temp, sizeof(temp), "%s", AS_CLASS(value)->name->chars);
+      break;
     case OBJ_CLOSURE: {
       ObjFunction *fn = AS_CLOSURE(value)->function;
       if (fn->name == NULL) {
@@ -265,6 +298,10 @@ void printValueToBuffer(VM *vm, Value value) {
       }
       break;
     }
+    case OBJ_INSTANCE:
+      len = snprintf(temp, sizeof(temp), "%s instance",
+                     AS_INSTANCE(value)->klass->name->chars);
+      break;
     case OBJ_NATIVE:
       len = snprintf(temp, sizeof(temp), "<native fn>");
       break;

@@ -33,6 +33,10 @@ NativeFn AS_NATIVE(Value value) {
 }
 bool IS_CLOSURE(Value value) { return IS_OBJ_TYPE(value, OBJ_CLOSURE); }
 ObjClosure *AS_CLOSURE(Value value) { return (ObjClosure *)AS_OBJ(value); }
+bool IS_CLASS(Value value) { return IS_OBJ_TYPE(value, OBJ_CLASS); }
+ObjClass *AS_CLASS(Value value) { return (ObjClass *)AS_OBJ(value); }
+bool IS_INSTANCE(Value value) { return IS_OBJ_TYPE(value, OBJ_INSTANCE); }
+ObjInstance *AS_INSTANCE(Value value) { return (ObjInstance *)AS_OBJ(value); }
 
 bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
@@ -235,6 +239,11 @@ static void blackenObject(VM *vm, Obj *object) {
 #endif
 
   switch (object->type) {
+  case OBJ_CLASS: {
+    ObjClass *klass = (ObjClass *)object;
+    markObject(vm, (Obj *)klass->name);
+    break;
+  }
   case OBJ_CLOSURE: {
     ObjClosure *closure = (ObjClosure *)object;
     markObject(vm, (Obj *)closure->function);
@@ -247,6 +256,12 @@ static void blackenObject(VM *vm, Obj *object) {
     ObjFunction *function = (ObjFunction *)object;
     markObject(vm, (Obj *)function->name);
     markArray(vm, &function->chunk.constants);
+    break;
+  }
+  case OBJ_INSTANCE: {
+    ObjInstance *instance = (ObjInstance *)object;
+    markObject(vm, (Obj *)instance->klass);
+    markTable(vm, &instance->fields);
     break;
   }
   case OBJ_UPVALUE:
@@ -280,6 +295,10 @@ static void freeObject(VM *vm, Obj *object) {
 #endif
 
   switch (object->type) {
+  case OBJ_CLASS: {
+    FREE(sizeof(ObjClass), object);
+    break;
+  }
   case OBJ_CLOSURE: {
     ObjClosure *closure = (ObjClosure *)object;
     FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *), closure->upvalues);
@@ -290,6 +309,12 @@ static void freeObject(VM *vm, Obj *object) {
     ObjFunction *function = (ObjFunction *)object;
     chunkFree(&function->chunk);
     FREE(sizeof(ObjFunction), object);
+    break;
+  }
+  case OBJ_INSTANCE: {
+    ObjInstance *instance = (ObjInstance *)object;
+    freeTable(&instance->fields);
+    FREE(sizeof(ObjInstance), object);
     break;
   }
   case OBJ_NATIVE: {

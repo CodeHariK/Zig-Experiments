@@ -8,8 +8,10 @@ static void parseLiteral(VM *vm, bool canAssign);
 static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
 static void call(VM *vm, bool canAssign);
+static void dot(VM *vm, bool canAssign);
 static void declaration(VM *vm);
 static void declareVariable(VM *vm);
+static void classDeclaration(VM *vm);
 static void statement(VM *vm);
 static void varDeclaration(VM *vm);
 static void and_(VM *vm, bool canAssign);
@@ -26,7 +28,7 @@ ParseRule rules[] = {
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
-    [TOKEN_DOT] = {NULL, NULL, PREC_NONE},
+    [TOKEN_DOT] = {NULL, dot, PREC_CALL},
     [TOKEN_MINUS] = {parseUnary, parseBinary, PREC_TERM},
     [TOKEN_PLUS] = {NULL, parseBinary, PREC_TERM},
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
@@ -696,6 +698,18 @@ static void call(VM *vm, bool canAssign) {
   emitBytes(vm, OP_CALL, argCount);
 }
 
+static void dot(VM *vm, bool canAssign) {
+  consume(vm, TOKEN_IDENTIFIER, "Expect property name after '.'.");
+  u8 name = identifierConstant(vm, &vm->parser->previous);
+
+  if (canAssign && match(vm, TOKEN_EQUAL)) {
+    parseExpression(vm);
+    emitBytes(vm, OP_SET_PROPERTY, name);
+  } else {
+    emitBytes(vm, OP_GET_PROPERTY, name);
+  }
+}
+
 static void function_(VM *vm, FunctionType type) {
   Compiler compiler;
   initCompiler(vm, &compiler, type);
@@ -723,6 +737,18 @@ static void function_(VM *vm, FunctionType type) {
     emitByte(vm, compiler.upvalues[i].isLocal ? 1 : 0);
     emitByte(vm, compiler.upvalues[i].index);
   }
+}
+
+static void classDeclaration(VM *vm) {
+  consume(vm, TOKEN_IDENTIFIER, "Expect class name.");
+  u8 nameConstant = identifierConstant(vm, &vm->parser->previous);
+  declareVariable(vm);
+
+  emitBytes(vm, OP_CLASS, nameConstant);
+  defineVariable(vm, nameConstant);
+
+  consume(vm, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  consume(vm, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 }
 
 static void funDeclaration(VM *vm) {
@@ -798,7 +824,9 @@ static void varDeclaration(VM *vm) {
 }
 
 static void declaration(VM *vm) {
-  if (match(vm, TOKEN_FUN)) {
+  if (match(vm, TOKEN_CLASS)) {
+    classDeclaration(vm);
+  } else if (match(vm, TOKEN_FUN)) {
     funDeclaration(vm);
   } else if (match(vm, TOKEN_VAR)) {
     varDeclaration(vm);
