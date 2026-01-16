@@ -121,6 +121,7 @@ typedef enum {
 
 struct Obj {
   ObjType type;
+  bool isMarked;
   struct Obj *next;
 };
 
@@ -188,12 +189,15 @@ typedef enum {
   INTERPRET_RUNTIME_ERROR
 } InterpretResult;
 
+// Forward declaration for addConstant
+typedef struct VM VM;
+
 void chunkInit(Chunk *chunk);
 void chunkWrite(Chunk *chunk, u8 byte, u32 line);
 void chunkFree(Chunk *chunk);
 void chunkDisassemble(Chunk *chunk, const char *name);
 size_t instructionDisassemble(Chunk *chunk, size_t offset);
-size_t addConstant(Chunk *chunk, Value value);
+size_t addConstant(VM *vm, Chunk *chunk, Value value);
 
 Value *getConstantArr(Chunk *chunk);
 u8 *getCodeArr(Chunk *chunk);
@@ -297,7 +301,7 @@ typedef struct {
   Value *slots;
 } CallFrame;
 
-typedef struct {
+struct VM {
   CallFrame frames[FRAMES_MAX];
   int frameCount;
 
@@ -307,7 +311,13 @@ typedef struct {
   Table globals;
   Table strings;
   ObjUpvalue *openUpvalues;
+
+  size_t bytesAllocated;
+  size_t nextGC;
   Obj *objects;
+  int grayCount;
+  int grayCapacity;
+  Obj **grayStack;
 
   Parser *parser;
   Scanner *scanner;
@@ -316,7 +326,7 @@ typedef struct {
   // Print output buffer for testing
   char printBuffer[4096];
   size_t printBufferLen;
-} VM;
+};
 
 typedef enum {
   PREC_NONE,
@@ -396,9 +406,16 @@ ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 
 void freeObjects(VM *vm);
+void collectGarbage(VM *vm);
+void markValue(VM *vm, Value value);
+void markObject(VM *vm, Obj *object);
+void markTable(VM *vm, Table *table);
+void tableRemoveWhite(Table *table);
+
+#define GC_HEAP_GROW_FACTOR 2
 
 // Memory management - regular functions (implemented in helper.c)
-void *reallocate(void *pointer, size_t oldSize, size_t newSize);
+void *reallocate(VM *vm, void *pointer, size_t oldSize, size_t newSize);
 void *allocateType(size_t count, size_t elementSize);
 void freeType(void *pointer, size_t size);
 void freeTypeArray(void *pointer, size_t count, size_t elementSize);

@@ -79,9 +79,28 @@ void arrayFree(Array *array) {
 // Obj functions
 // ====================================================
 
+// #define DEBUG_STRESS_GC
+// #define DEBUG_LOG_GC
+
+#ifdef DEBUG_LOG_GC
+#include <stdio.h>
+#endif
+
 // Memory management functions
-void *reallocate(void *pointer, size_t oldSize, size_t newSize) {
-  (void)oldSize; // Unused but kept for API consistency
+void *reallocate(VM *vm, void *pointer, size_t oldSize, size_t newSize) {
+  if (vm != NULL) {
+    vm->bytesAllocated += newSize - oldSize;
+
+    if (newSize > oldSize) {
+#ifdef DEBUG_STRESS_GC
+      collectGarbage(vm);
+#endif
+      if (vm->bytesAllocated > vm->nextGC) {
+        collectGarbage(vm);
+      }
+    }
+  }
+
   if (newSize == 0) {
     free(pointer);
     return NULL;
@@ -95,15 +114,17 @@ void *reallocate(void *pointer, size_t oldSize, size_t newSize) {
 
 // Memory allocation helpers (converted from macros)
 void *allocateType(size_t count, size_t elementSize) {
-  return reallocate(NULL, 0, count * elementSize);
+  return reallocate(NULL, NULL, 0, count * elementSize);
 }
 
-void freeType(void *pointer, size_t size) { reallocate(pointer, size, 0); }
+void freeType(void *pointer, size_t size) {
+  reallocate(NULL, pointer, size, 0);
+}
 
 // Memory management - wrappers
-void *allocate(size_t size) { return reallocate(NULL, 0, size); }
+void *allocate(size_t size) { return reallocate(NULL, NULL, 0, size); }
 
-void freePtr(void *pointer) { reallocate(pointer, 0, 0); }
+void freePtr(void *pointer) { reallocate(NULL, pointer, 0, 0); }
 
 // Memory allocation helpers
 void *ALLOCATE(size_t count, size_t elementSize) {
@@ -111,17 +132,223 @@ void *ALLOCATE(size_t count, size_t elementSize) {
 }
 
 void *ALLOCATE_OBJ(VM *vm, size_t size, ObjType type) {
-  Obj *object = (Obj *)reallocate(NULL, 0, size);
+  Obj *object = (Obj *)reallocate(vm, NULL, 0, size);
   object->type = type;
+  object->isMarked = false;
   object->next = vm->objects;
   vm->objects = object;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p allocate %zu for %d\n", (void *)object, size, type);
+#endif
+
   return object;
 }
 
 void FREE(size_t size, void *pointer) { freeType(pointer, size); }
 
 void FREE_ARRAY(size_t count, size_t elementSize, void *pointer) {
-  reallocate(pointer, count * elementSize, 0);
+  reallocate(NULL, pointer, count * elementSize, 0);
+}
+
+// ====================================================
+// Garbage Collection
+// ====================================================
+
+void markValue(VM *vm, Value value) {
+  if (IS_OBJ(value))
+    markObject(vm, AS_OBJ(value));
+}
+
+static void markArray(VM *vm, ValueArray *array) {
+  for (size_t i = 0; i < array->values.count; i++) {
+    markValue(vm, ((Value *)array->values.data)[i]);
+  }
+}
+
+void markObject(VM *vm, Obj *object) {
+  if (object == NULL)
+    return;
+  if (object->isMarked)
+    return;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p mark ", (void *)object);
+  printValue(OBJ_VAL(object));
+  printf("\n");
+#endif
+
+  object->isMarked = true;
+
+  if (vm->grayCapacity < vm->grayCount + 1) {
+    vm->grayCapacity = vm->grayCapacity < 8 ? 8 : vm->grayCapacity * 2;
+    vm->grayStack =
+        (Obj **)realloc(vm->grayStack, sizeof(Obj *) * vm->grayCapacity);
+    if (vm->grayStack == NULL)
+      exit(1);
+  }
+
+  vm->grayStack[vm->grayCount++] = object;
+}
+
+void markTable(VM *vm, Table *table) {
+  for (i32 i = 0; i < table->capacity; i++) {
+    Entry *entry = &table->entries[i];
+    markObject(vm, (Obj *)entry->key);
+    markValue(vm, entry->value);
+  }
+}
+
+static void markRoots(VM *vm) {
+  // Mark the stack
+  for (Value *slot = vm->stack; slot < vm->stackTop; slot++) {
+    markValue(vm, *slot);
+  }
+
+  // Mark call frames
+  for (int i = 0; i < vm->frameCount; i++) {
+    markObject(vm, (Obj *)vm->frames[i].closure);
+  }
+
+  // Mark open upvalues
+  for (ObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL;
+       upvalue = upvalue->next) {
+    markObject(vm, (Obj *)upvalue);
+  }
+
+  // Mark globals
+  markTable(vm, &vm->globals);
+
+  // Mark compiler roots
+  Compiler *compiler = vm->compiler;
+  while (compiler != NULL) {
+    markObject(vm, (Obj *)compiler->function);
+    compiler = compiler->enclosing;
+  }
+}
+
+static void blackenObject(VM *vm, Obj *object) {
+#ifdef DEBUG_LOG_GC
+  printf("%p blacken ", (void *)object);
+  printValue(OBJ_VAL(object));
+  printf("\n");
+#endif
+
+  switch (object->type) {
+  case OBJ_CLOSURE: {
+    ObjClosure *closure = (ObjClosure *)object;
+    markObject(vm, (Obj *)closure->function);
+    for (int i = 0; i < closure->upvalueCount; i++) {
+      markObject(vm, (Obj *)closure->upvalues[i]);
+    }
+    break;
+  }
+  case OBJ_FUNCTION: {
+    ObjFunction *function = (ObjFunction *)object;
+    markObject(vm, (Obj *)function->name);
+    markArray(vm, &function->chunk.constants);
+    break;
+  }
+  case OBJ_UPVALUE:
+    markValue(vm, ((ObjUpvalue *)object)->closed);
+    break;
+  case OBJ_NATIVE:
+  case OBJ_STRING:
+    break;
+  }
+}
+
+static void traceReferences(VM *vm) {
+  while (vm->grayCount > 0) {
+    Obj *object = vm->grayStack[--vm->grayCount];
+    blackenObject(vm, object);
+  }
+}
+
+void tableRemoveWhite(Table *table) {
+  for (i32 i = 0; i < table->capacity; i++) {
+    Entry *entry = &table->entries[i];
+    if (entry->key != NULL && !entry->key->obj.isMarked) {
+      tableDelete(table, entry->key);
+    }
+  }
+}
+
+static void freeObject(VM *vm, Obj *object) {
+#ifdef DEBUG_LOG_GC
+  printf("%p free type %d\n", (void *)object, object->type);
+#endif
+
+  switch (object->type) {
+  case OBJ_CLOSURE: {
+    ObjClosure *closure = (ObjClosure *)object;
+    FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *), closure->upvalues);
+    FREE(sizeof(ObjClosure), object);
+    break;
+  }
+  case OBJ_FUNCTION: {
+    ObjFunction *function = (ObjFunction *)object;
+    chunkFree(&function->chunk);
+    FREE(sizeof(ObjFunction), object);
+    break;
+  }
+  case OBJ_NATIVE: {
+    FREE(sizeof(ObjNative), object);
+    break;
+  }
+  case OBJ_STRING: {
+    ObjString *string = (ObjString *)object;
+    FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
+    FREE(sizeof(ObjString), object);
+    break;
+  }
+  case OBJ_UPVALUE: {
+    FREE(sizeof(ObjUpvalue), object);
+    break;
+  }
+  }
+}
+
+static void sweep(VM *vm) {
+  Obj *previous = NULL;
+  Obj *object = vm->objects;
+  while (object != NULL) {
+    if (object->isMarked) {
+      object->isMarked = false;
+      previous = object;
+      object = object->next;
+    } else {
+      Obj *unreached = object;
+      object = object->next;
+      if (previous != NULL) {
+        previous->next = object;
+      } else {
+        vm->objects = object;
+      }
+
+      freeObject(vm, unreached);
+    }
+  }
+}
+
+void collectGarbage(VM *vm) {
+#ifdef DEBUG_LOG_GC
+  printf("-- gc begin\n");
+  size_t before = vm->bytesAllocated;
+#endif
+
+  markRoots(vm);
+  traceReferences(vm);
+  tableRemoveWhite(&vm->strings);
+  sweep(vm);
+
+  vm->nextGC = vm->bytesAllocated * GC_HEAP_GROW_FACTOR;
+
+#ifdef DEBUG_LOG_GC
+  printf("-- gc end\n");
+  printf("   collected %zu bytes (from %zu to %zu) next at %zu\n",
+         before - vm->bytesAllocated, before, vm->bytesAllocated, vm->nextGC);
+#endif
 }
 
 // ====================================================

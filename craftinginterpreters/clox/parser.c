@@ -163,7 +163,7 @@ static void emitBytes(VM *vm, u8 byte1, u8 byte2) {
 }
 
 static u8 makeConstant(VM *vm, Value value) {
-  size_t constant = addConstant(currentChunk(vm), value);
+  size_t constant = addConstant(vm, currentChunk(vm), value);
   if (constant > UINT8_MAX) {
     error(vm->parser, "Too many constants in one chunk.");
     return 0;

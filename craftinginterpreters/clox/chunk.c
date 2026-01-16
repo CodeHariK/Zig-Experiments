@@ -179,7 +179,9 @@ size_t instructionDisassemble(Chunk *chunk, size_t offset) {
   }
 }
 
-size_t addConstant(Chunk *chunk, Value value) {
+size_t addConstant(VM *vm, Chunk *chunk, Value value) {
+  push(vm, value);
   writeValueArray(&chunk->constants, value);
+  pop(vm);
   return chunk->constants.values.count - 1;
 }

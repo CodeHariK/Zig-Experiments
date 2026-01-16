@@ -75,7 +75,11 @@ ObjString *allocateString(VM *vm, char *chars, i32 length, u32 hash) {
   string->length = length;
   string->chars = chars;
   string->hash = hash;
+
+  push(vm, OBJ_VAL((Obj *)string));
   tableSet(&vm->strings, string, NIL_VAL);
+  pop(vm);
+
   return string;
 }
 
@@ -91,8 +95,9 @@ ObjString *takeString(VM *vm, char *chars, i32 length) {
 }
 
 void concatenate(VM *vm) {
-  ObjString *b = AS_STRING(pop(vm));
-  ObjString *a = AS_STRING(pop(vm));
+  // Use peek to keep strings on stack during allocation (GC protection)
+  ObjString *b = AS_STRING(vm->stackTop[-1]);
+  ObjString *a = AS_STRING(vm->stackTop[-2]);
 
   i32 length = a->length + b->length;
   char *chars = (char *)ALLOCATE(length + 1, sizeof(char));
@@ -101,48 +106,52 @@ void concatenate(VM *vm) {
   chars[length] = '\0';
 
   ObjString *result = takeString(vm, chars, length);
+  pop(vm);
+  pop(vm);
   push(vm, OBJ_VAL((Obj *)result));
 }
 
-static void freeObject(VM *vm, Obj *object) {
-  (void)vm; // May be needed for future garbage collection
-  switch (object->type) {
-  case OBJ_CLOSURE: {
-    ObjClosure *closure = (ObjClosure *)object;
-    FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *), closure->upvalues);
-    FREE(sizeof(ObjClosure), object);
-    break;
-  }
-  case OBJ_FUNCTION: {
-    ObjFunction *function = (ObjFunction *)object;
-    chunkFree(&function->chunk);
-    FREE(sizeof(ObjFunction), object);
-    break;
-  }
-  case OBJ_NATIVE: {
-    FREE(sizeof(ObjNative), object);
-    break;
-  }
-  case OBJ_STRING: {
-    ObjString *string = (ObjString *)object;
-    FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
-    FREE(sizeof(ObjString), object);
-    break;
-  }
-  case OBJ_UPVALUE: {
-    FREE(sizeof(ObjUpvalue), object);
-    break;
-  }
-  }
-}
+// freeObject is defined in helper.c for GC
 
 void freeObjects(VM *vm) {
   Obj *object = vm->objects;
   while (object != NULL) {
     Obj *next = object->next;
-    freeObject(vm, object);
+    // Use the freeObject from helper.c via sweep's pattern
+    // Actually, just inline the freeing here for non-GC cleanup
+    switch (object->type) {
+    case OBJ_CLOSURE: {
+      ObjClosure *closure = (ObjClosure *)object;
+      FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *),
+                 closure->upvalues);
+      FREE(sizeof(ObjClosure), object);
+      break;
+    }
+    case OBJ_FUNCTION: {
+      ObjFunction *function = (ObjFunction *)object;
+      chunkFree(&function->chunk);
+      FREE(sizeof(ObjFunction), object);
+      break;
+    }
+    case OBJ_NATIVE: {
+      FREE(sizeof(ObjNative), object);
+      break;
+    }
+    case OBJ_STRING: {
+      ObjString *string = (ObjString *)object;
+      FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
+      FREE(sizeof(ObjString), object);
+      break;
+    }
+    case OBJ_UPVALUE: {
+      FREE(sizeof(ObjUpvalue), object);
+      break;
+    }
+    }
     object = next;
   }
+
+  free(vm->grayStack);
 }
 
 void initValueArray(ValueArray *array) {
