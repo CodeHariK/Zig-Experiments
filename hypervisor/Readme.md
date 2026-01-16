@@ -1,0 +1,5 @@
+* [Building a hypervisor, 1: KVM Introduction](https://iovec.net/2024-01-29)
+* [Hypervisor From Scratch](https://github.com/SinaKarvandi/Hypervisor-From-Scratch)
+* [Hypervisor 101 in Rust](https://github.com/tandasat/Hypervisor-101-in-Rust)
+* [Hypervisor in 1000 lines](https://seiya.me/blog/hypervisor-in-1000-lines)
+* [Hypervisor from scratch](https://research.hyperdbg.org/tutorial/hypervisor-from-scratch/)

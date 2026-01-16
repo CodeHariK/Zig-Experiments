@@ -1,5 +1,7 @@
 # xv6
 
+* https://github.com/nuta/operating-system-in-1000-lines
+
 * https://github.com/mit-pdos/xv6-riscv
 
 * [xv6 book](https://pdos.csail.mit.edu/6.828/2023/xv6/book-riscv-rev3.pdf)
