@@ -1,4 +1,4 @@
-Running 60 test cases...
+Running 73 test cases...
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='print' (PRINT)
 [PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
@@ -649,7 +649,7 @@ TEST 10: var hello = "hello"; var world = "world"; hello = hello + " " + world; 
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 TEST 11: { var a = 1; var a = 2; print a; }
 [RESULT]: 
-[PassError]
+[PassError] [line 1] Error at 'a': Already a variable with this name in this scope.
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='var' (VAR)
 [PARSER] Advanced: previous='var' (VAR), current='a' (IDENTIFIER)
@@ -9118,9 +9118,9 @@ STACK | <script> |
 0000    1 OP_GET_GLOBAL       0 'clock'
 STACK | <script> | <native fn> |
 0002    | OP_CALL             0
-STACK | <script> | 0.009849 |
+STACK | <script> | 0.020638 |
 0004    | OP_CONSTANT         1 '0'
-STACK | <script> | 0.009849 | 0 |
+STACK | <script> | 0.020638 | 0 |
 0006    | OP_GREATER
 STACK | <script> | true |
 0007    | OP_PRINT
@@ -9145,7 +9145,7 @@ TEST 53: print clock() > 0;
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 TEST 54: return 1;
 [RESULT]: 
-[PassError]
+[PassError] [line 1] Error at 'return': Can't return from top-level code.
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='fun' (FUN)
 [PARSER] Advanced: previous='fun' (FUN), current='foo' (IDENTIFIER)
@@ -9197,7 +9197,7 @@ STACK | <script> | <fn foo> | 1 |
 0008    | OP_CALL             1
 TEST 55: fun foo() {} foo(1);
 [RESULT]: 
-[PassError]
+[PassError] Expected 0 arguments but got 1.
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
 [PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
@@ -9217,9 +9217,11 @@ TEST 55: fun foo() {} foo(1);
 0000    1 OP_CLASS            0 'Foo'
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
 0004    | OP_GET_GLOBAL       1 'Foo'
-0006    | OP_PRINT
-0007    | OP_NIL
-0008    | OP_RETURN
+0006    | OP_POP
+0007    | OP_GET_GLOBAL       2 'Foo'
+0009    | OP_PRINT
+0010    | OP_NIL
+0011    | OP_RETURN
 STACK | <script> |
 0000    1 OP_CLASS            0 'Foo'
 STACK | <script> | Foo |
@@ -9227,11 +9229,15 @@ STACK | <script> | Foo |
 STACK | <script> |
 0004    | OP_GET_GLOBAL       1 'Foo'
 STACK | <script> | Foo |
-0006    | OP_PRINT
+0006    | OP_POP
 STACK | <script> |
-0007    | OP_NIL
+0007    | OP_GET_GLOBAL       2 'Foo'
+STACK | <script> | Foo |
+0009    | OP_PRINT
+STACK | <script> |
+0010    | OP_NIL
 STACK | <script> | nil |
-0008    | OP_RETURN
+0011    | OP_RETURN
 TEST 56: class Foo {} print Foo;
 [RESULT]: Foo;
 [PASS]
@@ -9268,31 +9274,37 @@ TEST 56: class Foo {} print Foo;
 == <script> ==
 0000    1 OP_CLASS            0 'Foo'
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
-0004    | OP_GET_GLOBAL       2 'Foo'
-0006    | OP_CALL             0
-0008    | OP_DEFINE_GLOBAL    1 'foo'
-0010    | OP_GET_GLOBAL       3 'foo'
-0012    | OP_PRINT
-0013    | OP_NIL
-0014    | OP_RETURN
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_POP
+0007    | OP_GET_GLOBAL       3 'Foo'
+0009    | OP_CALL             0
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+0013    | OP_GET_GLOBAL       4 'foo'
+0015    | OP_PRINT
+0016    | OP_NIL
+0017    | OP_RETURN
 STACK | <script> |
 0000    1 OP_CLASS            0 'Foo'
 STACK | <script> | Foo |
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
 STACK | <script> |
-0004    | OP_GET_GLOBAL       2 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
 STACK | <script> | Foo |
-0006    | OP_CALL             0
-STACK | <script> | Foo instance |
-0008    | OP_DEFINE_GLOBAL    1 'foo'
+0006    | OP_POP
 STACK | <script> |
-0010    | OP_GET_GLOBAL       3 'foo'
+0007    | OP_GET_GLOBAL       3 'Foo'
+STACK | <script> | Foo |
+0009    | OP_CALL             0
 STACK | <script> | Foo instance |
-0012    | OP_PRINT
+0011    | OP_DEFINE_GLOBAL    2 'foo'
 STACK | <script> |
-0013    | OP_NIL
+0013    | OP_GET_GLOBAL       4 'foo'
+STACK | <script> | Foo instance |
+0015    | OP_PRINT
+STACK | <script> |
+0016    | OP_NIL
 STACK | <script> | nil |
-0014    | OP_RETURN
+0017    | OP_RETURN
 TEST 57: class Foo {} var foo = Foo(); print foo;
 [RESULT]: Foo instance;
 [PASS]
@@ -9353,46 +9365,52 @@ TEST 57: class Foo {} var foo = Foo(); print foo;
 == <script> ==
 0000    1 OP_CLASS            0 'Foo'
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
-0004    | OP_GET_GLOBAL       2 'Foo'
-0006    | OP_CALL             0
-0008    | OP_DEFINE_GLOBAL    1 'foo'
-0010    | OP_GET_GLOBAL       3 'foo'
-0012    | OP_CONSTANT         5 '42'
-0014    | OP_SET_PROPERTY     4 'bar'
-0016    | OP_POP
-0017    | OP_GET_GLOBAL       6 'foo'
-0019    | OP_GET_PROPERTY     7 'bar'
-0021    | OP_PRINT
-0022    | OP_NIL
-0023    | OP_RETURN
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_POP
+0007    | OP_GET_GLOBAL       3 'Foo'
+0009    | OP_CALL             0
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+0013    | OP_GET_GLOBAL       4 'foo'
+0015    | OP_CONSTANT         6 '42'
+0017    | OP_SET_PROPERTY     5 'bar'
+0019    | OP_POP
+0020    | OP_GET_GLOBAL       7 'foo'
+0022    | OP_GET_PROPERTY     8 'bar'
+0024    | OP_PRINT
+0025    | OP_NIL
+0026    | OP_RETURN
 STACK | <script> |
 0000    1 OP_CLASS            0 'Foo'
 STACK | <script> | Foo |
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
 STACK | <script> |
-0004    | OP_GET_GLOBAL       2 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
 STACK | <script> | Foo |
-0006    | OP_CALL             0
-STACK | <script> | Foo instance |
-0008    | OP_DEFINE_GLOBAL    1 'foo'
+0006    | OP_POP
 STACK | <script> |
-0010    | OP_GET_GLOBAL       3 'foo'
+0007    | OP_GET_GLOBAL       3 'Foo'
+STACK | <script> | Foo |
+0009    | OP_CALL             0
 STACK | <script> | Foo instance |
-0012    | OP_CONSTANT         5 '42'
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+STACK | <script> |
+0013    | OP_GET_GLOBAL       4 'foo'
+STACK | <script> | Foo instance |
+0015    | OP_CONSTANT         6 '42'
 STACK | <script> | Foo instance | 42 |
-0014    | OP_SET_PROPERTY     4 'bar'
+0017    | OP_SET_PROPERTY     5 'bar'
 STACK | <script> | 42 |
-0016    | OP_POP
+0019    | OP_POP
 STACK | <script> |
-0017    | OP_GET_GLOBAL       6 'foo'
+0020    | OP_GET_GLOBAL       7 'foo'
 STACK | <script> | Foo instance |
-0019    | OP_GET_PROPERTY     7 'bar'
+0022    | OP_GET_PROPERTY     8 'bar'
 STACK | <script> | 42 |
-0021    | OP_PRINT
+0024    | OP_PRINT
 STACK | <script> |
-0022    | OP_NIL
+0025    | OP_NIL
 STACK | <script> | nil |
-0023    | OP_RETURN
+0026    | OP_RETURN
 TEST 58: class Foo {} var foo = Foo(); foo.bar = 42; print foo.bar;
 [RESULT]: 42;
 [PASS]
@@ -9487,67 +9505,73 @@ TEST 58: class Foo {} var foo = Foo(); foo.bar = 42; print foo.bar;
 == <script> ==
 0000    1 OP_CLASS            0 'Foo'
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
-0004    | OP_GET_GLOBAL       2 'Foo'
-0006    | OP_CALL             0
-0008    | OP_DEFINE_GLOBAL    1 'foo'
-0010    | OP_GET_GLOBAL       3 'foo'
-0012    | OP_CONSTANT         5 '1'
-0014    | OP_SET_PROPERTY     4 'x'
-0016    | OP_POP
-0017    | OP_GET_GLOBAL       6 'foo'
-0019    | OP_CONSTANT         8 '2'
-0021    | OP_SET_PROPERTY     7 'y'
-0023    | OP_POP
-0024    | OP_GET_GLOBAL       9 'foo'
-0026    | OP_GET_PROPERTY    10 'x'
-0028    | OP_GET_GLOBAL      11 'foo'
-0030    | OP_GET_PROPERTY    12 'y'
-0032    | OP_ADD
-0033    | OP_PRINT
-0034    | OP_NIL
-0035    | OP_RETURN
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_POP
+0007    | OP_GET_GLOBAL       3 'Foo'
+0009    | OP_CALL             0
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+0013    | OP_GET_GLOBAL       4 'foo'
+0015    | OP_CONSTANT         6 '1'
+0017    | OP_SET_PROPERTY     5 'x'
+0019    | OP_POP
+0020    | OP_GET_GLOBAL       7 'foo'
+0022    | OP_CONSTANT         9 '2'
+0024    | OP_SET_PROPERTY     8 'y'
+0026    | OP_POP
+0027    | OP_GET_GLOBAL      10 'foo'
+0029    | OP_GET_PROPERTY    11 'x'
+0031    | OP_GET_GLOBAL      12 'foo'
+0033    | OP_GET_PROPERTY    13 'y'
+0035    | OP_ADD
+0036    | OP_PRINT
+0037    | OP_NIL
+0038    | OP_RETURN
 STACK | <script> |
 0000    1 OP_CLASS            0 'Foo'
 STACK | <script> | Foo |
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
 STACK | <script> |
-0004    | OP_GET_GLOBAL       2 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
 STACK | <script> | Foo |
-0006    | OP_CALL             0
-STACK | <script> | Foo instance |
-0008    | OP_DEFINE_GLOBAL    1 'foo'
+0006    | OP_POP
 STACK | <script> |
-0010    | OP_GET_GLOBAL       3 'foo'
+0007    | OP_GET_GLOBAL       3 'Foo'
+STACK | <script> | Foo |
+0009    | OP_CALL             0
 STACK | <script> | Foo instance |
-0012    | OP_CONSTANT         5 '1'
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+STACK | <script> |
+0013    | OP_GET_GLOBAL       4 'foo'
+STACK | <script> | Foo instance |
+0015    | OP_CONSTANT         6 '1'
 STACK | <script> | Foo instance | 1 |
-0014    | OP_SET_PROPERTY     4 'x'
+0017    | OP_SET_PROPERTY     5 'x'
 STACK | <script> | 1 |
-0016    | OP_POP
+0019    | OP_POP
 STACK | <script> |
-0017    | OP_GET_GLOBAL       6 'foo'
+0020    | OP_GET_GLOBAL       7 'foo'
 STACK | <script> | Foo instance |
-0019    | OP_CONSTANT         8 '2'
+0022    | OP_CONSTANT         9 '2'
 STACK | <script> | Foo instance | 2 |
-0021    | OP_SET_PROPERTY     7 'y'
+0024    | OP_SET_PROPERTY     8 'y'
 STACK | <script> | 2 |
-0023    | OP_POP
+0026    | OP_POP
 STACK | <script> |
-0024    | OP_GET_GLOBAL       9 'foo'
+0027    | OP_GET_GLOBAL      10 'foo'
 STACK | <script> | Foo instance |
-0026    | OP_GET_PROPERTY    10 'x'
+0029    | OP_GET_PROPERTY    11 'x'
 STACK | <script> | 1 |
-0028    | OP_GET_GLOBAL      11 'foo'
+0031    | OP_GET_GLOBAL      12 'foo'
 STACK | <script> | 1 | Foo instance |
-0030    | OP_GET_PROPERTY    12 'y'
+0033    | OP_GET_PROPERTY    13 'y'
 STACK | <script> | 1 | 2 |
-0032    | OP_ADD
+0035    | OP_ADD
 STACK | <script> | 3 |
-0033    | OP_PRINT
+0036    | OP_PRINT
 STACK | <script> |
-0034    | OP_NIL
+0037    | OP_NIL
 STACK | <script> | nil |
-0035    | OP_RETURN
+0038    | OP_RETURN
 TEST 59: class Foo {} var foo = Foo(); foo.x = 1; foo.y = 2; print foo.x + foo.y;
 [RESULT]: 3;
 [PASS]
@@ -9608,15 +9632,800 @@ TEST 59: class Foo {} var foo = Foo(); foo.x = 1; foo.y = 2; print foo.x + foo.y
 == <script> ==
 0000    1 OP_CLASS            0 'Foo'
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
-0004    | OP_GET_GLOBAL       2 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_POP
+0007    | OP_GET_GLOBAL       3 'Foo'
+0009    | OP_CALL             0
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+0013    | OP_GET_GLOBAL       4 'foo'
+0015    | OP_CONSTANT         6 'baz'
+0017    | OP_SET_PROPERTY     5 'bar'
+0019    | OP_POP
+0020    | OP_GET_GLOBAL       7 'foo'
+0022    | OP_GET_PROPERTY     8 'bar'
+0024    | OP_PRINT
+0025    | OP_NIL
+0026    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Foo'
+STACK | <script> | Foo |
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Foo'
+STACK | <script> | Foo |
+0006    | OP_POP
+STACK | <script> |
+0007    | OP_GET_GLOBAL       3 'Foo'
+STACK | <script> | Foo |
+0009    | OP_CALL             0
+STACK | <script> | Foo instance |
+0011    | OP_DEFINE_GLOBAL    2 'foo'
+STACK | <script> |
+0013    | OP_GET_GLOBAL       4 'foo'
+STACK | <script> | Foo instance |
+0015    | OP_CONSTANT         6 'baz'
+STACK | <script> | Foo instance | baz |
+0017    | OP_SET_PROPERTY     5 'bar'
+STACK | <script> | baz |
+0019    | OP_POP
+STACK | <script> |
+0020    | OP_GET_GLOBAL       7 'foo'
+STACK | <script> | Foo instance |
+0022    | OP_GET_PROPERTY     8 'bar'
+STACK | <script> | baz |
+0024    | OP_PRINT
+STACK | <script> |
+0025    | OP_NIL
+STACK | <script> | nil |
+0026    | OP_RETURN
+TEST 60: class Foo {} var foo = Foo(); foo.bar = "baz"; print foo.bar;
+[RESULT]: baz;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Bacon' (IDENTIFIER)
+[PARSER] Advanced: previous='Bacon' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='eat' (IDENTIFIER)
+[PARSER] Advanced: previous='eat' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='"Crunch"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"Crunch"' (STRING), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== eat ==
+0000    1 OP_CONSTANT         0 'Crunch'
+0002    | OP_PRINT
+0003    | OP_NIL
+0004    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='Bacon' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Bacon' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='.' (DOT)
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='eat' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='eat' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Bacon'
+0002    | OP_DEFINE_GLOBAL    0 'Bacon'
+0004    | OP_GET_GLOBAL       1 'Bacon'
+0006    | OP_CLOSURE          3 <fn eat>
+0008    | OP_METHOD           2 'eat'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       4 'Bacon'
+0013    | OP_CALL             0
+0015    | OP_INVOKE        (0 args)    5 'eat'
+0018    | OP_POP
+0019    | OP_NIL
+0020    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Bacon'
+STACK | <script> | Bacon |
+0002    | OP_DEFINE_GLOBAL    0 'Bacon'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Bacon'
+STACK | <script> | Bacon |
+0006    | OP_CLOSURE          3 <fn eat>
+STACK | <script> | Bacon | <fn eat> |
+0008    | OP_METHOD           2 'eat'
+STACK | <script> | Bacon |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       4 'Bacon'
+STACK | <script> | Bacon |
+0013    | OP_CALL             0
+STACK | <script> | Bacon instance |
+0015    | OP_INVOKE        (0 args)    5 'eat'
+STACK | <script> | Bacon instance |
+0000    1 OP_CONSTANT         0 'Crunch'
+STACK | <script> | Bacon instance | Crunch |
+0002    | OP_PRINT
+STACK | <script> | Bacon instance |
+0003    | OP_NIL
+STACK | <script> | Bacon instance | nil |
+0004    | OP_RETURN
+STACK | <script> | nil |
+0018    | OP_POP
+STACK | <script> |
+0019    | OP_NIL
+STACK | <script> | nil |
+0020    | OP_RETURN
+TEST 61: class Bacon { eat() { print "Crunch"; } } Bacon().eat();
+[RESULT]: Crunch;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Bacon' (IDENTIFIER)
+[PARSER] Advanced: previous='Bacon' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='eat' (IDENTIFIER)
+[PARSER] Advanced: previous='eat' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='"Crunch"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"Crunch"' (STRING), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== eat ==
+0000    1 OP_CONSTANT         0 'Crunch'
+0002    | OP_PRINT
+0003    | OP_NIL
+0004    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='b' (IDENTIFIER)
+[PARSER] Advanced: previous='b' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Bacon' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Bacon' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='b' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='b' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='eat' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='eat' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Bacon'
+0002    | OP_DEFINE_GLOBAL    0 'Bacon'
+0004    | OP_GET_GLOBAL       1 'Bacon'
+0006    | OP_CLOSURE          3 <fn eat>
+0008    | OP_METHOD           2 'eat'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Bacon'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'b'
+0017    | OP_GET_GLOBAL       6 'b'
+0019    | OP_INVOKE        (0 args)    7 'eat'
+0022    | OP_POP
+0023    | OP_NIL
+0024    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Bacon'
+STACK | <script> | Bacon |
+0002    | OP_DEFINE_GLOBAL    0 'Bacon'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Bacon'
+STACK | <script> | Bacon |
+0006    | OP_CLOSURE          3 <fn eat>
+STACK | <script> | Bacon | <fn eat> |
+0008    | OP_METHOD           2 'eat'
+STACK | <script> | Bacon |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Bacon'
+STACK | <script> | Bacon |
+0013    | OP_CALL             0
+STACK | <script> | Bacon instance |
+0015    | OP_DEFINE_GLOBAL    4 'b'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 'b'
+STACK | <script> | Bacon instance |
+0019    | OP_INVOKE        (0 args)    7 'eat'
+STACK | <script> | Bacon instance |
+0000    1 OP_CONSTANT         0 'Crunch'
+STACK | <script> | Bacon instance | Crunch |
+0002    | OP_PRINT
+STACK | <script> | Bacon instance |
+0003    | OP_NIL
+STACK | <script> | Bacon instance | nil |
+0004    | OP_RETURN
+STACK | <script> | nil |
+0022    | OP_POP
+STACK | <script> |
+0023    | OP_NIL
+STACK | <script> | nil |
+0024    | OP_RETURN
+TEST 62: class Bacon { eat() { print "Crunch"; } } var b = Bacon(); b.eat();
+[RESULT]: Crunch;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Person' (IDENTIFIER)
+[PARSER] Advanced: previous='Person' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='sayName' (IDENTIFIER)
+[PARSER] Advanced: previous='sayName' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='name' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='name' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== sayName ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_GET_PROPERTY     0 'name'
+0004    | OP_PRINT
+0005    | OP_NIL
+0006    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='p' (IDENTIFIER)
+[PARSER] Advanced: previous='p' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Person' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Person' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='p' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='p' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='name' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='name' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='"Bob"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"Bob"' (STRING), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='p' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='p' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='sayName' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='sayName' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Person'
+0002    | OP_DEFINE_GLOBAL    0 'Person'
+0004    | OP_GET_GLOBAL       1 'Person'
+0006    | OP_CLOSURE          3 <fn sayName>
+0008    | OP_METHOD           2 'sayName'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Person'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'p'
+0017    | OP_GET_GLOBAL       6 'p'
+0019    | OP_CONSTANT         8 'Bob'
+0021    | OP_SET_PROPERTY     7 'name'
+0023    | OP_POP
+0024    | OP_GET_GLOBAL       9 'p'
+0026    | OP_INVOKE        (0 args)   10 'sayName'
+0029    | OP_POP
+0030    | OP_NIL
+0031    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Person'
+STACK | <script> | Person |
+0002    | OP_DEFINE_GLOBAL    0 'Person'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Person'
+STACK | <script> | Person |
+0006    | OP_CLOSURE          3 <fn sayName>
+STACK | <script> | Person | <fn sayName> |
+0008    | OP_METHOD           2 'sayName'
+STACK | <script> | Person |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Person'
+STACK | <script> | Person |
+0013    | OP_CALL             0
+STACK | <script> | Person instance |
+0015    | OP_DEFINE_GLOBAL    4 'p'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 'p'
+STACK | <script> | Person instance |
+0019    | OP_CONSTANT         8 'Bob'
+STACK | <script> | Person instance | Bob |
+0021    | OP_SET_PROPERTY     7 'name'
+STACK | <script> | Bob |
+0023    | OP_POP
+STACK | <script> |
+0024    | OP_GET_GLOBAL       9 'p'
+STACK | <script> | Person instance |
+0026    | OP_INVOKE        (0 args)   10 'sayName'
+STACK | <script> | Person instance |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Person instance | Person instance |
+0002    | OP_GET_PROPERTY     0 'name'
+STACK | <script> | Person instance | Bob |
+0004    | OP_PRINT
+STACK | <script> | Person instance |
+0005    | OP_NIL
+STACK | <script> | Person instance | nil |
+0006    | OP_RETURN
+STACK | <script> | nil |
+0029    | OP_POP
+STACK | <script> |
+0030    | OP_NIL
+STACK | <script> | nil |
+0031    | OP_RETURN
+TEST 63: class Person { sayName() { print this.name; } } var p = Person(); p.name = "Bob"; p.sayName();
+[RESULT]: Bob;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Nested' (IDENTIFIER)
+[PARSER] Advanced: previous='Nested' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='method' (IDENTIFIER)
+[PARSER] Advanced: previous='method' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='f' (IDENTIFIER)
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='field' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='field' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='f' (IDENTIFIER)
+== f ==
+0000    1 OP_GET_UPVALUE      0
+0002    | OP_GET_PROPERTY     0 'field'
+0004    | OP_PRINT
+0005    | OP_NIL
+0006    | OP_RETURN
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== method ==
+0000    1 OP_CLOSURE          0 <fn f>
+0002      |                     local 0
+0004    | OP_GET_LOCAL        1
 0006    | OP_CALL             0
-0008    | OP_DEFINE_GLOBAL    1 'foo'
-0010    | OP_GET_GLOBAL       3 'foo'
-0012    | OP_CONSTANT         5 'baz'
-0014    | OP_SET_PROPERTY     4 'bar'
-0016    | OP_POP
-0017    | OP_GET_GLOBAL       6 'foo'
-0019    | OP_GET_PROPERTY     7 'bar'
+0008    | OP_POP
+0009    | OP_NIL
+0010    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='n' (IDENTIFIER)
+[PARSER] Advanced: previous='n' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Nested' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Nested' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='n' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='n' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='field' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='field' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='42' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='42' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='n' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='n' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='method' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='method' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Nested'
+0002    | OP_DEFINE_GLOBAL    0 'Nested'
+0004    | OP_GET_GLOBAL       1 'Nested'
+0006    | OP_CLOSURE          3 <fn method>
+0008    | OP_METHOD           2 'method'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Nested'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'n'
+0017    | OP_GET_GLOBAL       6 'n'
+0019    | OP_CONSTANT         8 '42'
+0021    | OP_SET_PROPERTY     7 'field'
+0023    | OP_POP
+0024    | OP_GET_GLOBAL       9 'n'
+0026    | OP_INVOKE        (0 args)   10 'method'
+0029    | OP_POP
+0030    | OP_NIL
+0031    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Nested'
+STACK | <script> | Nested |
+0002    | OP_DEFINE_GLOBAL    0 'Nested'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Nested'
+STACK | <script> | Nested |
+0006    | OP_CLOSURE          3 <fn method>
+STACK | <script> | Nested | <fn method> |
+0008    | OP_METHOD           2 'method'
+STACK | <script> | Nested |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Nested'
+STACK | <script> | Nested |
+0013    | OP_CALL             0
+STACK | <script> | Nested instance |
+0015    | OP_DEFINE_GLOBAL    4 'n'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 'n'
+STACK | <script> | Nested instance |
+0019    | OP_CONSTANT         8 '42'
+STACK | <script> | Nested instance | 42 |
+0021    | OP_SET_PROPERTY     7 'field'
+STACK | <script> | 42 |
+0023    | OP_POP
+STACK | <script> |
+0024    | OP_GET_GLOBAL       9 'n'
+STACK | <script> | Nested instance |
+0026    | OP_INVOKE        (0 args)   10 'method'
+STACK | <script> | Nested instance |
+0000    1 OP_CLOSURE          0 <fn f>
+0002      |                     local 0
+STACK | <script> | Nested instance | <fn f> |
+0004    | OP_GET_LOCAL        1
+STACK | <script> | Nested instance | <fn f> | <fn f> |
+0006    | OP_CALL             0
+STACK | <script> | Nested instance | <fn f> | <fn f> |
+0000    1 OP_GET_UPVALUE      0
+STACK | <script> | Nested instance | <fn f> | <fn f> | Nested instance |
+0002    | OP_GET_PROPERTY     0 'field'
+STACK | <script> | Nested instance | <fn f> | <fn f> | 42 |
+0004    | OP_PRINT
+STACK | <script> | Nested instance | <fn f> | <fn f> |
+0005    | OP_NIL
+STACK | <script> | Nested instance | <fn f> | <fn f> | nil |
+0006    | OP_RETURN
+STACK | <script> | Nested instance | <fn f> | nil |
+0008    | OP_POP
+STACK | <script> | Nested instance | <fn f> |
+0009    | OP_NIL
+STACK | <script> | Nested instance | <fn f> | nil |
+0010    | OP_RETURN
+STACK | <script> | nil |
+0029    | OP_POP
+STACK | <script> |
+0030    | OP_NIL
+STACK | <script> | nil |
+0031    | OP_RETURN
+TEST 64: class Nested { method() { fun f() { print this.field; } f(); } } var n = Nested(); n.field = 42; n.method();
+[RESULT]: 42;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Circle' (IDENTIFIER)
+[PARSER] Advanced: previous='Circle' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='init' (IDENTIFIER)
+[PARSER] Advanced: previous='init' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='r' (IDENTIFIER)
+[PARSER] Advanced: previous='r' (IDENTIFIER), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='radius' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='radius' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='r' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='r' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== init ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_GET_LOCAL        1
+0004    | OP_SET_PROPERTY     0 'radius'
+0006    | OP_POP
+0007    | OP_GET_LOCAL        0
+0009    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='c' (IDENTIFIER)
+[PARSER] Advanced: previous='c' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Circle' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Circle' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='3' (NUMBER)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='3' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='c' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='c' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='radius' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='radius' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Circle'
+0002    | OP_DEFINE_GLOBAL    0 'Circle'
+0004    | OP_GET_GLOBAL       1 'Circle'
+0006    | OP_CLOSURE          3 <fn init>
+0008    | OP_METHOD           2 'init'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Circle'
+0013    | OP_CONSTANT         6 '3'
+0015    | OP_CALL             1
+0017    | OP_DEFINE_GLOBAL    4 'c'
+0019    | OP_GET_GLOBAL       7 'c'
+0021    | OP_GET_PROPERTY     8 'radius'
+0023    | OP_PRINT
+0024    | OP_NIL
+0025    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Circle'
+STACK | <script> | Circle |
+0002    | OP_DEFINE_GLOBAL    0 'Circle'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Circle'
+STACK | <script> | Circle |
+0006    | OP_CLOSURE          3 <fn init>
+STACK | <script> | Circle | <fn init> |
+0008    | OP_METHOD           2 'init'
+STACK | <script> | Circle |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Circle'
+STACK | <script> | Circle |
+0013    | OP_CONSTANT         6 '3'
+STACK | <script> | Circle | 3 |
+0015    | OP_CALL             1
+STACK | <script> | Circle instance | 3 |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Circle instance | 3 | Circle instance |
+0002    | OP_GET_LOCAL        1
+STACK | <script> | Circle instance | 3 | Circle instance | 3 |
+0004    | OP_SET_PROPERTY     0 'radius'
+STACK | <script> | Circle instance | 3 | 3 |
+0006    | OP_POP
+STACK | <script> | Circle instance | 3 |
+0007    | OP_GET_LOCAL        0
+STACK | <script> | Circle instance | 3 | Circle instance |
+0009    | OP_RETURN
+STACK | <script> | Circle instance |
+0017    | OP_DEFINE_GLOBAL    4 'c'
+STACK | <script> |
+0019    | OP_GET_GLOBAL       7 'c'
+STACK | <script> | Circle instance |
+0021    | OP_GET_PROPERTY     8 'radius'
+STACK | <script> | 3 |
+0023    | OP_PRINT
+STACK | <script> |
+0024    | OP_NIL
+STACK | <script> | nil |
+0025    | OP_RETURN
+TEST 65: class Circle { init(r) { this.radius = r; } } var c = Circle(3); print c.radius;
+[RESULT]: 3;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='init' (IDENTIFIER)
+[PARSER] Advanced: previous='init' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== init ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_CONSTANT         1 '1'
+0004    | OP_SET_PROPERTY     0 'x'
+0006    | OP_POP
+0007    | OP_GET_LOCAL        0
+0009    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='f' (IDENTIFIER)
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='f' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Foo'
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_CLOSURE          3 <fn init>
+0008    | OP_METHOD           2 'init'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Foo'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'f'
+0017    | OP_GET_GLOBAL       6 'f'
+0019    | OP_GET_PROPERTY     7 'x'
 0021    | OP_PRINT
 0022    | OP_NIL
 0023    | OP_RETURN
@@ -9625,31 +10434,851 @@ STACK | <script> |
 STACK | <script> | Foo |
 0002    | OP_DEFINE_GLOBAL    0 'Foo'
 STACK | <script> |
-0004    | OP_GET_GLOBAL       2 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
 STACK | <script> | Foo |
-0006    | OP_CALL             0
-STACK | <script> | Foo instance |
-0008    | OP_DEFINE_GLOBAL    1 'foo'
+0006    | OP_CLOSURE          3 <fn init>
+STACK | <script> | Foo | <fn init> |
+0008    | OP_METHOD           2 'init'
+STACK | <script> | Foo |
+0010    | OP_POP
 STACK | <script> |
-0010    | OP_GET_GLOBAL       3 'foo'
+0011    | OP_GET_GLOBAL       5 'Foo'
+STACK | <script> | Foo |
+0013    | OP_CALL             0
 STACK | <script> | Foo instance |
-0012    | OP_CONSTANT         5 'baz'
-STACK | <script> | Foo instance | baz |
-0014    | OP_SET_PROPERTY     4 'bar'
-STACK | <script> | baz |
-0016    | OP_POP
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Foo instance | Foo instance |
+0002    | OP_CONSTANT         1 '1'
+STACK | <script> | Foo instance | Foo instance | 1 |
+0004    | OP_SET_PROPERTY     0 'x'
+STACK | <script> | Foo instance | 1 |
+0006    | OP_POP
+STACK | <script> | Foo instance |
+0007    | OP_GET_LOCAL        0
+STACK | <script> | Foo instance | Foo instance |
+0009    | OP_RETURN
+STACK | <script> | Foo instance |
+0015    | OP_DEFINE_GLOBAL    4 'f'
 STACK | <script> |
-0017    | OP_GET_GLOBAL       6 'foo'
+0017    | OP_GET_GLOBAL       6 'f'
 STACK | <script> | Foo instance |
-0019    | OP_GET_PROPERTY     7 'bar'
-STACK | <script> | baz |
+0019    | OP_GET_PROPERTY     7 'x'
+STACK | <script> | 1 |
 0021    | OP_PRINT
 STACK | <script> |
 0022    | OP_NIL
 STACK | <script> | nil |
 0023    | OP_RETURN
-TEST 60: class Foo {} var foo = Foo(); foo.bar = "baz"; print foo.bar;
-[RESULT]: baz;
+TEST 66: class Foo { init() { this.x = 1; } } var f = Foo(); print f.x;
+[RESULT]: 1;
 [PASS]
 
-Summary: 57 passed, 0 failed, 3 passError
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='init' (IDENTIFIER)
+[PARSER] Advanced: previous='init' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current=';' (SEMICOLON)
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== init ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_RETURN
+0003    | OP_GET_LOCAL        0
+0005    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='f' (IDENTIFIER)
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='f' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Foo'
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_CLOSURE          3 <fn init>
+0008    | OP_METHOD           2 'init'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Foo'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'f'
+0017    | OP_GET_GLOBAL       6 'f'
+0019    | OP_PRINT
+0020    | OP_NIL
+0021    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Foo'
+STACK | <script> | Foo |
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Foo'
+STACK | <script> | Foo |
+0006    | OP_CLOSURE          3 <fn init>
+STACK | <script> | Foo | <fn init> |
+0008    | OP_METHOD           2 'init'
+STACK | <script> | Foo |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Foo'
+STACK | <script> | Foo |
+0013    | OP_CALL             0
+STACK | <script> | Foo instance |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Foo instance | Foo instance |
+0002    | OP_RETURN
+STACK | <script> | Foo instance |
+0015    | OP_DEFINE_GLOBAL    4 'f'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 'f'
+STACK | <script> | Foo instance |
+0019    | OP_PRINT
+STACK | <script> |
+0020    | OP_NIL
+STACK | <script> | nil |
+0021    | OP_RETURN
+TEST 67: class Foo { init() { return; } } var f = Foo(); print f;
+[RESULT]: Foo instance;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Builder' (IDENTIFIER)
+[PARSER] Advanced: previous='Builder' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='setX' (IDENTIFIER)
+[PARSER] Advanced: previous='setX' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='x' (IDENTIFIER)
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='x' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='setY' (IDENTIFIER)
+== setX ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_GET_LOCAL        1
+0004    | OP_SET_PROPERTY     0 'x'
+0006    | OP_POP
+0007    | OP_GET_LOCAL        0
+0009    | OP_RETURN
+0010    | OP_NIL
+0011    | OP_RETURN
+[PARSER] Advanced: previous='setY' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='y' (IDENTIFIER)
+[PARSER] Advanced: previous='y' (IDENTIFIER), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='y' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='y' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='y' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='y' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== setY ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_GET_LOCAL        1
+0004    | OP_SET_PROPERTY     0 'y'
+0006    | OP_POP
+0007    | OP_GET_LOCAL        0
+0009    | OP_RETURN
+0010    | OP_NIL
+0011    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='b' (IDENTIFIER)
+[PARSER] Advanced: previous='b' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Builder' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Builder' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='.' (DOT)
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='setX' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='setX' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='.' (DOT)
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='setY' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='setY' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='b' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='b' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='+' (PLUS)
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='b' (IDENTIFIER)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='b' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=FACTOR, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=FACTOR <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='y' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=FACTOR, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='y' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Builder'
+0002    | OP_DEFINE_GLOBAL    0 'Builder'
+0004    | OP_GET_GLOBAL       1 'Builder'
+0006    | OP_CLOSURE          3 <fn setX>
+0008    | OP_METHOD           2 'setX'
+0010    | OP_CLOSURE          5 <fn setY>
+0012    | OP_METHOD           4 'setY'
+0014    | OP_POP
+0015    | OP_GET_GLOBAL       7 'Builder'
+0017    | OP_CALL             0
+0019    | OP_CONSTANT         9 '1'
+0021    | OP_INVOKE        (1 args)    8 'setX'
+0024    | OP_CONSTANT        11 '2'
+0026    | OP_INVOKE        (1 args)   10 'setY'
+0029    | OP_DEFINE_GLOBAL    6 'b'
+0031    | OP_GET_GLOBAL      12 'b'
+0033    | OP_GET_PROPERTY    13 'x'
+0035    | OP_GET_GLOBAL      14 'b'
+0037    | OP_GET_PROPERTY    15 'y'
+0039    | OP_ADD
+0040    | OP_PRINT
+0041    | OP_NIL
+0042    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Builder'
+STACK | <script> | Builder |
+0002    | OP_DEFINE_GLOBAL    0 'Builder'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Builder'
+STACK | <script> | Builder |
+0006    | OP_CLOSURE          3 <fn setX>
+STACK | <script> | Builder | <fn setX> |
+0008    | OP_METHOD           2 'setX'
+STACK | <script> | Builder |
+0010    | OP_CLOSURE          5 <fn setY>
+STACK | <script> | Builder | <fn setY> |
+0012    | OP_METHOD           4 'setY'
+STACK | <script> | Builder |
+0014    | OP_POP
+STACK | <script> |
+0015    | OP_GET_GLOBAL       7 'Builder'
+STACK | <script> | Builder |
+0017    | OP_CALL             0
+STACK | <script> | Builder instance |
+0019    | OP_CONSTANT         9 '1'
+STACK | <script> | Builder instance | 1 |
+0021    | OP_INVOKE        (1 args)    8 'setX'
+STACK | <script> | Builder instance | 1 |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Builder instance | 1 | Builder instance |
+0002    | OP_GET_LOCAL        1
+STACK | <script> | Builder instance | 1 | Builder instance | 1 |
+0004    | OP_SET_PROPERTY     0 'x'
+STACK | <script> | Builder instance | 1 | 1 |
+0006    | OP_POP
+STACK | <script> | Builder instance | 1 |
+0007    | OP_GET_LOCAL        0
+STACK | <script> | Builder instance | 1 | Builder instance |
+0009    | OP_RETURN
+STACK | <script> | Builder instance |
+0024    | OP_CONSTANT        11 '2'
+STACK | <script> | Builder instance | 2 |
+0026    | OP_INVOKE        (1 args)   10 'setY'
+STACK | <script> | Builder instance | 2 |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Builder instance | 2 | Builder instance |
+0002    | OP_GET_LOCAL        1
+STACK | <script> | Builder instance | 2 | Builder instance | 2 |
+0004    | OP_SET_PROPERTY     0 'y'
+STACK | <script> | Builder instance | 2 | 2 |
+0006    | OP_POP
+STACK | <script> | Builder instance | 2 |
+0007    | OP_GET_LOCAL        0
+STACK | <script> | Builder instance | 2 | Builder instance |
+0009    | OP_RETURN
+STACK | <script> | Builder instance |
+0029    | OP_DEFINE_GLOBAL    6 'b'
+STACK | <script> |
+0031    | OP_GET_GLOBAL      12 'b'
+STACK | <script> | Builder instance |
+0033    | OP_GET_PROPERTY    13 'x'
+STACK | <script> | 1 |
+0035    | OP_GET_GLOBAL      14 'b'
+STACK | <script> | 1 | Builder instance |
+0037    | OP_GET_PROPERTY    15 'y'
+STACK | <script> | 1 | 2 |
+0039    | OP_ADD
+STACK | <script> | 3 |
+0040    | OP_PRINT
+STACK | <script> |
+0041    | OP_NIL
+STACK | <script> | nil |
+0042    | OP_RETURN
+TEST 68: class Builder { setX(x) { this.x = x; return this; } setY(y) { this.y = y; return this; } } var b = Builder().setX(1).setY(2); print b.x + b.y;
+[RESULT]: 3;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Scone' (IDENTIFIER)
+[PARSER] Advanced: previous='Scone' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='topping' (IDENTIFIER)
+[PARSER] Advanced: previous='topping' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='first' (IDENTIFIER)
+[PARSER] Advanced: previous='first' (IDENTIFIER), current=',' (COMMA)
+[PARSER] Advanced: previous=',' (COMMA), current='second' (IDENTIFIER)
+[PARSER] Advanced: previous='second' (IDENTIFIER), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='"scone with "' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"scone with "' (STRING), current='+' (PLUS)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='first' (IDENTIFIER)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='first' (IDENTIFIER), current='+' (PLUS)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=FACTOR, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='" and "' (STRING)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='" and "' (STRING), current='+' (PLUS)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=FACTOR, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='second' (IDENTIFIER)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='second' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=FACTOR, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== topping ==
+0000    1 OP_CONSTANT         0 'scone with '
+0002    | OP_GET_LOCAL        1
+0004    | OP_ADD
+0005    | OP_CONSTANT         1 ' and '
+0007    | OP_ADD
+0008    | OP_GET_LOCAL        2
+0010    | OP_ADD
+0011    | OP_PRINT
+0012    | OP_NIL
+0013    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='s' (IDENTIFIER)
+[PARSER] Advanced: previous='s' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Scone' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Scone' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='s' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='s' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='topping' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='topping' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='"berries"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"berries"' (STRING), current=',' (COMMA)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=',' (COMMA), current='"cream"' (STRING)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='"cream"' (STRING), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=STRING, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=STRING
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=STRING, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Scone'
+0002    | OP_DEFINE_GLOBAL    0 'Scone'
+0004    | OP_GET_GLOBAL       1 'Scone'
+0006    | OP_CLOSURE          3 <fn topping>
+0008    | OP_METHOD           2 'topping'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Scone'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 's'
+0017    | OP_GET_GLOBAL       6 's'
+0019    | OP_CONSTANT         8 'berries'
+0021    | OP_CONSTANT         9 'cream'
+0023    | OP_INVOKE        (2 args)    7 'topping'
+0026    | OP_POP
+0027    | OP_NIL
+0028    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Scone'
+STACK | <script> | Scone |
+0002    | OP_DEFINE_GLOBAL    0 'Scone'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Scone'
+STACK | <script> | Scone |
+0006    | OP_CLOSURE          3 <fn topping>
+STACK | <script> | Scone | <fn topping> |
+0008    | OP_METHOD           2 'topping'
+STACK | <script> | Scone |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Scone'
+STACK | <script> | Scone |
+0013    | OP_CALL             0
+STACK | <script> | Scone instance |
+0015    | OP_DEFINE_GLOBAL    4 's'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 's'
+STACK | <script> | Scone instance |
+0019    | OP_CONSTANT         8 'berries'
+STACK | <script> | Scone instance | berries |
+0021    | OP_CONSTANT         9 'cream'
+STACK | <script> | Scone instance | berries | cream |
+0023    | OP_INVOKE        (2 args)    7 'topping'
+STACK | <script> | Scone instance | berries | cream |
+0000    1 OP_CONSTANT         0 'scone with '
+STACK | <script> | Scone instance | berries | cream | scone with  |
+0002    | OP_GET_LOCAL        1
+STACK | <script> | Scone instance | berries | cream | scone with  | berries |
+0004    | OP_ADD
+STACK | <script> | Scone instance | berries | cream | scone with berries |
+0005    | OP_CONSTANT         1 ' and '
+STACK | <script> | Scone instance | berries | cream | scone with berries |  and  |
+0007    | OP_ADD
+STACK | <script> | Scone instance | berries | cream | scone with berries and  |
+0008    | OP_GET_LOCAL        2
+STACK | <script> | Scone instance | berries | cream | scone with berries and  | cream |
+0010    | OP_ADD
+STACK | <script> | Scone instance | berries | cream | scone with berries and cream |
+0011    | OP_PRINT
+STACK | <script> | Scone instance | berries | cream |
+0012    | OP_NIL
+STACK | <script> | Scone instance | berries | cream | nil |
+0013    | OP_RETURN
+STACK | <script> | nil |
+0026    | OP_POP
+STACK | <script> |
+0027    | OP_NIL
+STACK | <script> | nil |
+0028    | OP_RETURN
+TEST 69: class Scone { topping(first, second) { print "scone with " + first + " and " + second; } } var s = Scone(); s.topping("berries", "cream");
+[RESULT]: scone with berries and cream;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='method' (IDENTIFIER)
+[PARSER] Advanced: previous='method' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current='.' (DOT)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== method ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_GET_PROPERTY     0 'x'
+0004    | OP_PRINT
+0005    | OP_NIL
+0006    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='foo' (IDENTIFIER)
+[PARSER] Advanced: previous='foo' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='Foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='foo' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='x' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='123' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='123' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='m' (IDENTIFIER)
+[PARSER] Advanced: previous='m' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='foo' (IDENTIFIER), current='.' (DOT)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (DOT) -> CONTINUE
+[PARSER] Advanced: previous='.' (DOT), current='method' (IDENTIFIER)
+[PARSER] Calling infix rule for token=DOT
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=DOT, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous='method' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='m' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='m' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Foo'
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_CLOSURE          3 <fn method>
+0008    | OP_METHOD           2 'method'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       5 'Foo'
+0013    | OP_CALL             0
+0015    | OP_DEFINE_GLOBAL    4 'foo'
+0017    | OP_GET_GLOBAL       6 'foo'
+0019    | OP_CONSTANT         8 '123'
+0021    | OP_SET_PROPERTY     7 'x'
+0023    | OP_POP
+0024    | OP_GET_GLOBAL      10 'foo'
+0026    | OP_GET_PROPERTY    11 'method'
+0028    | OP_DEFINE_GLOBAL    9 'm'
+0030    | OP_GET_GLOBAL      12 'm'
+0032    | OP_CALL             0
+0034    | OP_POP
+0035    | OP_NIL
+0036    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Foo'
+STACK | <script> | Foo |
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Foo'
+STACK | <script> | Foo |
+0006    | OP_CLOSURE          3 <fn method>
+STACK | <script> | Foo | <fn method> |
+0008    | OP_METHOD           2 'method'
+STACK | <script> | Foo |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       5 'Foo'
+STACK | <script> | Foo |
+0013    | OP_CALL             0
+STACK | <script> | Foo instance |
+0015    | OP_DEFINE_GLOBAL    4 'foo'
+STACK | <script> |
+0017    | OP_GET_GLOBAL       6 'foo'
+STACK | <script> | Foo instance |
+0019    | OP_CONSTANT         8 '123'
+STACK | <script> | Foo instance | 123 |
+0021    | OP_SET_PROPERTY     7 'x'
+STACK | <script> | 123 |
+0023    | OP_POP
+STACK | <script> |
+0024    | OP_GET_GLOBAL      10 'foo'
+STACK | <script> | Foo instance |
+0026    | OP_GET_PROPERTY    11 'method'
+STACK | <script> | <fn method> |
+0028    | OP_DEFINE_GLOBAL    9 'm'
+STACK | <script> |
+0030    | OP_GET_GLOBAL      12 'm'
+STACK | <script> | <fn method> |
+0032    | OP_CALL             0
+STACK | <script> | Foo instance |
+0000    1 OP_GET_LOCAL        0
+STACK | <script> | Foo instance | Foo instance |
+0002    | OP_GET_PROPERTY     0 'x'
+STACK | <script> | Foo instance | 123 |
+0004    | OP_PRINT
+STACK | <script> | Foo instance |
+0005    | OP_NIL
+STACK | <script> | Foo instance | nil |
+0006    | OP_RETURN
+STACK | <script> | nil |
+0034    | OP_POP
+STACK | <script> |
+0035    | OP_NIL
+STACK | <script> | nil |
+0036    | OP_RETURN
+TEST 70: class Foo { method() { print this.x; } } var foo = Foo(); foo.x = 123; var m = foo.method; m();
+[RESULT]: 123;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='notMethod' (IDENTIFIER)
+[PARSER] Advanced: previous='notMethod' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='this' (THIS)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='this' (THIS), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=THIS, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=THIS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=THIS, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+======================Synchronizing======================
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+TEST 71: fun notMethod() { print this; }
+[RESULT]: 
+[PassError] [line 1] Error at 'this': Can't use 'this' outside of a class.
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='init' (IDENTIFIER)
+[PARSER] Advanced: previous='init' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='123' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='123' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+======================Synchronizing======================
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+TEST 72: class Foo { init() { return 123; } }
+[RESULT]: 
+[PassError] [line 1] Error at 'return': Can't return a value from an initializer.
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='class' (CLASS)
+[PARSER] Advanced: previous='class' (CLASS), current='Foo' (IDENTIFIER)
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='init' (IDENTIFIER)
+[PARSER] Advanced: previous='init' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='a' (IDENTIFIER)
+[PARSER] Advanced: previous='a' (IDENTIFIER), current=',' (COMMA)
+[PARSER] Advanced: previous=',' (COMMA), current='b' (IDENTIFIER)
+[PARSER] Advanced: previous='b' (IDENTIFIER), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='}' (RIGHT_BRACE)
+== init ==
+0000    1 OP_GET_LOCAL        0
+0002    | OP_RETURN
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='Foo' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='Foo' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='1' (NUMBER)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLASS            0 'Foo'
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+0004    | OP_GET_GLOBAL       1 'Foo'
+0006    | OP_CLOSURE          3 <fn init>
+0008    | OP_METHOD           2 'init'
+0010    | OP_POP
+0011    | OP_GET_GLOBAL       4 'Foo'
+0013    | OP_CONSTANT         5 '1'
+0015    | OP_CALL             1
+0017    | OP_POP
+0018    | OP_NIL
+0019    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLASS            0 'Foo'
+STACK | <script> | Foo |
+0002    | OP_DEFINE_GLOBAL    0 'Foo'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       1 'Foo'
+STACK | <script> | Foo |
+0006    | OP_CLOSURE          3 <fn init>
+STACK | <script> | Foo | <fn init> |
+0008    | OP_METHOD           2 'init'
+STACK | <script> | Foo |
+0010    | OP_POP
+STACK | <script> |
+0011    | OP_GET_GLOBAL       4 'Foo'
+STACK | <script> | Foo |
+0013    | OP_CONSTANT         5 '1'
+STACK | <script> | Foo | 1 |
+0015    | OP_CALL             1
+TEST 73: class Foo { init(a, b) {} } Foo(1);
+[RESULT]: 
+[PassError] Expected 2 arguments but got 1.
+
+Summary: 67 passed, 0 failed, 6 passError

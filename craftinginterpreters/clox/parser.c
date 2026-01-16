@@ -7,6 +7,7 @@ static void parseBinary(VM *vm, bool canAssign);
 static void parseLiteral(VM *vm, bool canAssign);
 static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
+static void this_(VM *vm, bool canAssign);
 static void call(VM *vm, bool canAssign);
 static void dot(VM *vm, bool canAssign);
 static void declaration(VM *vm);
@@ -57,7 +58,7 @@ ParseRule rules[] = {
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
     [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_THIS] = {NULL, NULL, PREC_NONE},
+    [TOKEN_THIS] = {this_, NULL, PREC_NONE},
     [TOKEN_TRUE] = {parseLiteral, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE] = {NULL, NULL, PREC_NONE},
@@ -65,31 +66,48 @@ ParseRule rules[] = {
     [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
 };
 
-static void errorAt(Parser *parser, Token *token, const char *message) {
-  if (parser->panicMode)
+static void errorAtVM(VM *vm, Token *token, const char *message) {
+  if (vm->parser->panicMode)
     return;
 
-  parser->panicMode = true;
+  vm->parser->panicMode = true;
   fprintf(stderr, "[line %d] Error", token->line);
+
+  // Write to error buffer
+  char temp[512];
+  int len = 0;
 
   if (token->type == TOKEN_EOF) {
     fprintf(stderr, " at end");
+    len = snprintf(temp, sizeof(temp), "[line %d] Error at end: %s\n",
+                   token->line, message);
   } else if (token->type == TOKEN_ERROR) {
-    // Nothing.
+    len = snprintf(temp, sizeof(temp), "[line %d] Error: %s\n", token->line,
+                   message);
   } else {
     fprintf(stderr, " at '%.*s'", (i32)token->length, token->start);
+    len = snprintf(temp, sizeof(temp), "[line %d] Error at '%.*s': %s\n",
+                   token->line, (i32)token->length, token->start, message);
   }
 
   fprintf(stderr, ": %s\n", message);
-  parser->hadError = true;
+
+  // Append to error buffer
+  if (len > 0 && vm->errorBufferLen + len < sizeof(vm->errorBuffer) - 1) {
+    memcpy(vm->errorBuffer + vm->errorBufferLen, temp, len);
+    vm->errorBufferLen += len;
+    vm->errorBuffer[vm->errorBufferLen] = '\0';
+  }
+
+  vm->parser->hadError = true;
 }
 
-static void error(Parser *parser, const char *message) {
-  errorAt(parser, &parser->previous, message);
+static void error(VM *vm, const char *message) {
+  errorAtVM(vm, &vm->parser->previous, message);
 }
 
-static void errorAtCurrent(Parser *parser, const char *message) {
-  errorAt(parser, &parser->current, message);
+static void errorAtCurrent(VM *vm, const char *message) {
+  errorAtVM(vm, &vm->parser->current, message);
 }
 
 static void advance(VM *vm) {
@@ -100,7 +118,7 @@ static void advance(VM *vm) {
     if (vm->parser->current.type != TOKEN_ERROR)
       break;
 
-    errorAtCurrent(vm->parser, vm->parser->current.start);
+    errorAtCurrent(vm, vm->parser->current.start);
   }
 
   debugTokenAdvance(vm->parser, &vm->parser->current);
@@ -123,7 +141,7 @@ static void consume(VM *vm, TokenType type, const char *message) {
     return;
   }
 
-  errorAtCurrent(vm->parser, message);
+  errorAtCurrent(vm, message);
 }
 
 static void synchronize(VM *vm) {
@@ -167,7 +185,7 @@ static void emitBytes(VM *vm, u8 byte1, u8 byte2) {
 static u8 makeConstant(VM *vm, Value value) {
   size_t constant = addConstant(vm, currentChunk(vm), value);
   if (constant > UINT8_MAX) {
-    error(vm->parser, "Too many constants in one chunk.");
+    error(vm, "Too many constants in one chunk.");
     return 0;
   }
 
@@ -179,7 +197,11 @@ static void emitConstant(VM *vm, Value value) {
 }
 
 static void emitReturn(VM *vm) {
-  emitByte(vm, OP_NIL);
+  if (vm->compiler->type == TYPE_INITIALIZER) {
+    emitBytes(vm, OP_GET_LOCAL, 0);
+  } else {
+    emitByte(vm, OP_NIL);
+  }
   emitByte(vm, OP_RETURN);
 }
 
@@ -195,7 +217,7 @@ static void patchJump(VM *vm, int offset) {
   int jump = (int)currentChunk(vm)->code.count - offset - 2;
 
   if (jump > UINT16_MAX) {
-    error(vm->parser, "Too much code to jump over.");
+    error(vm, "Too much code to jump over.");
   }
 
   getCodeArr(currentChunk(vm))[offset] = (jump >> 8) & 0xff;
@@ -207,7 +229,7 @@ static void emitLoop(VM *vm, int loopStart) {
 
   int offset = (int)currentChunk(vm)->code.count - loopStart + 2;
   if (offset > UINT16_MAX) {
-    error(vm->parser, "Loop body too large.");
+    error(vm, "Loop body too large.");
   }
 
   emitByte(vm, (offset >> 8) & 0xff);
@@ -234,8 +256,13 @@ static void initCompiler(VM *vm, Compiler *compiler, FunctionType type) {
   Local *local = &vm->compiler->locals[vm->compiler->localCount++];
   local->depth = 0;
   local->isCaptured = false;
-  local->name.start = "";
-  local->name.length = 0;
+  if (type != TYPE_FUNCTION) {
+    local->name.start = "this";
+    local->name.length = 4;
+  } else {
+    local->name.start = "";
+    local->name.length = 0;
+  }
 }
 
 static ObjFunction *endCompiler(VM *vm) {
@@ -265,7 +292,7 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
 
   ParseFn prefixRule = rule->prefix;
   if (prefixRule == NULL) {
-    error(vm->parser, "Expect expression.");
+    error(vm, "Expect expression.");
     debugExitParsePrecedence(precedence);
     return;
   }
@@ -291,7 +318,7 @@ static void parsePrecedence(VM *vm, Precedence precedence) {
   }
 
   if (canAssign && match(vm, TOKEN_EQUAL)) {
-    error(vm->parser, "Invalid assignment target.");
+    error(vm, "Invalid assignment target.");
   }
 
   debugExitParsePrecedence(precedence);
@@ -398,7 +425,7 @@ static bool identifiersEqual(Token *a, Token *b) {
 
 static void addLocal(VM *vm, Token name) {
   if (vm->compiler->localCount == UINT8_COUNT) {
-    error(vm->parser, "Too many local variables in function.");
+    error(vm, "Too many local variables in function.");
     return;
   }
   Local *local = &vm->compiler->locals[vm->compiler->localCount++];
@@ -422,7 +449,7 @@ static int resolveLocal(VM *vm, Token *name) {
   if (slot != -1) {
     Local *local = &vm->compiler->locals[slot];
     if (local->depth == -1) {
-      error(vm->parser, "Can't read local variable in its own initializer.");
+      error(vm, "Can't read local variable in its own initializer.");
     }
   }
   return slot;
@@ -439,7 +466,7 @@ static int addUpvalue(VM *vm, Compiler *compiler, u8 index, bool isLocal) {
   }
 
   if (upvalueCount == UINT8_COUNT) {
-    error(vm->parser, "Too many closure variables in function.");
+    error(vm, "Too many closure variables in function.");
     return 0;
   }
 
@@ -503,6 +530,15 @@ static void namedVariable(VM *vm, Token *name, bool canAssign) {
 
 static void parseVariable(VM *vm, bool canAssign) {
   namedVariable(vm, &vm->parser->previous, canAssign);
+}
+
+static void this_(VM *vm, bool canAssign) {
+  (void)canAssign;
+  if (vm->currentClass == NULL) {
+    error(vm, "Can't use 'this' outside of a class.");
+    return;
+  }
+  parseVariable(vm, false);
 }
 
 static void parseString(VM *vm, bool canAssign) {
@@ -683,7 +719,7 @@ static u8 argumentList(VM *vm) {
     do {
       parseExpression(vm);
       if (argCount == 255) {
-        error(vm->parser, "Can't have more than 255 arguments.");
+        error(vm, "Can't have more than 255 arguments.");
       }
       argCount++;
     } while (match(vm, TOKEN_COMMA));
@@ -705,6 +741,10 @@ static void dot(VM *vm, bool canAssign) {
   if (canAssign && match(vm, TOKEN_EQUAL)) {
     parseExpression(vm);
     emitBytes(vm, OP_SET_PROPERTY, name);
+  } else if (match(vm, TOKEN_LEFT_PAREN)) {
+    u8 argCount = argumentList(vm);
+    emitBytes(vm, OP_INVOKE, name);
+    emitByte(vm, argCount);
   } else {
     emitBytes(vm, OP_GET_PROPERTY, name);
   }
@@ -720,7 +760,7 @@ static void function_(VM *vm, FunctionType type) {
     do {
       vm->compiler->function->arity++;
       if (vm->compiler->function->arity > 255) {
-        errorAtCurrent(vm->parser, "Can't have more than 255 parameters.");
+        errorAtCurrent(vm, "Can't have more than 255 parameters.");
       }
       u8 constant = parseVariableDeclaration(vm, "Expect parameter name.");
       defineVariable(vm, constant);
@@ -739,16 +779,43 @@ static void function_(VM *vm, FunctionType type) {
   }
 }
 
+static void method(VM *vm) {
+  consume(vm, TOKEN_IDENTIFIER, "Expect method name.");
+  u8 constant = identifierConstant(vm, &vm->parser->previous);
+
+  FunctionType type = TYPE_METHOD;
+  if (vm->parser->previous.length == 4 &&
+      memcmp(vm->parser->previous.start, "init", 4) == 0) {
+    type = TYPE_INITIALIZER;
+  }
+
+  function_(vm, type);
+  emitBytes(vm, OP_METHOD, constant);
+}
+
 static void classDeclaration(VM *vm) {
   consume(vm, TOKEN_IDENTIFIER, "Expect class name.");
+  Token className = vm->parser->previous;
   u8 nameConstant = identifierConstant(vm, &vm->parser->previous);
   declareVariable(vm);
 
   emitBytes(vm, OP_CLASS, nameConstant);
   defineVariable(vm, nameConstant);
 
+  ClassCompiler classCompiler;
+  classCompiler.enclosing = vm->currentClass;
+  vm->currentClass = &classCompiler;
+
+  namedVariable(vm, &className, false);
+
   consume(vm, TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  while (!check(vm, TOKEN_RIGHT_BRACE) && !check(vm, TOKEN_EOF)) {
+    method(vm);
+  }
   consume(vm, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  emitByte(vm, OP_POP);
+
+  vm->currentClass = vm->currentClass->enclosing;
 }
 
 static void funDeclaration(VM *vm) {
@@ -760,12 +827,15 @@ static void funDeclaration(VM *vm) {
 
 static void returnStatement(VM *vm) {
   if (vm->compiler->type == TYPE_SCRIPT) {
-    error(vm->parser, "Can't return from top-level code.");
+    error(vm, "Can't return from top-level code.");
   }
 
   if (match(vm, TOKEN_SEMICOLON)) {
     emitReturn(vm);
   } else {
+    if (vm->compiler->type == TYPE_INITIALIZER) {
+      error(vm, "Can't return a value from an initializer.");
+    }
     parseExpression(vm);
     consume(vm, TOKEN_SEMICOLON, "Expect ';' after return value.");
     emitByte(vm, OP_RETURN);
@@ -794,7 +864,7 @@ static void declareVariable(VM *vm) {
     }
 
     if (identifiersEqual(name, &local->name)) {
-      error(vm->parser, "Already a variable with this name in this scope.");
+      error(vm, "Already a variable with this name in this scope.");
     }
   }
 

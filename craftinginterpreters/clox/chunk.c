@@ -53,6 +53,15 @@ static size_t jumpInstruction(const char *name, int sign, Chunk *chunk,
   return offset + 3;
 }
 
+static size_t invokeInstruction(const char *name, Chunk *chunk, size_t offset) {
+  u8 constant = getCodeArr(chunk)[offset + 1];
+  u8 argCount = getCodeArr(chunk)[offset + 2];
+  printf("%-16s (%d args) %4d '", name, argCount, constant);
+  printValue(getConstantArr(chunk)[constant]);
+  printf("'\n");
+  return offset + 3;
+}
+
 void chunkDisassemble(Chunk *chunk, const char *name) {
   printf("== %s ==\n", name);
 
@@ -179,6 +188,12 @@ size_t instructionDisassemble(Chunk *chunk, size_t offset) {
 
   case OP_SET_PROPERTY:
     return constantInstruction("OP_SET_PROPERTY", chunk, offset);
+
+  case OP_METHOD:
+    return constantInstruction("OP_METHOD", chunk, offset);
+
+  case OP_INVOKE:
+    return invokeInstruction("OP_INVOKE", chunk, offset);
 
   case OP_RETURN:
     return simpleInstruction("OP_RETURN", offset);

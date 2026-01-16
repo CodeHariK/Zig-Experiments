@@ -37,6 +37,12 @@ bool IS_CLASS(Value value) { return IS_OBJ_TYPE(value, OBJ_CLASS); }
 ObjClass *AS_CLASS(Value value) { return (ObjClass *)AS_OBJ(value); }
 bool IS_INSTANCE(Value value) { return IS_OBJ_TYPE(value, OBJ_INSTANCE); }
 ObjInstance *AS_INSTANCE(Value value) { return (ObjInstance *)AS_OBJ(value); }
+bool IS_BOUND_METHOD(Value value) {
+  return IS_OBJ_TYPE(value, OBJ_BOUND_METHOD);
+}
+ObjBoundMethod *AS_BOUND_METHOD(Value value) {
+  return (ObjBoundMethod *)AS_OBJ(value);
+}
 
 bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
@@ -223,6 +229,9 @@ static void markRoots(VM *vm) {
   // Mark globals
   markTable(vm, &vm->globals);
 
+  // Mark initString
+  markObject(vm, (Obj *)vm->initString);
+
   // Mark compiler roots
   Compiler *compiler = vm->compiler;
   while (compiler != NULL) {
@@ -239,9 +248,16 @@ static void blackenObject(VM *vm, Obj *object) {
 #endif
 
   switch (object->type) {
+  case OBJ_BOUND_METHOD: {
+    ObjBoundMethod *bound = (ObjBoundMethod *)object;
+    markValue(vm, bound->receiver);
+    markObject(vm, (Obj *)bound->method);
+    break;
+  }
   case OBJ_CLASS: {
     ObjClass *klass = (ObjClass *)object;
     markObject(vm, (Obj *)klass->name);
+    markTable(vm, &klass->methods);
     break;
   }
   case OBJ_CLOSURE: {
@@ -295,7 +311,13 @@ static void freeObject(VM *vm, Obj *object) {
 #endif
 
   switch (object->type) {
+  case OBJ_BOUND_METHOD: {
+    FREE(sizeof(ObjBoundMethod), object);
+    break;
+  }
   case OBJ_CLASS: {
+    ObjClass *klass = (ObjClass *)object;
+    freeTable(&klass->methods);
     FREE(sizeof(ObjClass), object);
     break;
   }

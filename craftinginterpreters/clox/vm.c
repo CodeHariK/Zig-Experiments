@@ -15,6 +15,19 @@ static void runtimeError(VM *vm, const char *format, ...) {
   va_end(args);
   fputs("\n", stderr);
 
+  // Also write to error buffer for testing
+  va_list args2;
+  va_start(args2, format);
+  int len =
+      vsnprintf(vm->errorBuffer + vm->errorBufferLen,
+                sizeof(vm->errorBuffer) - vm->errorBufferLen, format, args2);
+  va_end(args2);
+  if (len > 0 && vm->errorBufferLen + len < sizeof(vm->errorBuffer) - 1) {
+    vm->errorBufferLen += len;
+    vm->errorBuffer[vm->errorBufferLen++] = '\n';
+    vm->errorBuffer[vm->errorBufferLen] = '\0';
+  }
+
   for (int i = vm->frameCount - 1; i >= 0; i--) {
     CallFrame *frame = &vm->frames[i];
     ObjFunction *function = frame->closure->function;
@@ -48,6 +61,7 @@ void vmInit(VM *vm) {
   resetStack(vm);
   vm->objects = NULL;
   vm->compiler = NULL;
+  vm->currentClass = NULL;
   vm->bytesAllocated = 0;
   vm->nextGC = 1024 * 1024;
   vm->grayCount = 0;
@@ -55,8 +69,12 @@ void vmInit(VM *vm) {
   vm->grayStack = NULL;
   initTable(&vm->globals);
   initTable(&vm->strings);
+  vm->initString = NULL;
+  vm->initString = copyString(vm, "init", 4);
   vm->printBuffer[0] = '\0';
   vm->printBufferLen = 0;
+  vm->errorBuffer[0] = '\0';
+  vm->errorBufferLen = 0;
 
   defineNative(vm, "clock", clockNative);
 }
@@ -64,6 +82,7 @@ void vmInit(VM *vm) {
 void vmFree(VM *vm) {
   freeTable(&vm->globals);
   freeTable(&vm->strings);
+  vm->initString = NULL;
   freeObjects(vm);
 }
 
@@ -105,9 +124,21 @@ static bool call(VM *vm, ObjClosure *closure, int argCount) {
 static bool callValue(VM *vm, Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+    case OBJ_BOUND_METHOD: {
+      ObjBoundMethod *bound = AS_BOUND_METHOD(callee);
+      vm->stackTop[-argCount - 1] = bound->receiver;
+      return call(vm, bound->method, argCount);
+    }
     case OBJ_CLASS: {
       ObjClass *klass = AS_CLASS(callee);
       vm->stackTop[-argCount - 1] = OBJ_VAL((Obj *)newInstance(vm, klass));
+      Value initializer;
+      if (tableGet(&klass->methods, vm->initString, &initializer)) {
+        return call(vm, AS_CLOSURE(initializer), argCount);
+      } else if (argCount != 0) {
+        runtimeError(vm, "Expected 0 arguments but got %d.", argCount);
+        return false;
+      }
       return true;
     }
     case OBJ_CLOSURE:
@@ -158,6 +189,56 @@ static void closeUpvalues(VM *vm, Value *last) {
     upvalue->location = &upvalue->closed;
     vm->openUpvalues = upvalue->next;
   }
+}
+
+static void defineMethod(VM *vm, ObjString *name) {
+  Value method = peek(vm, 0);
+  ObjClass *klass = AS_CLASS(peek(vm, 1));
+  tableSet(&klass->methods, name, method);
+  pop(vm);
+}
+
+static bool bindMethod(VM *vm, ObjClass *klass, ObjString *name) {
+  Value method;
+  if (!tableGet(&klass->methods, name, &method)) {
+    runtimeError(vm, "Undefined property '%s'.", name->chars);
+    return false;
+  }
+
+  ObjBoundMethod *bound = newBoundMethod(vm, peek(vm, 0), AS_CLOSURE(method));
+  pop(vm);
+  push(vm, OBJ_VAL((Obj *)bound));
+  return true;
+}
+
+static bool invokeFromClass(VM *vm, ObjClass *klass, ObjString *name,
+                            int argCount) {
+  Value method;
+  if (!tableGet(&klass->methods, name, &method)) {
+    runtimeError(vm, "Undefined property '%s'.", name->chars);
+    return false;
+  }
+  return call(vm, AS_CLOSURE(method), argCount);
+}
+
+static bool invoke(VM *vm, ObjString *name, int argCount) {
+  Value receiver = peek(vm, argCount);
+
+  if (!IS_INSTANCE(receiver)) {
+    runtimeError(vm, "Only instances have methods.");
+    return false;
+  }
+
+  ObjInstance *instance = AS_INSTANCE(receiver);
+
+  // Check for field first (fields shadow methods)
+  Value value;
+  if (tableGet(&instance->fields, name, &value)) {
+    vm->stackTop[-argCount - 1] = value;
+    return callValue(vm, value, argCount);
+  }
+
+  return invokeFromClass(vm, instance->klass, name, argCount);
 }
 
 static InterpretResult run(VM *vm) {
@@ -411,8 +492,10 @@ static InterpretResult run(VM *vm) {
         break;
       }
 
-      runtimeError(vm, "Undefined property '%s'.", name->chars);
-      return INTERPRET_RUNTIME_ERROR;
+      if (!bindMethod(vm, instance->klass, name)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      break;
     }
 
     case OP_SET_PROPERTY: {
@@ -426,6 +509,20 @@ static InterpretResult run(VM *vm) {
       Value value = pop(vm);
       pop(vm);
       push(vm, value);
+      break;
+    }
+
+    case OP_METHOD:
+      defineMethod(vm, READ_STRING());
+      break;
+
+    case OP_INVOKE: {
+      ObjString *method = READ_STRING();
+      int argCount = READ_BYTE();
+      if (!invoke(vm, method, argCount)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      frame = &vm->frames[vm->frameCount - 1];
       break;
     }
 

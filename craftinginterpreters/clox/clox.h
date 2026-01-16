@@ -24,6 +24,7 @@ typedef struct ObjClosure ObjClosure;
 typedef struct ObjUpvalue ObjUpvalue;
 typedef struct ObjClass ObjClass;
 typedef struct ObjInstance ObjInstance;
+typedef struct ObjBoundMethod ObjBoundMethod;
 
 typedef enum {
   VAL_BOOL,
@@ -108,6 +109,8 @@ typedef enum {
   OP_CLASS,
   OP_GET_PROPERTY,
   OP_SET_PROPERTY,
+  OP_METHOD,
+  OP_INVOKE,
 
   OP_RETURN,
 } OpCode;
@@ -119,6 +122,7 @@ typedef struct {
 } Chunk;
 
 typedef enum {
+  OBJ_BOUND_METHOD,
   OBJ_CLASS,
   OBJ_CLOSURE,
   OBJ_FUNCTION,
@@ -184,6 +188,13 @@ typedef struct {
 struct ObjClass {
   Obj obj;
   ObjString *name;
+  Table methods;
+};
+
+struct ObjBoundMethod {
+  Obj obj;
+  Value receiver;
+  ObjClosure *method;
 };
 
 struct ObjInstance {
@@ -302,7 +313,16 @@ typedef struct {
   bool isLocal;
 } Upvalue;
 
-typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_INITIALIZER,
+  TYPE_METHOD,
+  TYPE_SCRIPT
+} FunctionType;
+
+typedef struct ClassCompiler {
+  struct ClassCompiler *enclosing;
+} ClassCompiler;
 
 typedef struct Compiler {
   struct Compiler *enclosing;
@@ -330,6 +350,7 @@ struct VM {
 
   Table globals;
   Table strings;
+  ObjString *initString;
   ObjUpvalue *openUpvalues;
 
   size_t bytesAllocated;
@@ -342,10 +363,15 @@ struct VM {
   Parser *parser;
   Scanner *scanner;
   Compiler *compiler;
+  ClassCompiler *currentClass;
 
   // Print output buffer for testing
   char printBuffer[4096];
   size_t printBufferLen;
+
+  // Error buffer for testing
+  char errorBuffer[4096];
+  size_t errorBufferLen;
 };
 
 typedef enum {
@@ -390,6 +416,8 @@ void printValue(Value value);
 void printValueToBuffer(VM *vm, Value value);
 const char *vmGetPrintBuffer(VM *vm);
 void vmClearPrintBuffer(VM *vm);
+const char *vmGetErrorBuffer(VM *vm);
+void vmClearErrorBuffer(VM *vm);
 
 extern Value NIL_VAL;
 
@@ -423,6 +451,8 @@ bool IS_CLASS(Value value);
 ObjClass *AS_CLASS(Value value);
 bool IS_INSTANCE(Value value);
 ObjInstance *AS_INSTANCE(Value value);
+bool IS_BOUND_METHOD(Value value);
+ObjBoundMethod *AS_BOUND_METHOD(Value value);
 
 ObjFunction *newFunction(VM *vm);
 ObjNative *newNative(VM *vm, NativeFn function);
@@ -430,6 +460,7 @@ ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjInstance *newInstance(VM *vm, ObjClass *klass);
+ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 
 void freeObjects(VM *vm);
 void collectGarbage(VM *vm);

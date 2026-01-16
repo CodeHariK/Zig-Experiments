@@ -51,7 +51,16 @@ ObjUpvalue *newUpvalue(VM *vm, Value *slot) {
 ObjClass *newClass(VM *vm, ObjString *name) {
   ObjClass *klass = (ObjClass *)ALLOCATE_OBJ(vm, sizeof(ObjClass), OBJ_CLASS);
   klass->name = name;
+  initTable(&klass->methods);
   return klass;
+}
+
+ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method) {
+  ObjBoundMethod *bound = (ObjBoundMethod *)ALLOCATE_OBJ(
+      vm, sizeof(ObjBoundMethod), OBJ_BOUND_METHOD);
+  bound->receiver = receiver;
+  bound->method = method;
+  return bound;
 }
 
 ObjInstance *newInstance(VM *vm, ObjClass *klass) {
@@ -134,7 +143,13 @@ void freeObjects(VM *vm) {
     // Use the freeObject from helper.c via sweep's pattern
     // Actually, just inline the freeing here for non-GC cleanup
     switch (object->type) {
+    case OBJ_BOUND_METHOD: {
+      FREE(sizeof(ObjBoundMethod), object);
+      break;
+    }
     case OBJ_CLASS: {
+      ObjClass *klass = (ObjClass *)object;
+      freeTable(&klass->methods);
       FREE(sizeof(ObjClass), object);
       break;
     }
@@ -218,6 +233,9 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
+  case OBJ_BOUND_METHOD:
+    printFunction(AS_BOUND_METHOD(value)->method->function);
+    break;
   case OBJ_CLASS:
     printf("%s", AS_CLASS(value)->name->chars);
     break;
@@ -277,6 +295,15 @@ void printValueToBuffer(VM *vm, Value value) {
     break;
   case VAL_OBJ:
     switch (OBJ_TYPE(value)) {
+    case OBJ_BOUND_METHOD: {
+      ObjFunction *fn = AS_BOUND_METHOD(value)->method->function;
+      if (fn->name == NULL) {
+        len = snprintf(temp, sizeof(temp), "<script>");
+      } else {
+        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
+      }
+      break;
+    }
     case OBJ_CLASS:
       len = snprintf(temp, sizeof(temp), "%s", AS_CLASS(value)->name->chars);
       break;
@@ -331,4 +358,11 @@ const char *vmGetPrintBuffer(VM *vm) { return vm->printBuffer; }
 void vmClearPrintBuffer(VM *vm) {
   vm->printBuffer[0] = '\0';
   vm->printBufferLen = 0;
+}
+
+const char *vmGetErrorBuffer(VM *vm) { return vm->errorBuffer; }
+
+void vmClearErrorBuffer(VM *vm) {
+  vm->errorBuffer[0] = '\0';
+  vm->errorBufferLen = 0;
 }

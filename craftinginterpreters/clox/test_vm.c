@@ -130,6 +130,55 @@ TestCase tests[] = {
      "3\n", false},
     {"class Foo {} var foo = Foo(); foo.bar = \"baz\"; print foo.bar;", "baz\n",
      false},
+
+    // Methods
+    {"class Bacon { eat() { print \"Crunch\"; } } Bacon().eat();", "Crunch\n",
+     false},
+    {"class Bacon { eat() { print \"Crunch\"; } } var b = Bacon(); b.eat();",
+     "Crunch\n", false},
+
+    // this keyword
+    {"class Person { sayName() { print this.name; } } var p = Person(); "
+     "p.name = \"Bob\"; p.sayName();",
+     "Bob\n", false},
+    {"class Nested { method() { fun f() { print this.field; } f(); } } "
+     "var n = Nested(); n.field = 42; n.method();",
+     "42\n", false},
+
+    // Initializer
+    {"class Circle { init(r) { this.radius = r; } } var c = Circle(3); "
+     "print c.radius;",
+     "3\n", false},
+    {"class Foo { init() { this.x = 1; } } var f = Foo(); print f.x;", "1\n",
+     false},
+    {"class Foo { init() { return; } } var f = Foo(); print f;",
+     "Foo instance\n", false},
+
+    // Method returning this
+    {"class Builder { setX(x) { this.x = x; return this; } "
+     "setY(y) { this.y = y; return this; } } "
+     "var b = Builder().setX(1).setY(2); print b.x + b.y;",
+     "3\n", false},
+
+    // OP_INVOKE optimization
+    {"class Scone { topping(first, second) { "
+     "print \"scone with \" + first + \" and \" + second; } } "
+     "var s = Scone(); s.topping(\"berries\", \"cream\");",
+     "scone with berries and cream\n", false},
+
+    // Bound method
+    {"class Foo { method() { print this.x; } } var foo = Foo(); foo.x = 123; "
+     "var m = foo.method; m();",
+     "123\n", false},
+
+    // Error: 'this' outside class
+    {"fun notMethod() { print this; }", "", true},
+
+    // Error: return value from init
+    {"class Foo { init() { return 123; } }", "", true},
+
+    // Error: calling class with wrong args
+    {"class Foo { init(a, b) {} } Foo(1);", "", true},
 };
 
 int main(void) {
@@ -145,6 +194,7 @@ int main(void) {
     VM vm;
     vmInit(&vm);
     vmClearPrintBuffer(&vm);
+    vmClearErrorBuffer(&vm);
 
     InterpretResult result = interpret(&vm, test->source);
 
@@ -173,7 +223,12 @@ int main(void) {
     bool passed = false;
     if (test->expectError) {
       if (hadError) {
-        printf("[PassError]\n");
+        const char *errorMsg = vmGetErrorBuffer(&vm);
+        if (errorMsg && strlen(errorMsg) > 0) {
+          printf("[PassError] %s", errorMsg);
+        } else {
+          printf("[PassError]\n");
+        }
         passed = true;
         passErrorCount++;
       } else {
