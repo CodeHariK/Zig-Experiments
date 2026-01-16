@@ -350,10 +350,3 @@ After understanding this:
 3. Set up interrupts and timers
 4. Explore memory management (page tables)
 5. Study xv6-riscv source code!
-
-## Resources
-
-- [RISC-V Specification](https://riscv.org/specifications/)
-- [QEMU RISC-V Virt Machine](https://www.qemu.org/docs/master/system/riscv/virt.html)
-- [xv6-riscv](https://github.com/mit-pdos/xv6-riscv)
-- [RISC-V Assembly Programmer's Manual](https://github.com/riscv-non-isa/riscv-asm-manual)

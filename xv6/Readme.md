@@ -11,3 +11,10 @@
 * [CS 162: Operating Systems and Systems](https://www.youtube.com/playlist?list=PLF2K2xZjNEf97A_uBCwEl61sdxWVP7VWC)
 
 * [The xv6 Kernel](https://www.youtube.com/playlist?list=PLbtzT1TYeoMhTPzyTZboW_j7TPAnjv9XB)
+
+
+## Resources
+
+- [RISC-V Specification](https://riscv.org/specifications/)
+- [xv6-riscv](https://github.com/mit-pdos/xv6-riscv)
+- [RISC-V Assembly Programmer's Manual](https://github.com/riscv-non-isa/riscv-asm-manual)
