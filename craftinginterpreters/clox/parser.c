@@ -9,6 +9,10 @@ static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
 static void declaration(VM *vm);
 static void declareVariable(VM *vm);
+static void statement(VM *vm);
+static void varDeclaration(VM *vm);
+static void and_(VM *vm, bool canAssign);
+static void or_(VM *vm, bool canAssign);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
@@ -33,7 +37,7 @@ ParseRule rules[] = {
     [TOKEN_IDENTIFIER] = {parseVariable, NULL, PREC_NONE},
     [TOKEN_STRING] = {parseString, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {parseNumber, NULL, PREC_NONE},
-    [TOKEN_AND] = {NULL, NULL, PREC_NONE},
+    [TOKEN_AND] = {NULL, and_, PREC_AND},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
     [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
     [TOKEN_FALSE] = {parseLiteral, NULL, PREC_NONE},
@@ -41,7 +45,7 @@ ParseRule rules[] = {
     [TOKEN_FUN] = {NULL, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
     [TOKEN_NIL] = {parseLiteral, NULL, PREC_NONE},
-    [TOKEN_OR] = {NULL, NULL, PREC_NONE},
+    [TOKEN_OR] = {NULL, or_, PREC_OR},
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
     [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
@@ -165,6 +169,37 @@ static void emitConstant(VM *vm, Value value) {
 }
 
 static void emitReturn(VM *vm) { emitByte(vm, OP_RETURN); }
+
+static int emitJump(VM *vm, u8 instruction) {
+  emitByte(vm, instruction);
+  emitByte(vm, 0xff);
+  emitByte(vm, 0xff);
+  return (int)vm->chunk->code.count - 2;
+}
+
+static void patchJump(VM *vm, int offset) {
+  // -2 to adjust for the bytecode for the jump offset itself.
+  int jump = (int)vm->chunk->code.count - offset - 2;
+
+  if (jump > UINT16_MAX) {
+    error(vm->parser, "Too much code to jump over.");
+  }
+
+  getCodeArr(vm->chunk)[offset] = (jump >> 8) & 0xff;
+  getCodeArr(vm->chunk)[offset + 1] = jump & 0xff;
+}
+
+static void emitLoop(VM *vm, int loopStart) {
+  emitByte(vm, OP_LOOP);
+
+  int offset = (int)vm->chunk->code.count - loopStart + 2;
+  if (offset > UINT16_MAX) {
+    error(vm->parser, "Loop body too large.");
+  }
+
+  emitByte(vm, (offset >> 8) & 0xff);
+  emitByte(vm, offset & 0xff);
+}
 
 #define DEBUG_PRINT_CODE
 
@@ -424,9 +459,99 @@ static void endScope(VM *vm) {
   }
 }
 
+static void ifStatement(VM *vm) {
+  consume(vm, TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  parseExpression(vm);
+  consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int thenJump = emitJump(vm, OP_JUMP_IF_FALSE);
+  emitByte(vm, OP_POP);
+  statement(vm);
+
+  int elseJump = emitJump(vm, OP_JUMP);
+
+  patchJump(vm, thenJump);
+  emitByte(vm, OP_POP);
+
+  if (match(vm, TOKEN_ELSE))
+    statement(vm);
+  patchJump(vm, elseJump);
+}
+
+static void whileStatement(VM *vm) {
+  int loopStart = (int)vm->chunk->code.count;
+  consume(vm, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+  parseExpression(vm);
+  consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int exitJump = emitJump(vm, OP_JUMP_IF_FALSE);
+  emitByte(vm, OP_POP);
+  statement(vm);
+  emitLoop(vm, loopStart);
+
+  patchJump(vm, exitJump);
+  emitByte(vm, OP_POP);
+}
+
+static void forStatement(VM *vm) {
+  beginScope(vm);
+  consume(vm, TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+
+  // Initializer clause
+  if (match(vm, TOKEN_SEMICOLON)) {
+    // No initializer.
+  } else if (match(vm, TOKEN_VAR)) {
+    varDeclaration(vm);
+  } else {
+    expressionStatement(vm);
+  }
+
+  int loopStart = (int)vm->chunk->code.count;
+
+  // Condition clause
+  int exitJump = -1;
+  if (!match(vm, TOKEN_SEMICOLON)) {
+    parseExpression(vm);
+    consume(vm, TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+    // Jump out of the loop if the condition is false.
+    exitJump = emitJump(vm, OP_JUMP_IF_FALSE);
+    emitByte(vm, OP_POP); // Condition.
+  }
+
+  // Increment clause
+  if (!match(vm, TOKEN_RIGHT_PAREN)) {
+    int bodyJump = emitJump(vm, OP_JUMP);
+    int incrementStart = (int)vm->chunk->code.count;
+    parseExpression(vm);
+    emitByte(vm, OP_POP);
+    consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    emitLoop(vm, loopStart);
+    loopStart = incrementStart;
+    patchJump(vm, bodyJump);
+  }
+
+  statement(vm);
+  emitLoop(vm, loopStart);
+
+  if (exitJump != -1) {
+    patchJump(vm, exitJump);
+    emitByte(vm, OP_POP); // Condition.
+  }
+
+  endScope(vm);
+}
+
 static void statement(VM *vm) {
   if (match(vm, TOKEN_PRINT)) {
     printStatement(vm);
+  } else if (match(vm, TOKEN_IF)) {
+    ifStatement(vm);
+  } else if (match(vm, TOKEN_WHILE)) {
+    whileStatement(vm);
+  } else if (match(vm, TOKEN_FOR)) {
+    forStatement(vm);
   } else if (match(vm, TOKEN_LEFT_BRACE)) {
     beginScope(vm);
     block(vm);
@@ -437,6 +562,28 @@ static void statement(VM *vm) {
 
   if (vm->parser->panicMode)
     synchronize(vm);
+}
+
+static void and_(VM *vm, bool canAssign) {
+  (void)canAssign;
+  int endJump = emitJump(vm, OP_JUMP_IF_FALSE);
+
+  emitByte(vm, OP_POP);
+  parsePrecedence(vm, PREC_AND);
+
+  patchJump(vm, endJump);
+}
+
+static void or_(VM *vm, bool canAssign) {
+  (void)canAssign;
+  int elseJump = emitJump(vm, OP_JUMP_IF_FALSE);
+  int endJump = emitJump(vm, OP_JUMP);
+
+  patchJump(vm, elseJump);
+  emitByte(vm, OP_POP);
+
+  parsePrecedence(vm, PREC_OR);
+  patchJump(vm, endJump);
 }
 
 static u8 parseVariableDeclaration(VM *vm, const char *errorMessage) {

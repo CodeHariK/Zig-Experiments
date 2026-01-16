@@ -36,6 +36,47 @@ TestCase tests[] = {
     {"var a = 1; { var a = 2; print a; } print a;", "2;1;", false},
     {"var a = 1; { a = 2; } print a;", "2;", false},
     {"var a = 1; { var a = 2; a = 3; } print a;", "1;", false},
+
+    // If statements
+    {"if (true) print 1;", "1;", false},
+    {"if (false) print 1;", "", false},
+    {"if (true) print 1; else print 2;", "1;", false},
+    {"if (false) print 1; else print 2;", "2;", false},
+    {"var a = 1; if (a == 1) { a = 2; } print a;", "2;", false},
+
+    // Logical and
+    {"print true and true;", "true;", false},
+    {"print true and false;", "false;", false},
+    {"print false and true;", "false;", false},
+    {"print false and false;", "false;", false},
+    {"print 1 and 2;", "2;", false},
+    {"print nil and 2;", "nil;", false},
+
+    // Logical or
+    {"print true or true;", "true;", false},
+    {"print true or false;", "true;", false},
+    {"print false or true;", "true;", false},
+    {"print false or false;", "false;", false},
+    {"print nil or 2;", "2;", false},
+    {"print 1 or 2;", "1;", false},
+
+    // Combined
+    {"print true and true or false;", "true;", false},
+    {"print false or true and true;", "true;", false},
+
+    // While loops
+    {"var i = 0; while (i < 3) { print i; i = i + 1; }", "0;1;2;", false},
+    {"var i = 0; while (i < 0) { print i; i = i + 1; }", "", false},
+
+    // For loops
+    {"for (var i = 0; i < 3; i = i + 1) print i;", "0;1;2;", false},
+    {"var i = 0; for (; i < 3; i = i + 1) print i;", "0;1;2;", false},
+    {"var i = 0; for (; i < 3;) { print i; i = i + 1; }", "0;1;2;", false},
+
+    // Nested loops
+    {"var sum = 0; for (var i = 0; i < 3; i = i + 1) { for (var j = 0; j < 2; "
+     "j = j + 1) { sum = sum + 1; } } print sum;",
+     "6;", false},
 };
 
 int main(void) {

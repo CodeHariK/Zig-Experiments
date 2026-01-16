@@ -3,6 +3,11 @@
 
 static inline u8 READ_BYTE(VM *vm) { return *vm->ip++; }
 
+static inline u16 READ_SHORT(VM *vm) {
+  vm->ip += 2;
+  return (u16)((vm->ip[-2] << 8) | vm->ip[-1]);
+}
+
 static inline Value READ_CONSTANT(VM *vm) {
   return getConstantArr(vm->chunk)[READ_BYTE(vm)];
 }
@@ -221,6 +226,25 @@ static InterpretResult run(VM *vm) {
       ObjString *name = READ_STRING(vm);
       tableSet(&vm->globals, name, peek(vm, 0));
       pop(vm);
+      break;
+    }
+
+    case OP_JUMP: {
+      u16 offset = READ_SHORT(vm);
+      vm->ip += offset;
+      break;
+    }
+
+    case OP_JUMP_IF_FALSE: {
+      u16 offset = READ_SHORT(vm);
+      if (isFalsey(peek(vm, 0)))
+        vm->ip += offset;
+      break;
+    }
+
+    case OP_LOOP: {
+      u16 offset = READ_SHORT(vm);
+      vm->ip -= offset;
       break;
     }
 

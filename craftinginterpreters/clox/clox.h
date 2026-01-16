@@ -12,6 +12,7 @@
 
 typedef uint32_t u32;
 typedef int32_t i32;
+typedef uint16_t u16;
 typedef uint8_t u8;
 
 typedef enum {
@@ -113,6 +114,10 @@ typedef enum {
   OP_DEFINE_GLOBAL,
   OP_GET_LOCAL,
   OP_SET_LOCAL,
+
+  OP_JUMP,
+  OP_JUMP_IF_FALSE,
+  OP_LOOP,
 
   OP_RETURN,
 } OpCode;
