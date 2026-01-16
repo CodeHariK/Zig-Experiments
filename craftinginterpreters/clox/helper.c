@@ -1,5 +1,6 @@
 #include "clox.h"
 
+#ifndef NAN_BOXING
 // Value constructors and accessors
 Value BOOL_VAL(bool value) { return (Value){VAL_BOOL, {.boolean = value}}; }
 
@@ -17,6 +18,8 @@ bool IS_NUMBER(Value value) { return value.type == VAL_NUMBER; }
 Value OBJ_VAL(Obj *obj) { return (Value){VAL_OBJ, {.obj = obj}}; }
 bool IS_OBJ(Value value) { return value.type == VAL_OBJ; }
 Obj *AS_OBJ(Value value) { return value.as.obj; }
+#endif
+
 ObjType OBJ_TYPE(Value value) { return AS_OBJ(value)->type; }
 bool IS_OBJ_TYPE(Value value, ObjType type) {
   return IS_OBJ(value) && OBJ_TYPE(value) == type;
@@ -414,7 +417,7 @@ void freeTable(Table *table) {
 }
 
 static Entry *findEntry(Entry *entries, i32 capacity, ObjString *key) {
-  u32 index = key->hash % capacity;
+  u32 index = key->hash & (capacity - 1);
   Entry *tombstone = NULL;
 
   for (;;) {
@@ -434,7 +437,7 @@ static Entry *findEntry(Entry *entries, i32 capacity, ObjString *key) {
       return entry;
     }
 
-    index = (index + 1) % capacity;
+    index = (index + 1) & (capacity - 1);
   }
 }
 
@@ -524,7 +527,7 @@ ObjString *tableFindString(Table *table, const char *chars, i32 length,
   if (table->count == 0)
     return NULL;
 
-  u32 index = hash % table->capacity;
+  u32 index = hash & (table->capacity - 1);
   for (;;) {
     Entry *entry = &table->entries[index];
     if (entry->key == NULL) {
@@ -537,6 +540,6 @@ ObjString *tableFindString(Table *table, const char *chars, i32 length,
       return entry->key;
     }
 
-    index = (index + 1) % table->capacity;
+    index = (index + 1) & (table->capacity - 1);
   }
 }

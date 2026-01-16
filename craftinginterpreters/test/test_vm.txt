@@ -9118,9 +9118,9 @@ STACK | <script> |
 0000    1 OP_GET_GLOBAL       0 'clock'
 STACK | <script> | <native fn> |
 0002    | OP_CALL             0
-STACK | <script> | 0.028286 |
+STACK | <script> | 0.022067 |
 0004    | OP_CONSTANT         1 '0'
-STACK | <script> | 0.028286 | 0 |
+STACK | <script> | 0.022067 | 0 |
 0006    | OP_GREATER
 STACK | <script> | true |
 0007    | OP_PRINT

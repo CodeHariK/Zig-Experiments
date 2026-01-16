@@ -1,7 +1,9 @@
 #include "clox.h"
 #include <stdio.h>
 
+#ifndef NAN_BOXING
 Value NIL_VAL = {VAL_NIL, {.boolean = false}};
+#endif
 
 Obj *allocateObject(VM *vm, size_t size, ObjType type) {
   return ALLOCATE_OBJ(vm, size, type);
@@ -206,6 +208,7 @@ void freeValueArray(ValueArray *array) {
   initValueArray(array);
 }
 
+#ifndef NAN_BOXING
 bool VAL_EQUAL(Value a, Value b) {
   if (a.type != b.type)
     return false;
@@ -222,6 +225,7 @@ bool VAL_EQUAL(Value a, Value b) {
     return false; // Unreachable.
   }
 }
+#endif
 
 static void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
@@ -261,6 +265,17 @@ void printObject(Value value) {
 }
 
 void printValue(Value value) {
+#ifdef NAN_BOXING
+  if (IS_BOOL(value)) {
+    printf(AS_BOOL(value) ? "true" : "false");
+  } else if (IS_NIL(value)) {
+    printf("nil");
+  } else if (IS_NUMBER(value)) {
+    printf("%g", AS_NUMBER(value));
+  } else if (IS_OBJ(value)) {
+    printObject(value);
+  }
+#else
   switch (value.type) {
   case VAL_BOOL:
     printf(AS_BOOL(value) ? "true" : "false");
@@ -277,12 +292,65 @@ void printValue(Value value) {
   default:
     printf("nil");
   }
+#endif
+}
+
+static size_t printObjToTemp(char *temp, size_t tempSize, Value value) {
+  switch (OBJ_TYPE(value)) {
+  case OBJ_BOUND_METHOD: {
+    ObjFunction *fn = AS_BOUND_METHOD(value)->method->function;
+    if (fn->name == NULL) {
+      return snprintf(temp, tempSize, "<script>");
+    } else {
+      return snprintf(temp, tempSize, "<fn %s>", fn->name->chars);
+    }
+  }
+  case OBJ_CLASS:
+    return snprintf(temp, tempSize, "%s", AS_CLASS(value)->name->chars);
+  case OBJ_CLOSURE: {
+    ObjFunction *fn = AS_CLOSURE(value)->function;
+    if (fn->name == NULL) {
+      return snprintf(temp, tempSize, "<script>");
+    } else {
+      return snprintf(temp, tempSize, "<fn %s>", fn->name->chars);
+    }
+  }
+  case OBJ_FUNCTION: {
+    ObjFunction *fn = AS_FUNCTION(value);
+    if (fn->name == NULL) {
+      return snprintf(temp, tempSize, "<script>");
+    } else {
+      return snprintf(temp, tempSize, "<fn %s>", fn->name->chars);
+    }
+  }
+  case OBJ_INSTANCE:
+    return snprintf(temp, tempSize, "%s instance",
+                    AS_INSTANCE(value)->klass->name->chars);
+  case OBJ_NATIVE:
+    return snprintf(temp, tempSize, "<native fn>");
+  case OBJ_STRING:
+    return snprintf(temp, tempSize, "%s", AS_CSTRING(value));
+  case OBJ_UPVALUE:
+    return snprintf(temp, tempSize, "upvalue");
+  }
+  return 0;
 }
 
 void printValueToBuffer(VM *vm, Value value) {
   char temp[256];
   size_t len = 0;
 
+#ifdef NAN_BOXING
+  if (IS_BOOL(value)) {
+    len = snprintf(temp, sizeof(temp), "%s", AS_BOOL(value) ? "true" : "false");
+  } else if (IS_NIL(value)) {
+    len = snprintf(temp, sizeof(temp), "nil");
+  } else if (IS_NUMBER(value)) {
+    len = snprintf(temp, sizeof(temp), "%g", AS_NUMBER(value));
+  } else if (IS_OBJ(value)) {
+    len = printObjToTemp(temp, sizeof(temp), value);
+  }
+#else
   switch (value.type) {
   case VAL_BOOL:
     len = snprintf(temp, sizeof(temp), "%s", AS_BOOL(value) ? "true" : "false");
@@ -294,56 +362,13 @@ void printValueToBuffer(VM *vm, Value value) {
     len = snprintf(temp, sizeof(temp), "%g", AS_NUMBER(value));
     break;
   case VAL_OBJ:
-    switch (OBJ_TYPE(value)) {
-    case OBJ_BOUND_METHOD: {
-      ObjFunction *fn = AS_BOUND_METHOD(value)->method->function;
-      if (fn->name == NULL) {
-        len = snprintf(temp, sizeof(temp), "<script>");
-      } else {
-        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
-      }
-      break;
-    }
-    case OBJ_CLASS:
-      len = snprintf(temp, sizeof(temp), "%s", AS_CLASS(value)->name->chars);
-      break;
-    case OBJ_CLOSURE: {
-      ObjFunction *fn = AS_CLOSURE(value)->function;
-      if (fn->name == NULL) {
-        len = snprintf(temp, sizeof(temp), "<script>");
-      } else {
-        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
-      }
-      break;
-    }
-    case OBJ_FUNCTION: {
-      ObjFunction *fn = AS_FUNCTION(value);
-      if (fn->name == NULL) {
-        len = snprintf(temp, sizeof(temp), "<script>");
-      } else {
-        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
-      }
-      break;
-    }
-    case OBJ_INSTANCE:
-      len = snprintf(temp, sizeof(temp), "%s instance",
-                     AS_INSTANCE(value)->klass->name->chars);
-      break;
-    case OBJ_NATIVE:
-      len = snprintf(temp, sizeof(temp), "<native fn>");
-      break;
-    case OBJ_STRING:
-      len = snprintf(temp, sizeof(temp), "%s", AS_CSTRING(value));
-      break;
-    case OBJ_UPVALUE:
-      len = snprintf(temp, sizeof(temp), "upvalue");
-      break;
-    }
+    len = printObjToTemp(temp, sizeof(temp), value);
     break;
   default:
     len = snprintf(temp, sizeof(temp), "nil");
     break;
   }
+#endif
 
   // Append to buffer
   if (vm->printBufferLen + len < sizeof(vm->printBuffer) - 1) {
