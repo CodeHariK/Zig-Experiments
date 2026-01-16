@@ -31,6 +31,8 @@ bool IS_NATIVE(Value value) { return IS_OBJ_TYPE(value, OBJ_NATIVE); }
 NativeFn AS_NATIVE(Value value) {
   return ((ObjNative *)AS_OBJ(value))->function;
 }
+bool IS_CLOSURE(Value value) { return IS_OBJ_TYPE(value, OBJ_CLOSURE); }
+ObjClosure *AS_CLOSURE(Value value) { return (ObjClosure *)AS_OBJ(value); }
 
 bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));

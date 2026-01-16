@@ -90,10 +90,25 @@ TestCase tests[] = {
     {"fun earlyReturn() { return 1; print 2; } print earlyReturn();", "1;",
      false},
 
-    // Functions - local variables
+    // Closures - basic upvalue capture
     {"fun outer() { var x = 1; fun inner() { return x; } return inner(); } "
      "print outer();",
-     "", true}, // Closures not implemented yet
+     "1;", false},
+
+    // Closures - closed upvalue
+    {"fun outer() { var x = 1; fun inner() { return x; } var f = inner; x = 2; "
+     "return f(); } print outer();",
+     "2;", false},
+
+    // Closures - upvalue in loop
+    {"var f; for (var i = 0; i < 1; i = i + 1) { fun g() { return i; } f = g; "
+     "} print f();",
+     "1;", false},
+
+    // Closures - nested
+    {"fun outer() { var x = 1; fun middle() { fun inner() { return x; } "
+     "return inner(); } return middle(); } print outer();",
+     "1;", false},
 
     // Functions - recursion with locals
     {"fun count(n) { if (n > 0) { print n; count(n - 1); } } count(3);",

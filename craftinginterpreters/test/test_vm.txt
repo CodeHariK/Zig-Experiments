@@ -1,4 +1,4 @@
-Running 52 test cases...
+Running 55 test cases...
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='print' (PRINT)
 [PARSER] Advanced: previous='print' (PRINT), current='1' (NUMBER)
@@ -3551,7 +3551,7 @@ TEST 42: var sum = 0; for (var i = 0; i < 3; i = i + 1) { for (var j = 0; j < 2;
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn sayHi>'
+0000    1 OP_CLOSURE          1 <fn sayHi>
 0002    | OP_DEFINE_GLOBAL    0 'sayHi'
 0004    | OP_GET_GLOBAL       2 'sayHi'
 0006    | OP_CALL             0
@@ -3559,7 +3559,7 @@ TEST 42: var sum = 0; for (var i = 0; i < 3; i = i + 1) { for (var j = 0; j < 2;
 0009    | OP_NIL
 0010    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn sayHi>'
+0000    1 OP_CLOSURE          1 <fn sayHi>
 STACK | <script> | <fn sayHi> |
 0002    | OP_DEFINE_GLOBAL    0 'sayHi'
 STACK | <script> |
@@ -3647,7 +3647,7 @@ TEST 43: fun sayHi() { print 1; } sayHi();
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn add>'
+0000    1 OP_CLOSURE          1 <fn add>
 0002    | OP_DEFINE_GLOBAL    0 'add'
 0004    | OP_GET_GLOBAL       2 'add'
 0006    | OP_CONSTANT         3 '1'
@@ -3657,7 +3657,7 @@ TEST 43: fun sayHi() { print 1; } sayHi();
 0013    | OP_NIL
 0014    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn add>'
+0000    1 OP_CLOSURE          1 <fn add>
 STACK | <script> | <fn add> |
 0002    | OP_DEFINE_GLOBAL    0 'add'
 STACK | <script> |
@@ -3826,7 +3826,7 @@ TEST 44: fun add(a, b) { return a + b; } print add(1, 2);
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn fib>'
+0000    1 OP_CLOSURE          1 <fn fib>
 0002    | OP_DEFINE_GLOBAL    0 'fib'
 0004    | OP_GET_GLOBAL       2 'fib'
 0006    | OP_CONSTANT         3 '10'
@@ -3835,7 +3835,7 @@ TEST 44: fun add(a, b) { return a + b; } print add(1, 2);
 0011    | OP_NIL
 0012    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn fib>'
+0000    1 OP_CLOSURE          1 <fn fib>
 STACK | <script> | <fn fib> |
 0002    | OP_DEFINE_GLOBAL    0 'fib'
 STACK | <script> |
@@ -8117,7 +8117,7 @@ TEST 45: fun fib(n) { if (n < 2) return n; return fib(n - 1) + fib(n - 2); } pri
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn noReturn>'
+0000    1 OP_CLOSURE          1 <fn noReturn>
 0002    | OP_DEFINE_GLOBAL    0 'noReturn'
 0004    | OP_GET_GLOBAL       2 'noReturn'
 0006    | OP_CALL             0
@@ -8125,7 +8125,7 @@ TEST 45: fun fib(n) { if (n < 2) return n; return fib(n - 1) + fib(n - 2); } pri
 0009    | OP_NIL
 0010    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn noReturn>'
+0000    1 OP_CLOSURE          1 <fn noReturn>
 STACK | <script> | <fn noReturn> |
 0002    | OP_DEFINE_GLOBAL    0 'noReturn'
 STACK | <script> |
@@ -8191,7 +8191,7 @@ TEST 46: fun noReturn() { } print noReturn();
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn earlyReturn>'
+0000    1 OP_CLOSURE          1 <fn earlyReturn>
 0002    | OP_DEFINE_GLOBAL    0 'earlyReturn'
 0004    | OP_GET_GLOBAL       2 'earlyReturn'
 0006    | OP_CALL             0
@@ -8199,7 +8199,7 @@ TEST 46: fun noReturn() { } print noReturn();
 0009    | OP_NIL
 0010    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn earlyReturn>'
+0000    1 OP_CLOSURE          1 <fn earlyReturn>
 STACK | <script> | <fn earlyReturn> |
 0002    | OP_DEFINE_GLOBAL    0 'earlyReturn'
 STACK | <script> |
@@ -8251,7 +8251,7 @@ TEST 47: fun earlyReturn() { return 1; print 2; } print earlyReturn();
 [PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
 [PARSER] Advanced: previous='}' (RIGHT_BRACE), current='return' (RETURN)
 == inner ==
-0000    1 OP_GET_GLOBAL       0 'x'
+0000    1 OP_GET_UPVALUE      0
 0002    | OP_RETURN
 0003    | OP_NIL
 0004    | OP_RETURN
@@ -8271,12 +8271,13 @@ TEST 47: fun earlyReturn() { return 1; print 2; } print earlyReturn();
 [PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
 == outer ==
 0000    1 OP_CONSTANT         0 '1'
-0002    | OP_CONSTANT         1 '<fn inner>'
-0004    | OP_GET_LOCAL        2
-0006    | OP_CALL             0
-0008    | OP_RETURN
-0009    | OP_NIL
+0002    | OP_CLOSURE          1 <fn inner>
+0004      |                     local 1
+0006    | OP_GET_LOCAL        2
+0008    | OP_CALL             0
 0010    | OP_RETURN
+0011    | OP_NIL
+0012    | OP_RETURN
 [PARSER] Advanced: previous='print' (PRINT), current='outer' (IDENTIFIER)
 [PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
 [PARSER] Advanced: previous='outer' (IDENTIFIER), current='(' (LEFT_PAREN)
@@ -8292,7 +8293,7 @@ TEST 47: fun earlyReturn() { return 1; print 2; } print earlyReturn();
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn outer>'
+0000    1 OP_CLOSURE          1 <fn outer>
 0002    | OP_DEFINE_GLOBAL    0 'outer'
 0004    | OP_GET_GLOBAL       2 'outer'
 0006    | OP_CALL             0
@@ -8300,7 +8301,7 @@ TEST 47: fun earlyReturn() { return 1; print 2; } print earlyReturn();
 0009    | OP_NIL
 0010    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn outer>'
+0000    1 OP_CLOSURE          1 <fn outer>
 STACK | <script> | <fn outer> |
 0002    | OP_DEFINE_GLOBAL    0 'outer'
 STACK | <script> |
@@ -8310,16 +8311,534 @@ STACK | <script> | <fn outer> |
 STACK | <script> | <fn outer> |
 0000    1 OP_CONSTANT         0 '1'
 STACK | <script> | <fn outer> | 1 |
-0002    | OP_CONSTANT         1 '<fn inner>'
+0002    | OP_CLOSURE          1 <fn inner>
+0004      |                     local 1
 STACK | <script> | <fn outer> | 1 | <fn inner> |
-0004    | OP_GET_LOCAL        2
+0006    | OP_GET_LOCAL        2
 STACK | <script> | <fn outer> | 1 | <fn inner> | <fn inner> |
-0006    | OP_CALL             0
+0008    | OP_CALL             0
 STACK | <script> | <fn outer> | 1 | <fn inner> | <fn inner> |
-0000    1 OP_GET_GLOBAL       0 'x'
+0000    1 OP_GET_UPVALUE      0
+STACK | <script> | <fn outer> | 1 | <fn inner> | <fn inner> | 1 |
+0002    | OP_RETURN
+STACK | <script> | <fn outer> | 1 | <fn inner> | 1 |
+0010    | OP_RETURN
+STACK | <script> | 1 |
+0008    | OP_PRINT
+STACK | <script> |
+0009    | OP_NIL
+STACK | <script> | nil |
+0010    | OP_RETURN
 TEST 48: fun outer() { var x = 1; fun inner() { return x; } return inner(); } print outer();
-[RESULT]: 
-[PassError]
+[RESULT]: 1;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='outer' (IDENTIFIER)
+[PARSER] Advanced: previous='outer' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='x' (IDENTIFIER)
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='inner' (IDENTIFIER)
+[PARSER] Advanced: previous='inner' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='x' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='var' (VAR)
+== inner ==
+0000    1 OP_GET_UPVALUE      0
+0002    | OP_RETURN
+0003    | OP_NIL
+0004    | OP_RETURN
+[PARSER] Advanced: previous='var' (VAR), current='f' (IDENTIFIER)
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='inner' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='inner' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='x' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='2' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='2' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='f' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+== outer ==
+0000    1 OP_CONSTANT         0 '1'
+0002    | OP_CLOSURE          1 <fn inner>
+0004      |                     local 1
+0006    | OP_GET_LOCAL        2
+0008    | OP_CONSTANT         2 '2'
+0010    | OP_SET_LOCAL        1
+0012    | OP_POP
+0013    | OP_GET_LOCAL        3
+0015    | OP_CALL             0
+0017    | OP_RETURN
+0018    | OP_NIL
+0019    | OP_RETURN
+[PARSER] Advanced: previous='print' (PRINT), current='outer' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='outer' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLOSURE          1 <fn outer>
+0002    | OP_DEFINE_GLOBAL    0 'outer'
+0004    | OP_GET_GLOBAL       2 'outer'
+0006    | OP_CALL             0
+0008    | OP_PRINT
+0009    | OP_NIL
+0010    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLOSURE          1 <fn outer>
+STACK | <script> | <fn outer> |
+0002    | OP_DEFINE_GLOBAL    0 'outer'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       2 'outer'
+STACK | <script> | <fn outer> |
+0006    | OP_CALL             0
+STACK | <script> | <fn outer> |
+0000    1 OP_CONSTANT         0 '1'
+STACK | <script> | <fn outer> | 1 |
+0002    | OP_CLOSURE          1 <fn inner>
+0004      |                     local 1
+STACK | <script> | <fn outer> | 1 | <fn inner> |
+0006    | OP_GET_LOCAL        2
+STACK | <script> | <fn outer> | 1 | <fn inner> | <fn inner> |
+0008    | OP_CONSTANT         2 '2'
+STACK | <script> | <fn outer> | 1 | <fn inner> | <fn inner> | 2 |
+0010    | OP_SET_LOCAL        1
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> | 2 |
+0012    | OP_POP
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> |
+0013    | OP_GET_LOCAL        3
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> | <fn inner> |
+0015    | OP_CALL             0
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> | <fn inner> |
+0000    1 OP_GET_UPVALUE      0
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> | <fn inner> | 2 |
+0002    | OP_RETURN
+STACK | <script> | <fn outer> | 2 | <fn inner> | <fn inner> | 2 |
+0017    | OP_RETURN
+STACK | <script> | 2 |
+0008    | OP_PRINT
+STACK | <script> |
+0009    | OP_NIL
+STACK | <script> | nil |
+0010    | OP_RETURN
+TEST 49: fun outer() { var x = 1; fun inner() { return x; } var f = inner; x = 2; return f(); } print outer();
+[RESULT]: 2;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='f' (IDENTIFIER)
+[PARSER] Advanced: previous='f' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Advanced: previous=';' (SEMICOLON), current='for' (FOR)
+[PARSER] Advanced: previous='for' (FOR), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='i' (IDENTIFIER)
+[PARSER] Advanced: previous='i' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='0' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='0' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='i' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='i' (IDENTIFIER), current='<' (LESS)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=COMPARISON (LESS) -> CONTINUE
+[PARSER] Advanced: previous='<' (LESS), current='1' (NUMBER)
+[PARSER] Calling infix rule for token=LESS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LESS, tokenPrec=COMPARISON, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=TERM
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=TERM, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=TERM
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='i' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='i' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='i' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='i' (IDENTIFIER), current='+' (PLUS)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=TERM (PLUS) -> CONTINUE
+[PARSER] Advanced: previous='+' (PLUS), current='1' (NUMBER)
+[PARSER] Calling infix rule for token=PLUS
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=PLUS, tokenPrec=TERM, isPrefix=false
+[PARSER] >>> Entering parsePrecedence with minPrec=FACTOR
+[PARSER] Advanced: previous='1' (NUMBER), current=')' (RIGHT_PAREN)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=FACTOR, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=FACTOR
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='g' (IDENTIFIER)
+[PARSER] Advanced: previous='g' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='i' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='i' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='f' (IDENTIFIER)
+== g ==
+0000    1 OP_GET_UPVALUE      0
+0002    | OP_RETURN
+0003    | OP_NIL
+0004    | OP_RETURN
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Advanced: previous='=' (EQUAL), current='g' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='g' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+[PARSER] Advanced: previous='print' (PRINT), current='f' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='f' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_NIL
+0001    | OP_DEFINE_GLOBAL    0 'f'
+0003    | OP_CONSTANT         1 '0'
+0005    | OP_GET_LOCAL        1
+0007    | OP_CONSTANT         2 '1'
+0009    | OP_LESS
+0010    | OP_JUMP_IF_FALSE   10 -> 41
+0013    | OP_POP
+0014    | OP_JUMP            14 -> 28
+0017    | OP_GET_LOCAL        1
+0019    | OP_CONSTANT         3 '1'
+0021    | OP_ADD
+0022    | OP_SET_LOCAL        1
+0024    | OP_POP
+0025    | OP_LOOP            25 -> 5
+0028    | OP_CLOSURE          4 <fn g>
+0030      |                     local 1
+0032    | OP_GET_LOCAL        2
+0034    | OP_SET_GLOBAL       5 'f'
+0036    | OP_POP
+0037    | OP_POP
+0038    | OP_LOOP            38 -> 17
+0041    | OP_POP
+0042    | OP_CLOSE_UPVALUE
+0043    | OP_GET_GLOBAL       6 'f'
+0045    | OP_CALL             0
+0047    | OP_PRINT
+0048    | OP_NIL
+0049    | OP_RETURN
+STACK | <script> |
+0000    1 OP_NIL
+STACK | <script> | nil |
+0001    | OP_DEFINE_GLOBAL    0 'f'
+STACK | <script> |
+0003    | OP_CONSTANT         1 '0'
+STACK | <script> | 0 |
+0005    | OP_GET_LOCAL        1
+STACK | <script> | 0 | 0 |
+0007    | OP_CONSTANT         2 '1'
+STACK | <script> | 0 | 0 | 1 |
+0009    | OP_LESS
+STACK | <script> | 0 | true |
+0010    | OP_JUMP_IF_FALSE   10 -> 41
+STACK | <script> | 0 | true |
+0013    | OP_POP
+STACK | <script> | 0 |
+0014    | OP_JUMP            14 -> 28
+STACK | <script> | 0 |
+0028    | OP_CLOSURE          4 <fn g>
+0030      |                     local 1
+STACK | <script> | 0 | <fn g> |
+0032    | OP_GET_LOCAL        2
+STACK | <script> | 0 | <fn g> | <fn g> |
+0034    | OP_SET_GLOBAL       5 'f'
+STACK | <script> | 0 | <fn g> | <fn g> |
+0036    | OP_POP
+STACK | <script> | 0 | <fn g> |
+0037    | OP_POP
+STACK | <script> | 0 |
+0038    | OP_LOOP            38 -> 17
+STACK | <script> | 0 |
+0017    | OP_GET_LOCAL        1
+STACK | <script> | 0 | 0 |
+0019    | OP_CONSTANT         3 '1'
+STACK | <script> | 0 | 0 | 1 |
+0021    | OP_ADD
+STACK | <script> | 0 | 1 |
+0022    | OP_SET_LOCAL        1
+STACK | <script> | 1 | 1 |
+0024    | OP_POP
+STACK | <script> | 1 |
+0025    | OP_LOOP            25 -> 5
+STACK | <script> | 1 |
+0005    | OP_GET_LOCAL        1
+STACK | <script> | 1 | 1 |
+0007    | OP_CONSTANT         2 '1'
+STACK | <script> | 1 | 1 | 1 |
+0009    | OP_LESS
+STACK | <script> | 1 | false |
+0010    | OP_JUMP_IF_FALSE   10 -> 41
+STACK | <script> | 1 | false |
+0041    | OP_POP
+STACK | <script> | 1 |
+0042    | OP_CLOSE_UPVALUE
+STACK | <script> |
+0043    | OP_GET_GLOBAL       6 'f'
+STACK | <script> | <fn g> |
+0045    | OP_CALL             0
+STACK | <script> | <fn g> |
+0000    1 OP_GET_UPVALUE      0
+STACK | <script> | <fn g> | 1 |
+0002    | OP_RETURN
+STACK | <script> | 1 |
+0047    | OP_PRINT
+STACK | <script> |
+0048    | OP_NIL
+STACK | <script> | nil |
+0049    | OP_RETURN
+TEST 50: var f; for (var i = 0; i < 1; i = i + 1) { fun g() { return i; } f = g; } print f();
+[RESULT]: 1;
+[PASS]
+
+[PARSER] Advanced: previous='(null)' (UNKNOWN), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='outer' (IDENTIFIER)
+[PARSER] Advanced: previous='outer' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='var' (VAR)
+[PARSER] Advanced: previous='var' (VAR), current='x' (IDENTIFIER)
+[PARSER] Advanced: previous='x' (IDENTIFIER), current='=' (EQUAL)
+[PARSER] Advanced: previous='=' (EQUAL), current='1' (NUMBER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='1' (NUMBER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=NUMBER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=NUMBER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=NUMBER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='middle' (IDENTIFIER)
+[PARSER] Advanced: previous='middle' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='fun' (FUN)
+[PARSER] Advanced: previous='fun' (FUN), current='inner' (IDENTIFIER)
+[PARSER] Advanced: previous='inner' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current='{' (LEFT_BRACE)
+[PARSER] Advanced: previous='{' (LEFT_BRACE), current='return' (RETURN)
+[PARSER] Advanced: previous='return' (RETURN), current='x' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='x' (IDENTIFIER), current=';' (SEMICOLON)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='return' (RETURN)
+== inner ==
+0000    1 OP_GET_UPVALUE      0
+0002    | OP_RETURN
+0003    | OP_NIL
+0004    | OP_RETURN
+[PARSER] Advanced: previous='return' (RETURN), current='inner' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='inner' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='return' (RETURN)
+== middle ==
+0000    1 OP_CLOSURE          0 <fn inner>
+0002      |                     upvalue 0
+0004    | OP_GET_LOCAL        1
+0006    | OP_CALL             0
+0008    | OP_RETURN
+0009    | OP_NIL
+0010    | OP_RETURN
+[PARSER] Advanced: previous='return' (RETURN), current='middle' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='middle' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current='}' (RIGHT_BRACE)
+[PARSER] Advanced: previous='}' (RIGHT_BRACE), current='print' (PRINT)
+== outer ==
+0000    1 OP_CONSTANT         0 '1'
+0002    | OP_CLOSURE          1 <fn middle>
+0004      |                     local 1
+0006    | OP_GET_LOCAL        2
+0008    | OP_CALL             0
+0010    | OP_RETURN
+0011    | OP_NIL
+0012    | OP_RETURN
+[PARSER] Advanced: previous='print' (PRINT), current='outer' (IDENTIFIER)
+[PARSER] >>> Entering parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous='outer' (IDENTIFIER), current='(' (LEFT_PAREN)
+[PARSER] Rule lookup: token=IDENTIFIER, prefix=HAS_PREFIX, infix=NO_INFIX, precedence=NONE
+[PARSER] Calling prefix rule for token=IDENTIFIER
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=IDENTIFIER, tokenPrec=NONE, isPrefix=true
+[PARSER] Precedence check: minPrec=ASSIGNMENT <= currentPrec=CALL (LEFT_PAREN) -> CONTINUE
+[PARSER] Advanced: previous='(' (LEFT_PAREN), current=')' (RIGHT_PAREN)
+[PARSER] Calling infix rule for token=LEFT_PAREN
+[PARSER] parsePrecedence: minPrec=ASSIGNMENT, token=LEFT_PAREN, tokenPrec=CALL, isPrefix=false
+[PARSER] Advanced: previous=')' (RIGHT_PAREN), current=';' (SEMICOLON)
+[PARSER] <<< Exiting parsePrecedence with minPrec=ASSIGNMENT
+[PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
+[PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
+== <script> ==
+0000    1 OP_CLOSURE          1 <fn outer>
+0002    | OP_DEFINE_GLOBAL    0 'outer'
+0004    | OP_GET_GLOBAL       2 'outer'
+0006    | OP_CALL             0
+0008    | OP_PRINT
+0009    | OP_NIL
+0010    | OP_RETURN
+STACK | <script> |
+0000    1 OP_CLOSURE          1 <fn outer>
+STACK | <script> | <fn outer> |
+0002    | OP_DEFINE_GLOBAL    0 'outer'
+STACK | <script> |
+0004    | OP_GET_GLOBAL       2 'outer'
+STACK | <script> | <fn outer> |
+0006    | OP_CALL             0
+STACK | <script> | <fn outer> |
+0000    1 OP_CONSTANT         0 '1'
+STACK | <script> | <fn outer> | 1 |
+0002    | OP_CLOSURE          1 <fn middle>
+0004      |                     local 1
+STACK | <script> | <fn outer> | 1 | <fn middle> |
+0006    | OP_GET_LOCAL        2
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> |
+0008    | OP_CALL             0
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> |
+0000    1 OP_CLOSURE          0 <fn inner>
+0002      |                     upvalue 0
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> | <fn inner> |
+0004    | OP_GET_LOCAL        1
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> | <fn inner> | <fn inner> |
+0006    | OP_CALL             0
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> | <fn inner> | <fn inner> |
+0000    1 OP_GET_UPVALUE      0
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> | <fn inner> | <fn inner> | 1 |
+0002    | OP_RETURN
+STACK | <script> | <fn outer> | 1 | <fn middle> | <fn middle> | <fn inner> | 1 |
+0008    | OP_RETURN
+STACK | <script> | <fn outer> | 1 | <fn middle> | 1 |
+0010    | OP_RETURN
+STACK | <script> | 1 |
+0008    | OP_PRINT
+STACK | <script> |
+0009    | OP_NIL
+STACK | <script> | nil |
+0010    | OP_RETURN
+TEST 51: fun outer() { var x = 1; fun middle() { fun inner() { return x; } return inner(); } return middle(); } print outer();
+[RESULT]: 1;
+[PASS]
 
 [PARSER] Advanced: previous='(null)' (UNKNOWN), current='fun' (FUN)
 [PARSER] Advanced: previous='fun' (FUN), current='count' (IDENTIFIER)
@@ -8424,7 +8943,7 @@ TEST 48: fun outer() { var x = 1; fun inner() { return x; } return inner(); } pr
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn count>'
+0000    1 OP_CLOSURE          1 <fn count>
 0002    | OP_DEFINE_GLOBAL    0 'count'
 0004    | OP_GET_GLOBAL       2 'count'
 0006    | OP_CONSTANT         3 '3'
@@ -8433,7 +8952,7 @@ TEST 48: fun outer() { var x = 1; fun inner() { return x; } return inner(); } pr
 0011    | OP_NIL
 0012    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn count>'
+0000    1 OP_CLOSURE          1 <fn count>
 STACK | <script> | <fn count> |
 0002    | OP_DEFINE_GLOBAL    0 'count'
 STACK | <script> |
@@ -8558,7 +9077,7 @@ STACK | <script> |
 0011    | OP_NIL
 STACK | <script> | nil |
 0012    | OP_RETURN
-TEST 49: fun count(n) { if (n > 0) { print n; count(n - 1); } } count(3);
+TEST 52: fun count(n) { if (n > 0) { print n; count(n - 1); } } count(3);
 [RESULT]: 3;2;1;
 [PASS]
 
@@ -8599,9 +9118,9 @@ STACK | <script> |
 0000    1 OP_GET_GLOBAL       0 'clock'
 STACK | <script> | <native fn> |
 0002    | OP_CALL             0
-STACK | <script> | 0.02228 |
+STACK | <script> | 0.026156 |
 0004    | OP_CONSTANT         1 '0'
-STACK | <script> | 0.02228 | 0 |
+STACK | <script> | 0.026156 | 0 |
 0006    | OP_GREATER
 STACK | <script> | true |
 0007    | OP_PRINT
@@ -8609,7 +9128,7 @@ STACK | <script> |
 0008    | OP_NIL
 STACK | <script> | nil |
 0009    | OP_RETURN
-TEST 50: print clock() > 0;
+TEST 53: print clock() > 0;
 [RESULT]: true;
 [PASS]
 
@@ -8624,7 +9143,7 @@ TEST 50: print clock() > 0;
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 ======================Synchronizing======================
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
-TEST 51: return 1;
+TEST 54: return 1;
 [RESULT]: 
 [PassError]
 
@@ -8658,7 +9177,7 @@ TEST 51: return 1;
 [PARSER] Advanced: previous=';' (SEMICOLON), current=EOF (EOF)
 [PARSER] Advanced: previous=EOF (EOF), current=EOF (EOF)
 == <script> ==
-0000    1 OP_CONSTANT         1 '<fn foo>'
+0000    1 OP_CLOSURE          1 <fn foo>
 0002    | OP_DEFINE_GLOBAL    0 'foo'
 0004    | OP_GET_GLOBAL       2 'foo'
 0006    | OP_CONSTANT         3 '1'
@@ -8667,7 +9186,7 @@ TEST 51: return 1;
 0011    | OP_NIL
 0012    | OP_RETURN
 STACK | <script> |
-0000    1 OP_CONSTANT         1 '<fn foo>'
+0000    1 OP_CLOSURE          1 <fn foo>
 STACK | <script> | <fn foo> |
 0002    | OP_DEFINE_GLOBAL    0 'foo'
 STACK | <script> |
@@ -8676,8 +9195,8 @@ STACK | <script> | <fn foo> |
 0006    | OP_CONSTANT         3 '1'
 STACK | <script> | <fn foo> | 1 |
 0008    | OP_CALL             1
-TEST 52: fun foo() {} foo(1);
+TEST 55: fun foo() {} foo(1);
 [RESULT]: 
 [PassError]
 
-Summary: 48 passed, 0 failed, 4 passError
+Summary: 52 passed, 0 failed, 3 passError

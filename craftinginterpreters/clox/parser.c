@@ -231,6 +231,7 @@ static void initCompiler(VM *vm, Compiler *compiler, FunctionType type) {
   // Claim slot zero for the VM's internal use
   Local *local = &vm->compiler->locals[vm->compiler->localCount++];
   local->depth = 0;
+  local->isCaptured = false;
   local->name.start = "";
   local->name.length = 0;
 }
@@ -401,18 +402,65 @@ static void addLocal(VM *vm, Token name) {
   Local *local = &vm->compiler->locals[vm->compiler->localCount++];
   local->name = name;
   local->depth = -1;
+  local->isCaptured = false;
 }
 
-static int resolveLocal(VM *vm, Token *name) {
-  for (int i = vm->compiler->localCount - 1; i >= 0; i--) {
-    Local *local = &vm->compiler->locals[i];
+static int resolveLocalInCompiler(Compiler *compiler, Token *name) {
+  for (int i = compiler->localCount - 1; i >= 0; i--) {
+    Local *local = &compiler->locals[i];
     if (identifiersEqual(name, &local->name)) {
-      if (local->depth == -1) {
-        error(vm->parser, "Can't read local variable in its own initializer.");
-      }
       return i;
     }
   }
+  return -1;
+}
+
+static int resolveLocal(VM *vm, Token *name) {
+  int slot = resolveLocalInCompiler(vm->compiler, name);
+  if (slot != -1) {
+    Local *local = &vm->compiler->locals[slot];
+    if (local->depth == -1) {
+      error(vm->parser, "Can't read local variable in its own initializer.");
+    }
+  }
+  return slot;
+}
+
+static int addUpvalue(VM *vm, Compiler *compiler, u8 index, bool isLocal) {
+  int upvalueCount = compiler->function->upvalueCount;
+
+  for (int i = 0; i < upvalueCount; i++) {
+    Upvalue *upvalue = &compiler->upvalues[i];
+    if (upvalue->index == index && upvalue->isLocal == isLocal) {
+      return i;
+    }
+  }
+
+  if (upvalueCount == UINT8_COUNT) {
+    error(vm->parser, "Too many closure variables in function.");
+    return 0;
+  }
+
+  compiler->upvalues[upvalueCount].isLocal = isLocal;
+  compiler->upvalues[upvalueCount].index = index;
+  return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(VM *vm, Compiler *compiler, Token *name) {
+  if (compiler->enclosing == NULL)
+    return -1;
+
+  int local = resolveLocalInCompiler(compiler->enclosing, name);
+  if (local != -1) {
+    compiler->enclosing->locals[local].isCaptured = true;
+    return addUpvalue(vm, compiler, (u8)local, true);
+  }
+
+  int upvalue = resolveUpvalue(vm, compiler->enclosing, name);
+  if (upvalue != -1) {
+    return addUpvalue(vm, compiler, (u8)upvalue, false);
+  }
+
   return -1;
 }
 
@@ -434,6 +482,9 @@ static void namedVariable(VM *vm, Token *name, bool canAssign) {
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
+  } else if ((arg = resolveUpvalue(vm, vm->compiler, name)) != -1) {
+    getOp = OP_GET_UPVALUE;
+    setOp = OP_SET_UPVALUE;
   } else {
     arg = identifierConstant(vm, name);
     getOp = OP_GET_GLOBAL;
@@ -486,7 +537,11 @@ static void endScope(VM *vm) {
   while (vm->compiler->localCount > 0 &&
          vm->compiler->locals[vm->compiler->localCount - 1].depth >
              vm->compiler->scopeDepth) {
-    emitByte(vm, OP_POP);
+    if (vm->compiler->locals[vm->compiler->localCount - 1].isCaptured) {
+      emitByte(vm, OP_CLOSE_UPVALUE);
+    } else {
+      emitByte(vm, OP_POP);
+    }
     vm->compiler->localCount--;
   }
 }
@@ -662,7 +717,12 @@ static void function_(VM *vm, FunctionType type) {
   block(vm);
 
   ObjFunction *function = endCompiler(vm);
-  emitBytes(vm, OP_CONSTANT, makeConstant(vm, OBJ_VAL((Obj *)function)));
+  emitBytes(vm, OP_CLOSURE, makeConstant(vm, OBJ_VAL((Obj *)function)));
+
+  for (int i = 0; i < function->upvalueCount; i++) {
+    emitByte(vm, compiler.upvalues[i].isLocal ? 1 : 0);
+    emitByte(vm, compiler.upvalues[i].index);
+  }
 }
 
 static void funDeclaration(VM *vm) {

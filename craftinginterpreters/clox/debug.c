@@ -16,8 +16,8 @@ void traceExecution(VM *vm) {
   printStack(vm);
   CallFrame *frame = &vm->frames[vm->frameCount - 1];
   instructionDisassemble(
-      &frame->function->chunk,
-      (size_t)(frame->ip - getCodeArr(&frame->function->chunk)));
+      &frame->closure->function->chunk,
+      (size_t)(frame->ip - getCodeArr(&frame->closure->function->chunk)));
 }
 #else
 void traceExecution(VM *vm) { (void)vm; }

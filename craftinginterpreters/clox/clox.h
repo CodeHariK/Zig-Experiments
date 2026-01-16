@@ -20,6 +20,8 @@ typedef uint8_t u8;
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 typedef struct ObjFunction ObjFunction;
+typedef struct ObjClosure ObjClosure;
+typedef struct ObjUpvalue ObjUpvalue;
 
 typedef enum {
   VAL_BOOL,
@@ -90,12 +92,16 @@ typedef enum {
   OP_DEFINE_GLOBAL,
   OP_GET_LOCAL,
   OP_SET_LOCAL,
+  OP_GET_UPVALUE,
+  OP_SET_UPVALUE,
 
   OP_JUMP,
   OP_JUMP_IF_FALSE,
   OP_LOOP,
 
   OP_CALL,
+  OP_CLOSURE,
+  OP_CLOSE_UPVALUE,
   OP_RETURN,
 } OpCode;
 
@@ -106,9 +112,11 @@ typedef struct {
 } Chunk;
 
 typedef enum {
+  OBJ_CLOSURE,
   OBJ_FUNCTION,
   OBJ_NATIVE,
   OBJ_STRING,
+  OBJ_UPVALUE,
 } ObjType;
 
 struct Obj {
@@ -119,8 +127,23 @@ struct Obj {
 struct ObjFunction {
   Obj obj;
   int arity;
+  int upvalueCount;
   Chunk chunk;
   ObjString *name;
+};
+
+struct ObjUpvalue {
+  Obj obj;
+  Value *location;
+  Value closed;
+  struct ObjUpvalue *next;
+};
+
+struct ObjClosure {
+  Obj obj;
+  ObjFunction *function;
+  ObjUpvalue **upvalues;
+  int upvalueCount;
 };
 
 typedef Value (*NativeFn)(int argCount, Value *args);
@@ -247,7 +270,13 @@ typedef struct {
 typedef struct {
   Token name;
   i32 depth;
+  bool isCaptured;
 } Local;
+
+typedef struct {
+  u8 index;
+  bool isLocal;
+} Upvalue;
 
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
@@ -258,11 +287,12 @@ typedef struct Compiler {
 
   Local locals[UINT8_COUNT];
   i32 localCount;
+  Upvalue upvalues[UINT8_COUNT];
   i32 scopeDepth;
 } Compiler;
 
 typedef struct {
-  ObjFunction *function;
+  ObjClosure *closure;
   u8 *ip;
   Value *slots;
 } CallFrame;
@@ -276,6 +306,7 @@ typedef struct {
 
   Table globals;
   Table strings;
+  ObjUpvalue *openUpvalues;
   Obj *objects;
 
   Parser *parser;
@@ -356,9 +387,13 @@ bool IS_FUNCTION(Value value);
 ObjFunction *AS_FUNCTION(Value value);
 bool IS_NATIVE(Value value);
 NativeFn AS_NATIVE(Value value);
+bool IS_CLOSURE(Value value);
+ObjClosure *AS_CLOSURE(Value value);
 
 ObjFunction *newFunction(VM *vm);
 ObjNative *newNative(VM *vm, NativeFn function);
+ObjClosure *newClosure(VM *vm, ObjFunction *function);
+ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 
 void freeObjects(VM *vm);
 

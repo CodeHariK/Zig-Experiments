@@ -11,6 +11,7 @@ ObjFunction *newFunction(VM *vm) {
   ObjFunction *function =
       (ObjFunction *)ALLOCATE_OBJ(vm, sizeof(ObjFunction), OBJ_FUNCTION);
   function->arity = 0;
+  function->upvalueCount = 0;
   function->name = NULL;
   chunkInit(&function->chunk);
   return function;
@@ -21,6 +22,30 @@ ObjNative *newNative(VM *vm, NativeFn function) {
       (ObjNative *)ALLOCATE_OBJ(vm, sizeof(ObjNative), OBJ_NATIVE);
   native->function = function;
   return native;
+}
+
+ObjClosure *newClosure(VM *vm, ObjFunction *function) {
+  ObjUpvalue **upvalues =
+      (ObjUpvalue **)ALLOCATE(function->upvalueCount, sizeof(ObjUpvalue *));
+  for (int i = 0; i < function->upvalueCount; i++) {
+    upvalues[i] = NULL;
+  }
+
+  ObjClosure *closure =
+      (ObjClosure *)ALLOCATE_OBJ(vm, sizeof(ObjClosure), OBJ_CLOSURE);
+  closure->function = function;
+  closure->upvalues = upvalues;
+  closure->upvalueCount = function->upvalueCount;
+  return closure;
+}
+
+ObjUpvalue *newUpvalue(VM *vm, Value *slot) {
+  ObjUpvalue *upvalue =
+      (ObjUpvalue *)ALLOCATE_OBJ(vm, sizeof(ObjUpvalue), OBJ_UPVALUE);
+  upvalue->closed = NIL_VAL;
+  upvalue->location = slot;
+  upvalue->next = NULL;
+  return upvalue;
 }
 
 static u32 hashString(const char *key, i32 length) {
@@ -82,6 +107,12 @@ void concatenate(VM *vm) {
 static void freeObject(VM *vm, Obj *object) {
   (void)vm; // May be needed for future garbage collection
   switch (object->type) {
+  case OBJ_CLOSURE: {
+    ObjClosure *closure = (ObjClosure *)object;
+    FREE_ARRAY(closure->upvalueCount, sizeof(ObjUpvalue *), closure->upvalues);
+    FREE(sizeof(ObjClosure), object);
+    break;
+  }
   case OBJ_FUNCTION: {
     ObjFunction *function = (ObjFunction *)object;
     chunkFree(&function->chunk);
@@ -96,6 +127,10 @@ static void freeObject(VM *vm, Obj *object) {
     ObjString *string = (ObjString *)object;
     FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
     FREE(sizeof(ObjString), object);
+    break;
+  }
+  case OBJ_UPVALUE: {
+    FREE(sizeof(ObjUpvalue), object);
     break;
   }
   }
@@ -150,6 +185,9 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
+  case OBJ_CLOSURE:
+    printFunction(AS_CLOSURE(value)->function);
+    break;
   case OBJ_FUNCTION:
     printFunction(AS_FUNCTION(value));
     break;
@@ -158,6 +196,9 @@ void printObject(Value value) {
     break;
   case OBJ_STRING:
     printf("%s", AS_CSTRING(value));
+    break;
+  case OBJ_UPVALUE:
+    printf("upvalue");
     break;
   }
 }
@@ -197,6 +238,15 @@ void printValueToBuffer(VM *vm, Value value) {
     break;
   case VAL_OBJ:
     switch (OBJ_TYPE(value)) {
+    case OBJ_CLOSURE: {
+      ObjFunction *fn = AS_CLOSURE(value)->function;
+      if (fn->name == NULL) {
+        len = snprintf(temp, sizeof(temp), "<script>");
+      } else {
+        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
+      }
+      break;
+    }
     case OBJ_FUNCTION: {
       ObjFunction *fn = AS_FUNCTION(value);
       if (fn->name == NULL) {
@@ -211,6 +261,9 @@ void printValueToBuffer(VM *vm, Value value) {
       break;
     case OBJ_STRING:
       len = snprintf(temp, sizeof(temp), "%s", AS_CSTRING(value));
+      break;
+    case OBJ_UPVALUE:
+      len = snprintf(temp, sizeof(temp), "upvalue");
       break;
     }
     break;
