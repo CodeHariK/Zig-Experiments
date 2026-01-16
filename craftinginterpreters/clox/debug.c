@@ -14,8 +14,10 @@ static void printStack(VM *vm) {
 
 void traceExecution(VM *vm) {
   printStack(vm);
-  instructionDisassemble(vm->chunk,
-                         (size_t)(vm->ip - (u8 *)vm->chunk->code.data));
+  CallFrame *frame = &vm->frames[vm->frameCount - 1];
+  instructionDisassemble(
+      &frame->function->chunk,
+      (size_t)(frame->ip - getCodeArr(&frame->function->chunk)));
 }
 #else
 void traceExecution(VM *vm) { (void)vm; }

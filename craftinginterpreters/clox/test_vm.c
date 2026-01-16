@@ -77,6 +77,34 @@ TestCase tests[] = {
     {"var sum = 0; for (var i = 0; i < 3; i = i + 1) { for (var j = 0; j < 2; "
      "j = j + 1) { sum = sum + 1; } } print sum;",
      "6;", false},
+
+    // Functions - basic
+    {"fun sayHi() { print 1; } sayHi();", "1;", false},
+    {"fun add(a, b) { return a + b; } print add(1, 2);", "3;", false},
+    {"fun fib(n) { if (n < 2) return n; return fib(n - 1) + fib(n - 2); } "
+     "print fib(10);",
+     "55;", false},
+
+    // Functions - return
+    {"fun noReturn() { } print noReturn();", "nil;", false},
+    {"fun earlyReturn() { return 1; print 2; } print earlyReturn();", "1;",
+     false},
+
+    // Functions - local variables
+    {"fun outer() { var x = 1; fun inner() { return x; } return inner(); } "
+     "print outer();",
+     "", true}, // Closures not implemented yet
+
+    // Functions - recursion with locals
+    {"fun count(n) { if (n > 0) { print n; count(n - 1); } } count(3);",
+     "3;2;1;", false},
+
+    // Native functions
+    {"print clock() > 0;", "true;", false},
+
+    // Error cases
+    {"return 1;", "", true},            // Can't return from top-level
+    {"fun foo() {} foo(1);", "", true}, // Wrong arity
 };
 
 int main(void) {

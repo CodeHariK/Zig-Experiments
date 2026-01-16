@@ -25,6 +25,13 @@ bool IS_STRING(Value value) { return IS_OBJ_TYPE(value, OBJ_STRING); }
 ObjString *AS_STRING(Value value) { return (ObjString *)AS_OBJ(value); }
 char *AS_CSTRING(Value value) { return AS_STRING(value)->chars; }
 
+bool IS_FUNCTION(Value value) { return IS_OBJ_TYPE(value, OBJ_FUNCTION); }
+ObjFunction *AS_FUNCTION(Value value) { return (ObjFunction *)AS_OBJ(value); }
+bool IS_NATIVE(Value value) { return IS_OBJ_TYPE(value, OBJ_NATIVE); }
+NativeFn AS_NATIVE(Value value) {
+  return ((ObjNative *)AS_OBJ(value))->function;
+}
+
 bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }

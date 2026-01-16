@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define STACK_MAX 256
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 #define UINT8_COUNT (UINT8_MAX + 1)
 
 typedef uint32_t u32;
@@ -15,28 +16,17 @@ typedef int32_t i32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 
+// Forward declarations
+typedef struct Obj Obj;
+typedef struct ObjString ObjString;
+typedef struct ObjFunction ObjFunction;
+
 typedef enum {
   VAL_BOOL,
   VAL_NIL,
   VAL_NUMBER,
   VAL_OBJ,
 } ValueType;
-
-typedef enum {
-  OBJ_STRING,
-} ObjType;
-
-typedef struct Obj {
-  ObjType type;
-  struct Obj *next;
-} Obj;
-
-typedef struct {
-  Obj obj;
-  i32 length;
-  char *chars;
-  u32 hash;
-} ObjString;
 
 typedef struct {
   ValueType type;
@@ -48,28 +38,6 @@ typedef struct {
 } Value;
 
 typedef struct {
-  ObjString *key;
-  Value value;
-} Entry;
-
-typedef struct {
-  i32 count;
-  i32 capacity;
-  Entry *entries;
-} Table;
-
-#define ARRAY_MAX_LOAD 0.75
-
-void initTable(Table *table);
-void freeTable(Table *table);
-bool tableGet(Table *table, ObjString *key, Value *value);
-bool tableSet(Table *table, ObjString *key, Value value);
-bool tableDelete(Table *table, ObjString *key);
-void tableAddAll(Table *from, Table *to);
-ObjString *tableFindString(Table *table, const char *chars, i32 length,
-                           u32 hash);
-
-typedef struct {
   size_t count;
   size_t capacity;
   size_t elementSize;
@@ -79,6 +47,14 @@ typedef struct {
 void arrayInit(Array *array, size_t elementSize);
 void arrayWrite(Array *array, const void *element);
 void arrayFree(Array *array);
+
+typedef struct {
+  Array values;
+} ValueArray;
+
+void initValueArray(ValueArray *array);
+void writeValueArray(ValueArray *array, Value value);
+void freeValueArray(ValueArray *array);
 
 typedef enum {
   OP_CONSTANT,
@@ -119,28 +95,75 @@ typedef enum {
   OP_JUMP_IF_FALSE,
   OP_LOOP,
 
+  OP_CALL,
   OP_RETURN,
 } OpCode;
-
-typedef struct {
-  Array values;
-} ValueArray;
-
-void initValueArray(ValueArray *array);
-void writeValueArray(ValueArray *array, Value value);
-void freeValueArray(ValueArray *array);
-
-typedef enum {
-  INTERPRET_OK,
-  INTERPRET_COMPILE_ERROR,
-  INTERPRET_RUNTIME_ERROR
-} InterpretResult;
 
 typedef struct {
   Array code;
   Array lines;
   ValueArray constants;
 } Chunk;
+
+typedef enum {
+  OBJ_FUNCTION,
+  OBJ_NATIVE,
+  OBJ_STRING,
+} ObjType;
+
+struct Obj {
+  ObjType type;
+  struct Obj *next;
+};
+
+struct ObjFunction {
+  Obj obj;
+  int arity;
+  Chunk chunk;
+  ObjString *name;
+};
+
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+typedef struct {
+  Obj obj;
+  NativeFn function;
+} ObjNative;
+
+struct ObjString {
+  Obj obj;
+  i32 length;
+  char *chars;
+  u32 hash;
+};
+
+typedef struct {
+  ObjString *key;
+  Value value;
+} Entry;
+
+typedef struct {
+  i32 count;
+  i32 capacity;
+  Entry *entries;
+} Table;
+
+#define ARRAY_MAX_LOAD 0.75
+
+void initTable(Table *table);
+void freeTable(Table *table);
+bool tableGet(Table *table, ObjString *key, Value *value);
+bool tableSet(Table *table, ObjString *key, Value value);
+bool tableDelete(Table *table, ObjString *key);
+void tableAddAll(Table *from, Table *to);
+ObjString *tableFindString(Table *table, const char *chars, i32 length,
+                           u32 hash);
+
+typedef enum {
+  INTERPRET_OK,
+  INTERPRET_COMPILE_ERROR,
+  INTERPRET_RUNTIME_ERROR
+} InterpretResult;
 
 void chunkInit(Chunk *chunk);
 void chunkWrite(Chunk *chunk, u8 byte, u32 line);
@@ -226,15 +249,27 @@ typedef struct {
   i32 depth;
 } Local;
 
-typedef struct {
+typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+
+typedef struct Compiler {
+  struct Compiler *enclosing;
+  ObjFunction *function;
+  FunctionType type;
+
   Local locals[UINT8_COUNT];
   i32 localCount;
   i32 scopeDepth;
 } Compiler;
 
 typedef struct {
-  Chunk *chunk;
+  ObjFunction *function;
   u8 *ip;
+  Value *slots;
+} CallFrame;
+
+typedef struct {
+  CallFrame frames[FRAMES_MAX];
+  int frameCount;
 
   Value stack[STACK_MAX];
   Value *stackTop;
@@ -283,7 +318,7 @@ InterpretResult interpret(VM *vm, const char *source);
 void initScanner(Scanner *scanner, const char *source);
 Token scanToken(Scanner *scanner);
 
-bool compile(VM *vm);
+ObjFunction *compile(VM *vm);
 
 ObjString *copyString(VM *vm, const char *chars, i32 length);
 ObjString *allocateString(VM *vm, char *chars, i32 length, u32 hash);
@@ -316,6 +351,14 @@ bool IS_STRING(Value value);
 ObjString *AS_STRING(Value value);
 char *AS_CSTRING(Value value);
 bool isFalsey(Value value);
+
+bool IS_FUNCTION(Value value);
+ObjFunction *AS_FUNCTION(Value value);
+bool IS_NATIVE(Value value);
+NativeFn AS_NATIVE(Value value);
+
+ObjFunction *newFunction(VM *vm);
+ObjNative *newNative(VM *vm, NativeFn function);
 
 void freeObjects(VM *vm);
 

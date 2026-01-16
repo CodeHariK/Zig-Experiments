@@ -7,6 +7,22 @@ Obj *allocateObject(VM *vm, size_t size, ObjType type) {
   return ALLOCATE_OBJ(vm, size, type);
 }
 
+ObjFunction *newFunction(VM *vm) {
+  ObjFunction *function =
+      (ObjFunction *)ALLOCATE_OBJ(vm, sizeof(ObjFunction), OBJ_FUNCTION);
+  function->arity = 0;
+  function->name = NULL;
+  chunkInit(&function->chunk);
+  return function;
+}
+
+ObjNative *newNative(VM *vm, NativeFn function) {
+  ObjNative *native =
+      (ObjNative *)ALLOCATE_OBJ(vm, sizeof(ObjNative), OBJ_NATIVE);
+  native->function = function;
+  return native;
+}
+
 static u32 hashString(const char *key, i32 length) {
   u32 hash = 2166136261u;
   for (i32 i = 0; i < length; i++) {
@@ -66,6 +82,16 @@ void concatenate(VM *vm) {
 static void freeObject(VM *vm, Obj *object) {
   (void)vm; // May be needed for future garbage collection
   switch (object->type) {
+  case OBJ_FUNCTION: {
+    ObjFunction *function = (ObjFunction *)object;
+    chunkFree(&function->chunk);
+    FREE(sizeof(ObjFunction), object);
+    break;
+  }
+  case OBJ_NATIVE: {
+    FREE(sizeof(ObjNative), object);
+    break;
+  }
   case OBJ_STRING: {
     ObjString *string = (ObjString *)object;
     FREE_ARRAY(string->length + 1, sizeof(char), string->chars);
@@ -114,8 +140,22 @@ bool VAL_EQUAL(Value a, Value b) {
   }
 }
 
+static void printFunction(ObjFunction *function) {
+  if (function->name == NULL) {
+    printf("<script>");
+    return;
+  }
+  printf("<fn %s>", function->name->chars);
+}
+
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
+  case OBJ_FUNCTION:
+    printFunction(AS_FUNCTION(value));
+    break;
+  case OBJ_NATIVE:
+    printf("<native fn>");
+    break;
   case OBJ_STRING:
     printf("%s", AS_CSTRING(value));
     break;
@@ -157,6 +197,18 @@ void printValueToBuffer(VM *vm, Value value) {
     break;
   case VAL_OBJ:
     switch (OBJ_TYPE(value)) {
+    case OBJ_FUNCTION: {
+      ObjFunction *fn = AS_FUNCTION(value);
+      if (fn->name == NULL) {
+        len = snprintf(temp, sizeof(temp), "<script>");
+      } else {
+        len = snprintf(temp, sizeof(temp), "<fn %s>", fn->name->chars);
+      }
+      break;
+    }
+    case OBJ_NATIVE:
+      len = snprintf(temp, sizeof(temp), "<native fn>");
+      break;
     case OBJ_STRING:
       len = snprintf(temp, sizeof(temp), "%s", AS_CSTRING(value));
       break;

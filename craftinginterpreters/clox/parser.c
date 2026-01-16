@@ -7,15 +7,21 @@ static void parseBinary(VM *vm, bool canAssign);
 static void parseLiteral(VM *vm, bool canAssign);
 static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
+static void call(VM *vm, bool canAssign);
 static void declaration(VM *vm);
 static void declareVariable(VM *vm);
 static void statement(VM *vm);
 static void varDeclaration(VM *vm);
 static void and_(VM *vm, bool canAssign);
 static void or_(VM *vm, bool canAssign);
+static u8 parseVariableDeclaration(VM *vm, const char *errorMessage);
+static void defineVariable(VM *vm, u8 global);
+static void returnStatement(VM *vm);
+static void block(VM *vm);
+static void beginScope(VM *vm);
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN] = {parseGrouping, NULL, PREC_NONE},
+    [TOKEN_LEFT_PAREN] = {parseGrouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
@@ -145,8 +151,10 @@ static void synchronize(VM *vm) {
   // If we're at EOF, we've synchronized (nothing more to skip)
 }
 
+static Chunk *currentChunk(VM *vm) { return &vm->compiler->function->chunk; }
+
 static void emitByte(VM *vm, u8 byte) {
-  chunkWrite(vm->chunk, byte, vm->parser->previous.line);
+  chunkWrite(currentChunk(vm), byte, vm->parser->previous.line);
 }
 
 static void emitBytes(VM *vm, u8 byte1, u8 byte2) {
@@ -155,7 +163,7 @@ static void emitBytes(VM *vm, u8 byte1, u8 byte2) {
 }
 
 static u8 makeConstant(VM *vm, Value value) {
-  size_t constant = addConstant(vm->chunk, value);
+  size_t constant = addConstant(currentChunk(vm), value);
   if (constant > UINT8_MAX) {
     error(vm->parser, "Too many constants in one chunk.");
     return 0;
@@ -168,31 +176,34 @@ static void emitConstant(VM *vm, Value value) {
   emitBytes(vm, OP_CONSTANT, makeConstant(vm, value));
 }
 
-static void emitReturn(VM *vm) { emitByte(vm, OP_RETURN); }
+static void emitReturn(VM *vm) {
+  emitByte(vm, OP_NIL);
+  emitByte(vm, OP_RETURN);
+}
 
 static int emitJump(VM *vm, u8 instruction) {
   emitByte(vm, instruction);
   emitByte(vm, 0xff);
   emitByte(vm, 0xff);
-  return (int)vm->chunk->code.count - 2;
+  return (int)currentChunk(vm)->code.count - 2;
 }
 
 static void patchJump(VM *vm, int offset) {
   // -2 to adjust for the bytecode for the jump offset itself.
-  int jump = (int)vm->chunk->code.count - offset - 2;
+  int jump = (int)currentChunk(vm)->code.count - offset - 2;
 
   if (jump > UINT16_MAX) {
     error(vm->parser, "Too much code to jump over.");
   }
 
-  getCodeArr(vm->chunk)[offset] = (jump >> 8) & 0xff;
-  getCodeArr(vm->chunk)[offset + 1] = jump & 0xff;
+  getCodeArr(currentChunk(vm))[offset] = (jump >> 8) & 0xff;
+  getCodeArr(currentChunk(vm))[offset + 1] = jump & 0xff;
 }
 
 static void emitLoop(VM *vm, int loopStart) {
   emitByte(vm, OP_LOOP);
 
-  int offset = (int)vm->chunk->code.count - loopStart + 2;
+  int offset = (int)currentChunk(vm)->code.count - loopStart + 2;
   if (offset > UINT16_MAX) {
     error(vm->parser, "Loop body too large.");
   }
@@ -203,19 +214,41 @@ static void emitLoop(VM *vm, int loopStart) {
 
 #define DEBUG_PRINT_CODE
 
-static void initCompiler(VM *vm) {
-  vm->compiler->localCount = 0;
-  vm->compiler->scopeDepth = 0;
+static void initCompiler(VM *vm, Compiler *compiler, FunctionType type) {
+  compiler->enclosing = vm->compiler;
+  compiler->function = NULL;
+  compiler->type = type;
+  compiler->localCount = 0;
+  compiler->scopeDepth = 0;
+  compiler->function = newFunction(vm);
+  vm->compiler = compiler;
+
+  if (type != TYPE_SCRIPT) {
+    vm->compiler->function->name =
+        copyString(vm, vm->parser->previous.start, vm->parser->previous.length);
+  }
+
+  // Claim slot zero for the VM's internal use
+  Local *local = &vm->compiler->locals[vm->compiler->localCount++];
+  local->depth = 0;
+  local->name.start = "";
+  local->name.length = 0;
 }
 
-static void endCompiler(VM *vm) {
+static ObjFunction *endCompiler(VM *vm) {
   emitReturn(vm);
+  ObjFunction *function = vm->compiler->function;
 
 #ifdef DEBUG_PRINT_CODE
   if (!vm->parser->hadError) {
-    chunkDisassemble(vm->chunk, "code");
+    chunkDisassemble(currentChunk(vm), function->name != NULL
+                                           ? function->name->chars
+                                           : "<script>");
   }
 #endif
+
+  vm->compiler = vm->compiler->enclosing;
+  return function;
 }
 
 static inline ParseRule *getRule(TokenType type) { return &rules[type]; }
@@ -373,9 +406,6 @@ static void addLocal(VM *vm, Token name) {
 static int resolveLocal(VM *vm, Token *name) {
   for (int i = vm->compiler->localCount - 1; i >= 0; i--) {
     Local *local = &vm->compiler->locals[i];
-    if (local->depth != -1 && local->depth < vm->compiler->scopeDepth) {
-      break;
-    }
     if (identifiersEqual(name, &local->name)) {
       if (local->depth == -1) {
         error(vm->parser, "Can't read local variable in its own initializer.");
@@ -387,6 +417,8 @@ static int resolveLocal(VM *vm, Token *name) {
 }
 
 static void markInitialized(VM *vm) {
+  if (vm->compiler->scopeDepth == 0)
+    return;
   vm->compiler->locals[vm->compiler->localCount - 1].depth =
       vm->compiler->scopeDepth;
 }
@@ -479,7 +511,7 @@ static void ifStatement(VM *vm) {
 }
 
 static void whileStatement(VM *vm) {
-  int loopStart = (int)vm->chunk->code.count;
+  int loopStart = (int)currentChunk(vm)->code.count;
   consume(vm, TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   parseExpression(vm);
   consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -506,7 +538,7 @@ static void forStatement(VM *vm) {
     expressionStatement(vm);
   }
 
-  int loopStart = (int)vm->chunk->code.count;
+  int loopStart = (int)currentChunk(vm)->code.count;
 
   // Condition clause
   int exitJump = -1;
@@ -522,7 +554,7 @@ static void forStatement(VM *vm) {
   // Increment clause
   if (!match(vm, TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(vm, OP_JUMP);
-    int incrementStart = (int)vm->chunk->code.count;
+    int incrementStart = (int)currentChunk(vm)->code.count;
     parseExpression(vm);
     emitByte(vm, OP_POP);
     consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
@@ -548,6 +580,8 @@ static void statement(VM *vm) {
     printStatement(vm);
   } else if (match(vm, TOKEN_IF)) {
     ifStatement(vm);
+  } else if (match(vm, TOKEN_RETURN)) {
+    returnStatement(vm);
   } else if (match(vm, TOKEN_WHILE)) {
     whileStatement(vm);
   } else if (match(vm, TOKEN_FOR)) {
@@ -584,6 +618,72 @@ static void or_(VM *vm, bool canAssign) {
 
   parsePrecedence(vm, PREC_OR);
   patchJump(vm, endJump);
+}
+
+static u8 argumentList(VM *vm) {
+  u8 argCount = 0;
+  if (!check(vm, TOKEN_RIGHT_PAREN)) {
+    do {
+      parseExpression(vm);
+      if (argCount == 255) {
+        error(vm->parser, "Can't have more than 255 arguments.");
+      }
+      argCount++;
+    } while (match(vm, TOKEN_COMMA));
+  }
+  consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+  return argCount;
+}
+
+static void call(VM *vm, bool canAssign) {
+  (void)canAssign;
+  u8 argCount = argumentList(vm);
+  emitBytes(vm, OP_CALL, argCount);
+}
+
+static void function_(VM *vm, FunctionType type) {
+  Compiler compiler;
+  initCompiler(vm, &compiler, type);
+  beginScope(vm);
+
+  consume(vm, TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+  if (!check(vm, TOKEN_RIGHT_PAREN)) {
+    do {
+      vm->compiler->function->arity++;
+      if (vm->compiler->function->arity > 255) {
+        errorAtCurrent(vm->parser, "Can't have more than 255 parameters.");
+      }
+      u8 constant = parseVariableDeclaration(vm, "Expect parameter name.");
+      defineVariable(vm, constant);
+    } while (match(vm, TOKEN_COMMA));
+  }
+  consume(vm, TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+  consume(vm, TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+  block(vm);
+
+  ObjFunction *function = endCompiler(vm);
+  emitBytes(vm, OP_CONSTANT, makeConstant(vm, OBJ_VAL((Obj *)function)));
+}
+
+static void funDeclaration(VM *vm) {
+  u8 global = parseVariableDeclaration(vm, "Expect function name.");
+  markInitialized(vm);
+  function_(vm, TYPE_FUNCTION);
+  defineVariable(vm, global);
+}
+
+static void returnStatement(VM *vm) {
+  if (vm->compiler->type == TYPE_SCRIPT) {
+    error(vm->parser, "Can't return from top-level code.");
+  }
+
+  if (match(vm, TOKEN_SEMICOLON)) {
+    emitReturn(vm);
+  } else {
+    parseExpression(vm);
+    consume(vm, TOKEN_SEMICOLON, "Expect ';' after return value.");
+    emitByte(vm, OP_RETURN);
+  }
 }
 
 static u8 parseVariableDeclaration(VM *vm, const char *errorMessage) {
@@ -638,7 +738,9 @@ static void varDeclaration(VM *vm) {
 }
 
 static void declaration(VM *vm) {
-  if (match(vm, TOKEN_VAR)) {
+  if (match(vm, TOKEN_FUN)) {
+    funDeclaration(vm);
+  } else if (match(vm, TOKEN_VAR)) {
     varDeclaration(vm);
   } else {
     statement(vm);
@@ -648,15 +750,14 @@ static void declaration(VM *vm) {
     synchronize(vm);
 }
 
-bool compile(VM *vm) {
+ObjFunction *compile(VM *vm) {
   Compiler compiler;
-  vm->compiler = &compiler;
-  initCompiler(vm);
+  initCompiler(vm, &compiler, TYPE_SCRIPT);
 
   advance(vm);
   while (!match(vm, TOKEN_EOF)) {
     declaration(vm);
   }
-  endCompiler(vm);
-  return !vm->parser->hadError;
+  ObjFunction *function = endCompiler(vm);
+  return vm->parser->hadError ? NULL : function;
 }
