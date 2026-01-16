@@ -8,6 +8,7 @@ static void parseLiteral(VM *vm, bool canAssign);
 static void parseString(VM *vm, bool canAssign);
 static void parseVariable(VM *vm, bool canAssign);
 static void this_(VM *vm, bool canAssign);
+static void super_(VM *vm, bool canAssign);
 static void call(VM *vm, bool canAssign);
 static void dot(VM *vm, bool canAssign);
 static void declaration(VM *vm);
@@ -22,6 +23,7 @@ static void defineVariable(VM *vm, u8 global);
 static void returnStatement(VM *vm);
 static void block(VM *vm);
 static void beginScope(VM *vm);
+static u8 argumentList(VM *vm);
 
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {parseGrouping, call, PREC_CALL},
@@ -57,7 +59,7 @@ ParseRule rules[] = {
     [TOKEN_OR] = {NULL, or_, PREC_OR},
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
-    [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_SUPER] = {super_, NULL, PREC_NONE},
     [TOKEN_THIS] = {this_, NULL, PREC_NONE},
     [TOKEN_TRUE] = {parseLiteral, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
@@ -532,6 +534,13 @@ static void parseVariable(VM *vm, bool canAssign) {
   namedVariable(vm, &vm->parser->previous, canAssign);
 }
 
+static Token syntheticToken(const char *text) {
+  Token token;
+  token.start = text;
+  token.length = (int)strlen(text);
+  return token;
+}
+
 static void this_(VM *vm, bool canAssign) {
   (void)canAssign;
   if (vm->currentClass == NULL) {
@@ -539,6 +548,33 @@ static void this_(VM *vm, bool canAssign) {
     return;
   }
   parseVariable(vm, false);
+}
+
+static void super_(VM *vm, bool canAssign) {
+  (void)canAssign;
+  if (vm->currentClass == NULL) {
+    error(vm, "Can't use 'super' outside of a class.");
+  } else if (!vm->currentClass->hasSuperclass) {
+    error(vm, "Can't use 'super' in a class with no superclass.");
+  }
+
+  consume(vm, TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(vm, TOKEN_IDENTIFIER, "Expect superclass method name.");
+  u8 name = identifierConstant(vm, &vm->parser->previous);
+
+  Token thisToken = syntheticToken("this");
+  Token superToken = syntheticToken("super");
+  namedVariable(vm, &thisToken, false);
+
+  if (match(vm, TOKEN_LEFT_PAREN)) {
+    u8 argCount = argumentList(vm);
+    namedVariable(vm, &superToken, false);
+    emitBytes(vm, OP_SUPER_INVOKE, name);
+    emitByte(vm, argCount);
+  } else {
+    namedVariable(vm, &superToken, false);
+    emitBytes(vm, OP_GET_SUPER, name);
+  }
 }
 
 static void parseString(VM *vm, bool canAssign) {
@@ -803,8 +839,27 @@ static void classDeclaration(VM *vm) {
   defineVariable(vm, nameConstant);
 
   ClassCompiler classCompiler;
+  classCompiler.hasSuperclass = false;
   classCompiler.enclosing = vm->currentClass;
   vm->currentClass = &classCompiler;
+
+  if (match(vm, TOKEN_LESS)) {
+    consume(vm, TOKEN_IDENTIFIER, "Expect superclass name.");
+    parseVariable(vm, false);
+
+    if (identifiersEqual(&className, &vm->parser->previous)) {
+      error(vm, "A class can't inherit from itself.");
+    }
+
+    beginScope(vm);
+    Token superToken = syntheticToken("super");
+    addLocal(vm, superToken);
+    defineVariable(vm, 0);
+
+    namedVariable(vm, &className, false);
+    emitByte(vm, OP_INHERIT);
+    classCompiler.hasSuperclass = true;
+  }
 
   namedVariable(vm, &className, false);
 
@@ -814,6 +869,10 @@ static void classDeclaration(VM *vm) {
   }
   consume(vm, TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(vm, OP_POP);
+
+  if (classCompiler.hasSuperclass) {
+    endScope(vm);
+  }
 
   vm->currentClass = vm->currentClass->enclosing;
 }

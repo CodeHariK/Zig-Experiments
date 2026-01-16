@@ -179,6 +179,55 @@ TestCase tests[] = {
 
     // Error: calling class with wrong args
     {"class Foo { init(a, b) {} } Foo(1);", "", true},
+
+    // Inheritance - basic
+    {"class A { method() { print \"A\"; } } "
+     "class B < A {} "
+     "B().method();",
+     "A\n", false},
+
+    // Inheritance - override
+    {"class A { method() { print \"A\"; } } "
+     "class B < A { method() { print \"B\"; } } "
+     "B().method();",
+     "B\n", false},
+
+    // Inheritance - super call
+    {"class A { method() { print \"A\"; } } "
+     "class B < A { method() { super.method(); print \"B\"; } } "
+     "B().method();",
+     "A\nB\n", false},
+
+    // Inheritance - super in init
+    {"class A { init(x) { this.x = x; } } "
+     "class B < A { init(x, y) { super.init(x); this.y = y; } } "
+     "var b = B(1, 2); print b.x + b.y;",
+     "3\n", false},
+
+    // Inheritance - deep chain
+    {"class A { foo() { return \"A\"; } } "
+     "class B < A {} "
+     "class C < B {} "
+     "print C().foo();",
+     "A\n", false},
+
+    // Inheritance - super invoke optimization
+    {"class A { method(x) { return x * 2; } } "
+     "class B < A { method(x) { return super.method(x) + 1; } } "
+     "print B().method(5);",
+     "11\n", false},
+
+    // Error: inherit from non-class
+    {"var NotAClass = \"string\"; class Foo < NotAClass {}", "", true},
+
+    // Error: inherit from self
+    {"class Foo < Foo {}", "", true},
+
+    // Error: super outside class
+    {"super.method();", "", true},
+
+    // Error: super without superclass
+    {"class Foo { bar() { super.bar(); } }", "", true},
 };
 
 int main(void) {
