@@ -1,5 +1,9 @@
 # xv6
 
+* https://pages.cs.wisc.edu/~remzi/OSTEP/
+* [OSTEP Videos](https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Discussion/videos.html)
+* https://github.com/remzi-arpacidusseau/ostep-projects/
+
 * https://github.com/nuta/operating-system-in-1000-lines
 
 * https://github.com/mit-pdos/xv6-riscv
