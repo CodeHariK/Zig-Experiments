@@ -102,13 +102,6 @@
 
 * [Ben Eater: Binary to decimal can’t be that hard, right?](https://www.youtube.com/watch?v=v3-a-zqKfgA)
 
-## RISC-V
-
-* [RISC-V Lectures](https://www.youtube.com/playlist?list=PL3by7evD3F53Dz2RiB47Ztp9l_piGVuus)
-
-* [RV32I Base Integer Instruction Set, Version 2.1](https://docs.riscv.org/reference/isa/unpriv/rv32.html)
-
-* [rv32emu: RISC-V 32-bit Emulator](https://github.com/sysprog21/rv32emu?tab=readme-ov-file#reference)
 
 ## Hardware
 
