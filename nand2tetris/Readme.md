@@ -24,12 +24,6 @@
 
 * [Core Dumped: Process](https://www.youtube.com/watch?v=LDhoD4IVElk)
 
-## Bitlemon
-
-* [The Central Processing Unit (CPU)](https://www.youtube.com/playlist?list=PL38NNHQLqJqaAJYo71PSNSkf61__4P8Sh)
-* [Memory Management (Virtual Memory / Paging / DMA)](https://www.youtube.com/playlist?list=PL38NNHQLqJqZoDp4CrAueD1aBin7OebEL)
-* [The CPU Cache](https://www.youtube.com/playlist?list=PL38NNHQLqJqYnNrTenxBvGJSPCkV9EOWk)
-
 ## Computerphile
 
 * [What Every Programmer Should Know about How CPUs Work](https://www.youtube.com/watch?v=-HNpim5x-IE)
