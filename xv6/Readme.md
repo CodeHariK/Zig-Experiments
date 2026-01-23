@@ -23,6 +23,7 @@
 * [The xv6 Kernel](https://www.youtube.com/playlist?list=PLbtzT1TYeoMhTPzyTZboW_j7TPAnjv9XB)
 
 * [[REDACTED] OS](https://www.youtube.com/playlist?list=PLsVorjAex5gtQkIUrtsWHs_h3OU29-euB)
+* [Writing an operating system](https://www.youtube.com/playlist?list=PL980gcR1LE3LBuWuSv2CL28HsfnpC4Qf7)
 
 * [How does an OS boot? //Source Dive// 001](https://www.youtube.com/watch?v=KkenLT8S9Hs)
 
@@ -43,6 +44,20 @@
 * [Memory Management (Virtual Memory / Paging / DMA)](https://www.youtube.com/playlist?list=PL38NNHQLqJqZoDp4CrAueD1aBin7OebEL)
 * [The CPU Cache](https://www.youtube.com/playlist?list=PL38NNHQLqJqYnNrTenxBvGJSPCkV9EOWk)
 
+## ELF
+
+* https://cpu.land/becoming-an-elf-lord
+
+* https://github.com/eliben/pyelftools
+* https://github.com/orhun/binsider
+
+* [In-depth: ELF - The Extensible & Linkable Format](https://www.youtube.com/watch?v=nC1U1LJQL8o)
+
+* [Writing a Linux ELF Binary by Hand](https://www.youtube.com/watch?v=JM9jX2aqkog)
+
+* [Fast and Beautiful Assembly](https://www.youtube.com/watch?v=ON9vuzLiGuc)
+* [How the stack got stacked](https://www.youtube.com/watch?v=2vBVvQTTdXg)
+* [Crafting executables from raw bytes](https://www.youtube.com/watch?v=cX5tQJhuNeY)
 
 ## Resources
 
