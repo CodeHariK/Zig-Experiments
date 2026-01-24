@@ -29,6 +29,7 @@
 
 * [CS 162: Operating Systems and Systems](https://www.youtube.com/playlist?list=PLF2K2xZjNEf97A_uBCwEl61sdxWVP7VWC)
 
+* [xv6 Source Dive](https://www.youtube.com/playlist?list=PLP29wDx6QmW4Mw8mgvP87Zk33LRcKA9bl)
 * [The xv6 Kernel](https://www.youtube.com/playlist?list=PLbtzT1TYeoMhTPzyTZboW_j7TPAnjv9XB)
 
 ## Virtual Memory

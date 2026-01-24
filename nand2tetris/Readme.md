@@ -111,3 +111,8 @@
 * [Computer Science 101 - The First Video YOU Should Watch](youtube.com/watch?v=pDELW2pIvWw)
 
 * [Branch Education: The Engineering that Runs the Digital World 🛠️⚙️💻 How do CPUs Work?](https://www.youtube.com/watch?v=16zrEPOsIcI)
+
+
+## Software
+
+* [Fixed-point math is better than floating point](https://www.youtube.com/watch?v=i1phJl-0v54)
