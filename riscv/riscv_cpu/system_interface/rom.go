@@ -20,13 +20,10 @@ func (rd *ROM_Device) Write(addr uint64, value uint64) error {
 }
 
 func (rd *ROM_Device) Load(data []uint32) {
+	rd.Reset()
 	for i := 0; i < len(data) && i < ROM_SIZE; i++ {
-		if i >= len(data) {
-			rd.memory[i] = 0xFFFFFFFF
-		} else {
-			rd.memory[i] = data[i]
-			rd.Read(uint64(i))
-		}
+		rd.memory[i] = data[i]
+		rd.Read(uint64(i))
 	}
 	rd.ProgramSize = uint64(len(data))
 }
@@ -35,4 +32,11 @@ func (rd *ROM_Device) PrintRom() {
 	for i := 0; i < int(rd.ProgramSize); i++ {
 		fmt.Printf("ROM[%d] = 0x%X\n", i, rd.memory[i])
 	}
+}
+
+func (rd *ROM_Device) Reset() {
+	for i := 0; i < ROM_SIZE; i++ {
+		rd.memory[i] = 0xFFFFFFFF
+	}
+	rd.ProgramSize = 0
 }

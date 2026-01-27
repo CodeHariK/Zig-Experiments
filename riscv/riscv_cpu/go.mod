@@ -1,3 +1,3 @@
-module github.com/codeharik/riscv_cpu
+module riscv
 
 go 1.25.4
