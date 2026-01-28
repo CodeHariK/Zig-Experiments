@@ -38,7 +38,7 @@ func (ma *WriteBackStage) Compute() {
 		if memoryAccessValues.isAluOperation {
 			// Write-back to register file (x0 is hardwired zero)
 			if ma.regFile != nil && memoryAccessValues.rd != 0 {
-				ma.regFile[memoryAccessValues.rd].Value = memoryAccessValues.aluResult
+				ma.regFile[memoryAccessValues.rd].SetN(memoryAccessValues.aluResult)
 			}
 		}
 	}

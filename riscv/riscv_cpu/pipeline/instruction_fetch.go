@@ -16,11 +16,9 @@ func NewInstructionFetchParams(bus *SystemInterface, shouldStall func() bool) *I
 }
 
 type InstructionFetchStage struct {
-	pc     Register32
-	pcNext Register32
+	pc Register32
 
-	instruction     Register32
-	instructionNext Register32
+	instruction Register32
 
 	bus         *SystemInterface
 	shouldStall func() bool
@@ -28,10 +26,8 @@ type InstructionFetchStage struct {
 
 func NewInstructionFetchStage(params *InstructionFetchParams) *InstructionFetchStage {
 	ifs := &InstructionFetchStage{}
-	ifs.pc = Register32{Value: MEMORY_MAP_ROM_START}
-	ifs.pcNext = Register32{Value: MEMORY_MAP_ROM_START}
-	ifs.instruction = Register32{Value: 0}
-	ifs.instructionNext = Register32{Value: 0}
+	ifs.pc = NewRegister32(MEMORY_MAP_ROM_START)
+	ifs.instruction = NewRegister32(0)
 	ifs.bus = params.bus
 	ifs.shouldStall = params.shouldStall
 	return ifs
@@ -47,20 +43,20 @@ func (ifs *InstructionFetchStage) readyToReceive() bool {
 
 func (ifs *InstructionFetchStage) Compute() {
 	if !ifs.shouldStall() {
-		v, err := ifs.bus.Read(uint64(ifs.pc.Value))
+		v, err := ifs.bus.Read(uint64(ifs.pc.GetN()))
 		if err != nil {
 			panic(err)
 		}
-		ifs.instructionNext.Value = uint32(v)
-		ifs.pcNext.Value += 4
+		ifs.instruction.SetN(uint32(v))
+		ifs.pc.SetN(ifs.pc.GetN() + 4)
 	}
 }
 
 func (ifs *InstructionFetchStage) LatchNext() {
-	ifs.instruction.Value = ifs.instructionNext.Value
-	ifs.pc.Value = ifs.pcNext.Value
+	ifs.instruction.LatchNext()
+	ifs.pc.LatchNext()
 }
 
 func (ifs *InstructionFetchStage) GetInstructionOut() uint32 {
-	return ifs.instruction.Value
+	return ifs.instruction.GetN()
 }

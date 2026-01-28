@@ -1,0 +1,31 @@
+ROM[0] = 0xCAFEBABE
+ROM[1] = 0x8BADF00D
+ROM[2] = 0xC0DECAFE
+=== RUN   TestROMLoadAndRead
+--- PASS: TestROMLoadAndRead (0.00s)
+=== RUN   TestRAMWrite
+--- PASS: TestRAMWrite (0.00s)
+=== RUN   TestInstruction
+Execute: ADDI  rd=3  rs1=0x1020304  imm=1 -> 0x1020305
+Execute: ADDI  rd=3  rs1=0x1020304  imm=-1 -> 0x1020303
+Execute: ADD   rd=3  rs1=0x2030405  rs2=0x1020304 -> 0x3050709
+Execute: SUB   rd=3  rs1=0x1020304  rs2=0x2030405 -> 0xFEFEFEFF
+Execute: SLL   rd=3  rs1=0x1020304  rs2=0x1 -> 0x2040608
+Execute: SLLI  rd=3  rs1=0x1020304  shamt=3 -> 0x8101820
+Execute: SLT   rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x1
+Execute: SLTI  rd=3  rs1=0x1020304  imm=2 -> 0x0
+Execute: SLTU  rd=3  rs1=0x1020304  rs2=0x1 -> 0x0
+Execute: SLTIU rd=3  rs1=0x1020304  imm=1 -> 0x0
+Execute: XOR   rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x3010701
+Execute: XORI  rd=3  rs1=0x1020304  imm=3 -> 0x1020307
+Execute: SRL   rd=3  rs1=0x1020304  rs2=0x1 -> 0x810182
+Execute: SRLI  rd=3  rs1=0x1020304  shamt=3 -> 0x204060
+Execute: OR    rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x3030705
+Execute: ORI   rd=3  rs1=0x1020304  imm=3 -> 0x1020307
+Execute: AND   rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x20004
+Execute: ANDI  rd=3  rs1=0x1020304  imm=15 -> 0x4
+--- PASS: TestInstruction (0.00s)
+PASS
+ok  	riscv	(cached)
+?   	riscv/pipeline	[no test files]
+?   	riscv/system_interface	[no test files]

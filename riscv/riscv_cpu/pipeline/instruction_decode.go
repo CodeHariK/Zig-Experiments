@@ -17,8 +17,7 @@ func NewDecodeParams(regFile *[32]Register32, shouldStall func() bool, getInstru
 }
 
 type DecodeStage struct {
-	instruction     Register32
-	instructionNext Register32
+	instruction Register32
 
 	opcode     byte // 7 bits [6-0]
 	opcodeNext byte
@@ -57,8 +56,7 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 	ids := &DecodeStage{}
 
-	ids.instruction = Register32{Value: 0}
-	ids.instructionNext = Register32{Value: 0}
+	ids.instruction = NewRegister32(0)
 
 	ids.opcode = 0
 	ids.opcodeNext = 0
@@ -98,41 +96,42 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 func (ids *DecodeStage) Compute() {
 	if !ids.shouldStall() {
-		ids.instructionNext.Value = ids.getInstructionIn()
+		ids.instruction.SetN(ids.getInstructionIn())
 
-		ids.opcodeNext = byte(ids.instructionNext.Value & 0x7F)
+		ids.opcodeNext = byte(ids.instruction.GetN() & 0x7F)
 
-		ids.rdNext = byte((ids.instructionNext.Value >> 7) & 0x1F)
+		ids.rdNext = byte((ids.instruction.GetN() >> 7) & 0x1F)
 
-		ids.function3Next = byte((ids.instructionNext.Value >> 12) & 0x07)
-		ids.function7Next = byte((ids.instructionNext.Value >> 25) & 0x7F)
+		ids.function3Next = byte((ids.instruction.GetN() >> 12) & 0x07)
+		ids.function7Next = byte((ids.instruction.GetN() >> 25) & 0x7F)
 
-		rs1Address := byte((ids.instructionNext.Value >> 15) & 0x1F)
-		rs2Address := byte((ids.instructionNext.Value >> 20) & 0x1F)
+		rs1Address := byte((ids.instruction.GetN() >> 15) & 0x1F)
+		rs2Address := byte((ids.instruction.GetN() >> 20) & 0x1F)
 		ids.shamtNext = rs2Address // For shift instructions, shamt is in rs2 field
 		ids.rs1Next = 0
 		if rs1Address != 0 {
-			ids.rs1Next = ids.regFile[rs1Address].Value
+			ids.rs1Next = ids.regFile[rs1Address].GetN()
 		}
 		ids.rs2Next = 0
 		if rs2Address != 0 {
-			ids.rs2Next = ids.regFile[rs2Address].Value
+			ids.rs2Next = ids.regFile[rs2Address].GetN()
 		}
 
 		// Immediate extraction for I-type instructions
-		ids.imm_11_0_Next = int32(ids.instructionNext.Value) >> 20
+		ids.imm_11_0_Next = int32(ids.instruction.GetN()) >> 20
 
 		// Immediate extraction for U-type instructions
-		ids.imm_31_12_Next = int32(ids.instructionNext.Value & 0xFFFFF000)
+		ids.imm_31_12_Next = int32(ids.instruction.GetN() & 0xFFFFF000)
 
 		// Immediate extraction for S-type instructions
-		ids.imm_4_0_Next = int32((ids.instructionNext.Value >> 7) & 0x1F)
-		ids.imm_11_5_Next = int32((ids.instructionNext.Value >> 25) & 0x7F)
+		ids.imm_4_0_Next = int32((ids.instruction.GetN() >> 7) & 0x1F)
+		ids.imm_11_5_Next = int32((ids.instruction.GetN() >> 25) & 0x7F)
 	}
 }
 
 func (ids *DecodeStage) LatchNext() {
-	ids.instruction.Value = ids.instructionNext.Value
+	ids.instruction.LatchNext()
+
 	ids.opcode = ids.opcodeNext
 
 	ids.rd = ids.rdNext

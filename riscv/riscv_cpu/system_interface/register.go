@@ -1,17 +1,26 @@
 package systeminterface
 
 type Register32 struct {
-	Value uint32
+	value     uint32
+	valueNext uint32
 }
 
-func NewRegister32(value uint32) *Register32 {
-	return &Register32{Value: value}
+func NewRegister32(value uint32) Register32 {
+	return Register32{value: value, valueNext: value}
 }
 
 func (r *Register32) Get() uint32 {
-	return r.Value
+	return r.value
 }
 
-func (r *Register32) Set(value uint32) {
-	r.Value = value
+func (r *Register32) GetN() uint32 {
+	return r.valueNext
+}
+
+func (r *Register32) SetN(value uint32) {
+	r.valueNext = value
+}
+
+func (r *Register32) LatchNext() {
+	r.value = r.valueNext
 }

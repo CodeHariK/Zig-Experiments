@@ -101,6 +101,10 @@ func (sys *RVI32System) LatchNext() {
 	sys.EX.LatchNext()
 	sys.MA.LatchNext()
 	sys.WB.LatchNext()
+
+	for i := range sys.regFile {
+		sys.regFile[i].LatchNext()
+	}
 }
 
 func (sys *RVI32System) Cycle() {
