@@ -16,9 +16,9 @@ func NewInstructionFetchParams(bus *SystemInterface, shouldStall func() bool) *I
 }
 
 type InstructionFetchStage struct {
-	pc Register32
+	pc RUint32
 
-	instruction Register32
+	instruction RUint32
 
 	bus         *SystemInterface
 	shouldStall func() bool
@@ -26,8 +26,8 @@ type InstructionFetchStage struct {
 
 func NewInstructionFetchStage(params *InstructionFetchParams) *InstructionFetchStage {
 	ifs := &InstructionFetchStage{}
-	ifs.pc = NewRegister32(MEMORY_MAP_ROM_START)
-	ifs.instruction = NewRegister32(0)
+	ifs.pc = NewRUint32(MEMORY_MAP_ROM_START)
+	ifs.instruction = NewRUint32(0)
 	ifs.bus = params.bus
 	ifs.shouldStall = params.shouldStall
 	return ifs

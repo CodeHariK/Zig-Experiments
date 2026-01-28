@@ -18,7 +18,7 @@ type RVI32System struct {
 
 	ram     RAM_Device
 	rom     ROM_Device
-	regFile [32]Register32
+	regFile [32]RUint32
 
 	bus SystemInterface
 

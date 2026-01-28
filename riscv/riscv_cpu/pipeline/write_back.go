@@ -3,12 +3,12 @@ package pipeline
 import . "riscv/system_interface"
 
 type WriteBackParams struct {
-	regFile                 *[32]Register32
+	regFile                 *[32]RUint32
 	shouldStall             func() bool
 	getMemoryAccessValuesIn func() ExecutedValues
 }
 
-func NewWriteBackParams(regFile *[32]Register32, shouldStall func() bool, getMemoryAccessValuesIn func() ExecutedValues) *WriteBackParams {
+func NewWriteBackParams(regFile *[32]RUint32, shouldStall func() bool, getMemoryAccessValuesIn func() ExecutedValues) *WriteBackParams {
 	return &WriteBackParams{
 		regFile:                 regFile,
 		shouldStall:             shouldStall,
@@ -17,7 +17,7 @@ func NewWriteBackParams(regFile *[32]Register32, shouldStall func() bool, getMem
 }
 
 type WriteBackStage struct {
-	regFile                 *[32]Register32
+	regFile                 *[32]RUint32
 	shouldStall             func() bool
 	getMemoryAccessValuesIn func() ExecutedValues
 }

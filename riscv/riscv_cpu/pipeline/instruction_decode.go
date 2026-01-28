@@ -3,12 +3,12 @@ package pipeline
 import . "riscv/system_interface"
 
 type DecodeParams struct {
-	regFile          *[32]Register32
+	regFile          *[32]RUint32
 	shouldStall      func() bool
 	getInstructionIn func() uint32
 }
 
-func NewDecodeParams(regFile *[32]Register32, shouldStall func() bool, getInstructionIn func() uint32) *DecodeParams {
+func NewDecodeParams(regFile *[32]RUint32, shouldStall func() bool, getInstructionIn func() uint32) *DecodeParams {
 	return &DecodeParams{
 		regFile:          regFile,
 		shouldStall:      shouldStall,
@@ -17,36 +17,23 @@ func NewDecodeParams(regFile *[32]Register32, shouldStall func() bool, getInstru
 }
 
 type DecodeStage struct {
-	instruction Register32
+	instruction RUint32
 
-	opcode     byte // 7 bits [6-0]
-	opcodeNext byte
+	opcode RByte // 7 bits [6-0]
+	rd     RByte // 5 bits [11-7]
+	func3  RByte // 3 bits [14-12]
+	func7  RByte // 7 bits [31-25]
+	shamt  RByte // 5 bits [24-20] (for shift instructions)
 
-	rd     byte // 5 bits [11-7]
-	rdNext byte
+	rs1V RUint32 // 5 bits [19-15]
+	rs2V RUint32 // 5 bits [24-20]
 
-	function3     byte // 3 bits [14-12]
-	function3Next byte
-	function7     byte // 7 bits [31-25]
-	function7Next byte
+	imm_11_0  RInt32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
+	imm_31_12 RInt32 // 20 bits [31-12]
+	imm_11_5  RInt32 // 7 bits [31-25]
+	imm_4_0   RInt32 // 5 bits [11-7]
 
-	rs1       uint32 // 5 bits [19-15]
-	rs1Next   uint32
-	rs2       uint32 // 5 bits [24-20]
-	rs2Next   uint32
-	shamt     byte // 5 bits [24-20] (for shift instructions)
-	shamtNext byte
-
-	imm_11_0       int32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
-	imm_11_0_Next  int32
-	imm_31_12      int32 // 20 bits [31-12]
-	imm_31_12_Next int32
-	imm_11_5       int32 // 7 bits [31-25]
-	imm_11_5_Next  int32
-	imm_4_0        int32 // 5 bits [11-7]
-	imm_4_0_Next   int32
-
-	regFile *[32]Register32
+	regFile *[32]RUint32
 
 	shouldStall      func() bool
 	getInstructionIn func() uint32
@@ -56,37 +43,24 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 	ids := &DecodeStage{}
 
-	ids.instruction = NewRegister32(0)
+	ids.instruction = NewRUint32(0)
 
-	ids.opcode = 0
-	ids.opcodeNext = 0
+	ids.opcode = NewRByte(0)
 
-	ids.rd = 0
-	ids.rdNext = 0
+	ids.rd = NewRByte(0)
 
-	ids.function3 = 0
-	ids.function3Next = 0
-	ids.function7 = 0
-	ids.function7Next = 0
+	ids.func3 = NewRByte(0)
+	ids.func7 = NewRByte(0)
 
-	ids.rs1 = 0
-	ids.rs1Next = 0
-	ids.rs2 = 0
-	ids.rs2Next = 0
+	ids.rs1V = NewRUint32(0)
+	ids.rs2V = NewRUint32(0)
 
-	ids.shamt = 0
-	ids.shamtNext = 0
+	ids.shamt = NewRByte(0)
 
-	ids.imm_11_0 = 0
-	ids.imm_11_0_Next = 0
-
-	ids.imm_31_12 = 0
-	ids.imm_31_12_Next = 0
-
-	ids.imm_11_5 = 0
-	ids.imm_11_5_Next = 0
-	ids.imm_4_0 = 0
-	ids.imm_4_0_Next = 0
+	ids.imm_11_0 = NewRInt32(0)
+	ids.imm_31_12 = NewRInt32(0)
+	ids.imm_11_5 = NewRInt32(0)
+	ids.imm_4_0 = NewRInt32(0)
 
 	ids.regFile = params.regFile
 	ids.shouldStall = params.shouldStall
@@ -98,69 +72,69 @@ func (ids *DecodeStage) Compute() {
 	if !ids.shouldStall() {
 		ids.instruction.SetN(ids.getInstructionIn())
 
-		ids.opcodeNext = byte(ids.instruction.GetN() & 0x7F)
+		ids.opcode.SetN(byte(ids.instruction.GetN() & 0x7F))
 
-		ids.rdNext = byte((ids.instruction.GetN() >> 7) & 0x1F)
+		ids.rd.SetN(byte((ids.instruction.GetN() >> 7) & 0x1F))
 
-		ids.function3Next = byte((ids.instruction.GetN() >> 12) & 0x07)
-		ids.function7Next = byte((ids.instruction.GetN() >> 25) & 0x7F)
+		ids.func3.SetN(byte((ids.instruction.GetN() >> 12) & 0x07))
+		ids.func7.SetN(byte((ids.instruction.GetN() >> 25) & 0x7F))
 
 		rs1Address := byte((ids.instruction.GetN() >> 15) & 0x1F)
 		rs2Address := byte((ids.instruction.GetN() >> 20) & 0x1F)
-		ids.shamtNext = rs2Address // For shift instructions, shamt is in rs2 field
-		ids.rs1Next = 0
+		ids.shamt.SetN(rs2Address) // For shift instructions, shamt is in rs2 field
+		ids.rs1V.SetN(0)
 		if rs1Address != 0 {
-			ids.rs1Next = ids.regFile[rs1Address].GetN()
+			ids.rs1V.SetN(ids.regFile[rs1Address].GetN())
 		}
-		ids.rs2Next = 0
+		ids.rs2V.SetN(0)
 		if rs2Address != 0 {
-			ids.rs2Next = ids.regFile[rs2Address].GetN()
+			ids.rs2V.SetN(ids.regFile[rs2Address].GetN())
 		}
 
 		// Immediate extraction for I-type instructions
-		ids.imm_11_0_Next = int32(ids.instruction.GetN()) >> 20
+		ids.imm_11_0.SetN(int32(ids.instruction.GetN()) >> 20)
 
 		// Immediate extraction for U-type instructions
-		ids.imm_31_12_Next = int32(ids.instruction.GetN() & 0xFFFFF000)
+		ids.imm_31_12.SetN(int32(ids.instruction.GetN() & 0xFFFFF000))
 
 		// Immediate extraction for S-type instructions
-		ids.imm_4_0_Next = int32((ids.instruction.GetN() >> 7) & 0x1F)
-		ids.imm_11_5_Next = int32((ids.instruction.GetN() >> 25) & 0x7F)
+		ids.imm_4_0.SetN(int32((ids.instruction.GetN() >> 7) & 0x1F))
+		ids.imm_11_5.SetN(int32((ids.instruction.GetN() >> 25) & 0x7F))
 	}
 }
 
 func (ids *DecodeStage) LatchNext() {
 	ids.instruction.LatchNext()
 
-	ids.opcode = ids.opcodeNext
+	ids.opcode.LatchNext()
 
-	ids.rd = ids.rdNext
+	ids.rd.LatchNext()
 
-	ids.function3 = ids.function3Next
-	ids.function7 = ids.function7Next
+	ids.func3.LatchNext()
+	ids.func7.LatchNext()
 
-	ids.rs1 = ids.rs1Next
-	ids.rs2 = ids.rs2Next
-	ids.shamt = ids.shamtNext // For shift instructions, shamt is in rs2 field
+	ids.rs1V.LatchNext()
+	ids.rs2V.LatchNext()
+	ids.shamt.LatchNext() // For shift instructions, shamt is in rs2 field
 
 	// Immediate extraction for I-type instructions
-	ids.imm_11_0 = ids.imm_11_0_Next
+	ids.imm_11_0.LatchNext()
 
 	// Immediate extraction for U-type instructions
-	ids.imm_31_12 = ids.imm_31_12_Next
+	ids.imm_31_12.LatchNext()
 
 	// Immediate extraction for S-type instructions
-	ids.imm_4_0 = ids.imm_4_0_Next
-	ids.imm_11_5 = ids.imm_11_5_Next
+	ids.imm_4_0.LatchNext()
+	ids.imm_11_5.LatchNext()
 }
 
 type DecodedValues struct {
 	Opcode    byte
 	Rd        byte
-	Function3 byte
-	Function7 byte
-	Rs1       uint32
-	Rs2       uint32
+	Func3     byte
+	Func7     byte
+	Rs1V      uint32
+	Rs2V      uint32
 	Shamt     byte
 	Imm_11_0  int32
 	Imm_31_12 int32
@@ -170,16 +144,16 @@ type DecodedValues struct {
 
 func (ids *DecodeStage) GetDecodedValues() DecodedValues {
 	return DecodedValues{
-		Opcode:    ids.opcode,
-		Rd:        ids.rd,
-		Function3: ids.function3,
-		Function7: ids.function7,
-		Rs1:       ids.rs1,
-		Rs2:       ids.rs2,
-		Shamt:     ids.shamt,
-		Imm_11_0:  ids.imm_11_0,
-		Imm_31_12: ids.imm_31_12,
-		Imm_11_5:  ids.imm_11_5,
-		Imm_4_0:   ids.imm_4_0,
+		Opcode:    ids.opcode.GetN(),
+		Rd:        ids.rd.GetN(),
+		Func3:     ids.func3.GetN(),
+		Func7:     ids.func7.GetN(),
+		Rs1V:      ids.rs1V.GetN(),
+		Rs2V:      ids.rs2V.GetN(),
+		Shamt:     ids.shamt.GetN(),
+		Imm_11_0:  ids.imm_11_0.GetN(),
+		Imm_31_12: ids.imm_31_12.GetN(),
+		Imm_11_5:  ids.imm_11_5.GetN(),
+		Imm_4_0:   ids.imm_4_0.GetN(),
 	}
 }

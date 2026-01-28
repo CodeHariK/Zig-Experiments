@@ -51,9 +51,9 @@ type romTestCase struct {
 }
 
 func TestInstruction(t *testing.T) {
-	rv.regFile[1] = NewRegister32(0x01020304)
-	rv.regFile[2] = NewRegister32(0x02030405)
-	rv.regFile[5] = NewRegister32(0x00000001)
+	rv.regFile[1] = NewRUint32(0x01020304)
+	rv.regFile[2] = NewRUint32(0x02030405)
+	rv.regFile[5] = NewRUint32(0x00000001)
 
 	testCases := []romTestCase{
 		{
