@@ -54,6 +54,9 @@ func TestInstruction(t *testing.T) {
 		// imm[11:0] rs1 000 rd 0010011 ADDI => x[rd] = x[rs1] + sign-extended(immediate)
 		0b000000000001_00001_000_00011_0010011, // ADDI x3, x1, 1 => x3 = x1 + 1
 
+		// imm[11:0] rs1 000 rd 0010011 ADDI => x[rd] = x[rs1] + sign-extended(immediate)
+		0b111111111111_00001_000_00011_0010011, // ADDI x3, x1, 1 => x3 = x1 - 1
+
 		// 0000000 rs2 rs1 000 rd 0110011 ADD => x[rd] = x[rs1] + x[rs2]
 		0b0000000_00001_00010_000_00011_0110011, // ADD x3, x1, x2 => x3 = x1 + x2
 
@@ -61,20 +64,34 @@ func TestInstruction(t *testing.T) {
 		0b0100000_00010_00001_000_00011_0110011, // SUB x3, x1, x2 => x3 = x1 - x2 (rs2=00010, rs1=00001)
 	})
 
-	// Each instruction needs 3 cycles (IF -> DE -> EX) in this simple pipeline
-	for i := 0; i < 3; i++ { rv.Cycle() }
+	// Each instruction needs 5 cycles (IF -> DE -> EX -> MA -> WB) in this pipeline
+	for i := 0; i < 5; i++ {
+		rv.Cycle()
+	}
 	v := rv.regFile[3].Value
 	if v != 0x01020305 {
 		t.Fatalf("After ADDI, x3 = 0x%X; want 0x01020305", v)
 	}
 
-	for i := 0; i < 3; i++ { rv.Cycle() }
+	for i := 0; i < 5; i++ {
+		rv.Cycle()
+	}
+	v = rv.regFile[3].Value
+	if v != 0x01020303 {
+		t.Fatalf("After ADDI, x3 = 0x%X; want 0x01020303", v)
+	}
+
+	for i := 0; i < 5; i++ {
+		rv.Cycle()
+	}
 	v = rv.regFile[3].Value
 	if v != 0x03050709 {
 		t.Fatalf("After ADD, x3 = 0x%X; want 0x03050709", v)
 	}
 
-	for i := 0; i < 3; i++ { rv.Cycle() }
+	for i := 0; i < 5; i++ {
+		rv.Cycle()
+	}
 	v = rv.regFile[3].Value
 	if v != 0xFEFEFEFF {
 		t.Fatalf("After SUB, x3 = 0x%X; want 0xFEFEFEFF", v)

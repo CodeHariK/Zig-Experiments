@@ -25,6 +25,8 @@ type RVI32System struct {
 	IF *InstructionFetchStage
 	DE *DecodeStage
 	EX *ExecuteStage
+	MA *MemoryAccessStage
+	WB *WriteBackStage
 }
 
 func NewRVI32System() *RVI32System {
@@ -65,6 +67,23 @@ func NewRVI32System() *RVI32System {
 	)
 	sys.EX = NewExecuteStage(executeParams)
 
+	memoryAccessParams := NewMemoryAccessParams(
+		func() bool {
+			return sys.state != MEMORY_ACCESS
+		},
+		sys.EX.GetExecutionValuesOut,
+	)
+	sys.MA = NewMemoryAccessStage(memoryAccessParams)
+
+	writeBackParams := NewWriteBackParams(
+		&sys.regFile,
+		func() bool {
+			return sys.state != WRITE_BACK
+		},
+		sys.MA.GetMemoryAccessValuesOut,
+	)
+	sys.WB = NewWriteBackStage(writeBackParams)
+
 	return sys
 }
 
@@ -72,12 +91,16 @@ func (sys *RVI32System) Compute() {
 	sys.IF.Compute()
 	sys.DE.Compute()
 	sys.EX.Compute()
+	sys.MA.Compute()
+	sys.WB.Compute()
 }
 
 func (sys *RVI32System) LatchNext() {
 	sys.IF.LatchNext()
 	sys.DE.LatchNext()
 	sys.EX.LatchNext()
+	sys.MA.LatchNext()
+	sys.WB.LatchNext()
 }
 
 func (sys *RVI32System) Cycle() {
@@ -90,6 +113,10 @@ func (sys *RVI32System) Cycle() {
 	case DECODE:
 		sys.state = EXECUTE
 	case EXECUTE:
+		sys.state = MEMORY_ACCESS
+	case MEMORY_ACCESS:
+		sys.state = WRITE_BACK
+	case WRITE_BACK:
 		sys.state = INSTRUCTION_FETCH
 	}
 }

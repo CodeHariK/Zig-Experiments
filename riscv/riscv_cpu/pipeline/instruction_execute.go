@@ -1,6 +1,9 @@
 package pipeline
 
-import . "riscv/system_interface"
+import (
+	"fmt"
+	. "riscv/system_interface"
+)
 
 type ExecuteParams struct {
 	shouldStall        func() bool
@@ -31,8 +34,10 @@ type ExecuteStage struct {
 	aluResult     Register32
 	aluResultNext Register32
 
-	rd     byte
-	rdNext byte
+	rd                 byte
+	rdNext             byte
+	isAluOperation     bool
+	isAluOperationNext bool
 
 	regFile *[32]Register32
 
@@ -49,6 +54,9 @@ func NewExecuteStage(params *ExecuteParams) *ExecuteStage {
 
 	ies.rd = 0
 	ies.rdNext = 0
+	ies.isAluOperation = false
+	ies.isAluOperationNext = false
+
 	ies.regFile = params.regFile
 
 	ies.shouldStall = params.shouldStall
@@ -68,17 +76,22 @@ func (ies *ExecuteStage) Compute() {
 
 		imm32 := (decoded.Imm_11_0 << 20) >> 20 // Sign-extend 12-bit immediate to 32 bits
 
+		ies.isAluOperationNext = (decoded.Opcode & 0b1011111) == 0b0010011 // R-type or I-type ALU operation
+
 		switch decoded.Function3 {
 		case OP_ADD_SUB:
 			{
 				if isRegisterOp {
 					if isAlternate {
 						ies.aluResultNext.Value = decoded.Rs1 - decoded.Rs2 // SUB
+						fmt.Printf("Execute: SUB rd=%d rs1=0x%X rs2=0x%X -> 0x%X\n", decoded.Rd, decoded.Rs1, decoded.Rs2, ies.aluResultNext.Value)
 					} else {
 						ies.aluResultNext.Value = decoded.Rs1 + decoded.Rs2 // ADD
+						fmt.Printf("Execute: ADD rd=%d rs1=0x%X rs2=0x%X -> 0x%X\n", decoded.Rd, decoded.Rs1, decoded.Rs2, ies.aluResultNext.Value)
 					}
 				} else {
 					ies.aluResultNext.Value = decoded.Rs1 + uint32(imm32) // ADDI
+					fmt.Printf("Execute: ADDI rd=%d rs1=0x%X imm=%d -> 0x%X\n", decoded.Rd, decoded.Rs1, imm32, ies.aluResultNext.Value)
 				}
 			}
 		}
@@ -88,12 +101,13 @@ func (ies *ExecuteStage) Compute() {
 func (ies *ExecuteStage) LatchNext() {
 	ies.aluResult = ies.aluResultNext
 	ies.rd = ies.rdNext
-	// Write-back to register file (x0 is hardwired zero)
-	if ies.regFile != nil && ies.rd != 0 {
-		ies.regFile[ies.rd].Value = ies.aluResult.Value
-	}
+	ies.isAluOperation = ies.isAluOperationNext
 }
 
-func (ies *ExecuteStage) GetALUResultOut() uint32 {
-	return ies.aluResult.Value
+func (ies *ExecuteStage) GetExecutionValuesOut() ExecutedValues {
+	return ExecutedValues{
+		aluResult:      ies.aluResult.Value,
+		rd:             ies.rd,
+		isAluOperation: ies.isAluOperation,
+	}
 }

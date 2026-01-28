@@ -38,7 +38,7 @@ type DecodeStage struct {
 	shamt     byte // 5 bits [24-20] (for shift instructions)
 	shamtNext byte
 
-	imm_11_0       int32 // 12 bits [31-20]
+	imm_11_0       int32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
 	imm_11_0_Next  int32
 	imm_31_12      int32 // 20 bits [31-12]
 	imm_31_12_Next int32
