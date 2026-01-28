@@ -24,6 +24,11 @@ Execute: OR    rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x3030705
 Execute: ORI   rd=3  rs1=0x1020304  imm=3 -> 0x1020307
 Execute: AND   rd=3  rs1=0x1020304  rs2=0x2030405 -> 0x20004
 Execute: ANDI  rd=3  rs1=0x1020304  imm=15 -> 0x4
+STORE BYTE: SB Addr=0x20000003, Value=0x5, <nil> 
+STORE HALFWORD: SH Addr=0x20000002, Value=0x405, <nil> 
+STORE WORD: SW Addr=0x20000000, Value=0x2030405, <nil> 
+STORE HALFWORD: SH Addr=0x20000003, Value=0x405, Unaligned halfword write at address 0x3 
+STORE WORD: SW Addr=0x20000003, Value=0x2030405, Unaligned word write at address 0x3 
 --- PASS: TestInstruction (0.00s)
 PASS
 ok  	riscv	(cached)

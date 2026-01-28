@@ -1,9 +1,5 @@
 package systeminterface
 
-import (
-	"fmt"
-)
-
 const (
 	MEMORY_MAP_ROM_START = 0x10000000
 	MEMORY_MAP_ROM_END   = 0x1FFFFFFF
@@ -11,9 +7,17 @@ const (
 	MEMORY_MAP_RAM_END   = 0x2FFFFFFF
 )
 
+type MEMORY_WIDTH byte
+
+const (
+	MEMORY_WIDTH_BYTE MEMORY_WIDTH = 0b000
+	MEMORY_WIDTH_HALF MEMORY_WIDTH = 0b001
+	MEMORY_WIDTH_WORD MEMORY_WIDTH = 0b010
+)
+
 type MMIO_DEVICE interface {
-	Read(addr uint64) (uint64, error)
-	Write(addr uint64, value uint64) error
+	Read(addr uint32, width MEMORY_WIDTH) (uint32, error)
+	Write(addr uint32, value uint32, width MEMORY_WIDTH) error
 }
 
 type SystemInterface struct {
@@ -28,34 +32,22 @@ func NewSystemInterface(rom *ROM_Device, ram *RAM_Device) *SystemInterface {
 	return si
 }
 
-func (si *SystemInterface) Read(addr uint64) (uint64, error) {
-	if (addr & 0b11) != 0 {
-		return 0, fmt.Errorf("Unaligned read at address 0x%X",
-			ToHexString(addr, 32))
-	}
-
-	wordAddr := (addr & 0x0FFFFFFF) >> 2 // word address
+func (si *SystemInterface) Read(addr uint32, width MEMORY_WIDTH) (uint32, error) {
 
 	if (addr & MEMORY_MAP_ROM_START) == MEMORY_MAP_ROM_START {
-		return si.rom.Read(wordAddr)
+		return si.rom.Read(addr&0x0FFFFFFF, width)
 	}
 	if (addr & MEMORY_MAP_RAM_START) == MEMORY_MAP_RAM_START {
-		return si.ram.Read(wordAddr)
+		return si.ram.Read(addr&0x0FFFFFFF, width)
 	}
 
 	return 0, nil
 }
 
-func (si *SystemInterface) Write(addr uint64, value uint64) error {
-	if (addr & 0b11) != 0 {
-		return fmt.Errorf("Unaligned write at address 0x%X (value 0x%X)",
-			ToHexString(addr, 32), ToHexString(value, 32))
-	}
-
-	wordAddr := (addr & 0x0FFFFFFF) >> 2 // word address
+func (si *SystemInterface) Write(addr uint32, value uint32, width MEMORY_WIDTH) error {
 
 	if (addr & MEMORY_MAP_RAM_START) == MEMORY_MAP_RAM_START {
-		return si.ram.Write(wordAddr, value)
+		return si.ram.Write(addr&0x0FFFFFFF, value, width)
 	}
 
 	return nil

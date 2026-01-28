@@ -33,10 +33,13 @@ const (
 type ExecuteStage struct {
 	aluResult RUint32
 
-	rd                 byte
-	rdNext             byte
-	isAluOperation     bool
-	isAluOperationNext bool
+	rd               RByte
+	rs1V             RUint32
+	rs2V             RUint32
+	isAluOperation   RBool
+	isStoreOperation RBool
+	imm32            RInt32
+	func3            RByte
 
 	regFile *[32]RUint32
 
@@ -50,10 +53,13 @@ func NewExecuteStage(params *ExecuteParams) *ExecuteStage {
 
 	ies.aluResult = NewRUint32(0)
 
-	ies.rd = 0
-	ies.rdNext = 0
-	ies.isAluOperation = false
-	ies.isAluOperationNext = false
+	ies.rd = NewRByte(0)
+	ies.rs1V = NewRUint32(0)
+	ies.rs2V = NewRUint32(0)
+	ies.isAluOperation = NewRBool(false)
+	ies.isStoreOperation = NewRBool(false)
+	ies.imm32 = NewRInt32(0)
+	ies.func3 = NewRByte(0)
 
 	ies.regFile = params.regFile
 
@@ -66,16 +72,27 @@ func (ies *ExecuteStage) Compute() {
 	if !ies.shouldStall() {
 		decoded := ies.getDecodedValuesIn()
 
-		// Save destination register for write-back in the latch phase
-		ies.rdNext = decoded.Rd
+		ies.isAluOperation.SetN(decoded.IsAluOperation)
+		ies.isStoreOperation.SetN(decoded.IsStoreOperation)
+		ies.imm32.SetN(decoded.Imm32)
+		ies.func3.SetN(decoded.Func3)
 
-		isRegisterOp := decoded.Opcode>>5 == 1         // Check if opcode indicates register-register operation
+		imm32 := decoded.Imm32
+
+		// Save destination register for write-back in the latch phase
+		ies.rd.SetN(decoded.Rd)
+		ies.rs1V.SetN(decoded.Rs1V)
+		ies.rs2V.SetN(decoded.Rs2V)
+
+		isRegisterOp := decoded.Opcode>>5 == 1     // Check if opcode indicates register-register operation
 		isAlternate := (decoded.Func7 & 0x20) != 0 // Use funct7 bit to distinguish SUB (0100000)
 
-		imm32 := (decoded.Imm_11_0 << 20) >> 20 // Sign-extend 12-bit immediate to 32 bits
+		if decoded.IsAluOperation == false {
+			// Not an ALU operation; nothing to do here
+			return
+		}
 
-		ies.isAluOperationNext = (decoded.Opcode & 0b1011111) == 0b0010011 // R-type or I-type ALU operation
-
+		// Perform ALU operation
 		switch decoded.Func3 {
 		case OP_ADD_SUB:
 			{
@@ -188,14 +205,24 @@ func (ies *ExecuteStage) Compute() {
 
 func (ies *ExecuteStage) LatchNext() {
 	ies.aluResult.LatchNext()
-	ies.rd = ies.rdNext
-	ies.isAluOperation = ies.isAluOperationNext
+	ies.rd.LatchNext()
+	ies.rs1V.LatchNext()
+	ies.rs2V.LatchNext()
+	ies.isAluOperation.LatchNext()
+	ies.isStoreOperation.LatchNext()
+	ies.imm32.LatchNext()
+	ies.func3.LatchNext()
 }
 
 func (ies *ExecuteStage) GetExecutionValuesOut() ExecutedValues {
 	return ExecutedValues{
-		aluResult:      ies.aluResult.GetN(),
-		rd:             ies.rd,
-		isAluOperation: ies.isAluOperation,
+		aluResult:        ies.aluResult.GetN(),
+		rd:               ies.rd.GetN(),
+		rs1V:             ies.rs1V.GetN(),
+		rs2V:             ies.rs2V.GetN(),
+		isAluOperation:   ies.isAluOperation.GetN(),
+		isStoreOperation: ies.isStoreOperation.GetN(),
+		imm32:            ies.imm32.GetN(),
+		func3:            ies.func3.GetN(),
 	}
 }

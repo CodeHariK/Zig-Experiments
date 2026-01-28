@@ -43,7 +43,7 @@ func (ifs *InstructionFetchStage) readyToReceive() bool {
 
 func (ifs *InstructionFetchStage) Compute() {
 	if !ifs.shouldStall() {
-		v, err := ifs.bus.Read(uint64(ifs.pc.GetN()))
+		v, err := ifs.bus.Read(ifs.pc.GetN(), MEMORY_WIDTH_WORD)
 		if err != nil {
 			panic(err)
 		}

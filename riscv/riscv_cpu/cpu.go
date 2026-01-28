@@ -1,4 +1,4 @@
-package main
+package riscv
 
 import (
 	. "riscv/pipeline"
@@ -68,6 +68,7 @@ func NewRVI32System() *RVI32System {
 	sys.EX = NewExecuteStage(executeParams)
 
 	memoryAccessParams := NewMemoryAccessParams(
+		sys.bus,
 		func() bool {
 			return sys.state != MEMORY_ACCESS
 		},
@@ -123,8 +124,4 @@ func (sys *RVI32System) Cycle() {
 	case WRITE_BACK:
 		sys.state = INSTRUCTION_FETCH
 	}
-}
-
-func main() {
-	println("Hello, World!")
 }

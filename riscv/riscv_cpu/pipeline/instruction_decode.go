@@ -19,6 +19,9 @@ func NewDecodeParams(regFile *[32]RUint32, shouldStall func() bool, getInstructi
 type DecodeStage struct {
 	instruction RUint32
 
+	isAluOperation   RBool // R-type or I-type ALU operation
+	isStoreOperation RBool // S-type store operation
+
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
 	func3  RByte // 3 bits [14-12]
@@ -33,6 +36,8 @@ type DecodeStage struct {
 	imm_11_5  RInt32 // 7 bits [31-25]
 	imm_4_0   RInt32 // 5 bits [11-7]
 
+	imm32 RInt32 // Sign-extend 12-bit immediate to 32 bits
+
 	regFile *[32]RUint32
 
 	shouldStall      func() bool
@@ -44,6 +49,9 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 	ids := &DecodeStage{}
 
 	ids.instruction = NewRUint32(0)
+
+	ids.isAluOperation = NewRBool(false)
+	ids.isStoreOperation = NewRBool(false)
 
 	ids.opcode = NewRByte(0)
 
@@ -73,6 +81,8 @@ func (ids *DecodeStage) Compute() {
 		ids.instruction.SetN(ids.getInstructionIn())
 
 		ids.opcode.SetN(byte(ids.instruction.GetN() & 0x7F))
+		ids.isAluOperation.SetN(ids.opcode.GetN()&0b1011111 == 0b0010011)
+		ids.isStoreOperation.SetN(ids.opcode.GetN() == 0b0100011)
 
 		ids.rd.SetN(byte((ids.instruction.GetN() >> 7) & 0x1F))
 
@@ -81,7 +91,9 @@ func (ids *DecodeStage) Compute() {
 
 		rs1Address := byte((ids.instruction.GetN() >> 15) & 0x1F)
 		rs2Address := byte((ids.instruction.GetN() >> 20) & 0x1F)
+
 		ids.shamt.SetN(rs2Address) // For shift instructions, shamt is in rs2 field
+
 		ids.rs1V.SetN(0)
 		if rs1Address != 0 {
 			ids.rs1V.SetN(ids.regFile[rs1Address].GetN())
@@ -100,6 +112,17 @@ func (ids *DecodeStage) Compute() {
 		// Immediate extraction for S-type instructions
 		ids.imm_4_0.SetN(int32((ids.instruction.GetN() >> 7) & 0x1F))
 		ids.imm_11_5.SetN(int32((ids.instruction.GetN() >> 25) & 0x7F))
+
+		storeImm := (ids.imm_11_5.GetN() << 5) | ids.imm_4_0.GetN()
+		aluImm := (ids.imm_11_0.GetN() << 20) >> 20
+
+		if ids.isStoreOperation.GetN() {
+			ids.imm32.SetN(storeImm)
+		} else if ids.isAluOperation.GetN() {
+			ids.imm32.SetN(aluImm)
+		} else {
+			panic("Unknown operation")
+		}
 	}
 }
 
@@ -107,6 +130,8 @@ func (ids *DecodeStage) LatchNext() {
 	ids.instruction.LatchNext()
 
 	ids.opcode.LatchNext()
+	ids.isAluOperation.LatchNext()
+	ids.isStoreOperation.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -129,7 +154,10 @@ func (ids *DecodeStage) LatchNext() {
 }
 
 type DecodedValues struct {
-	Opcode    byte
+	Opcode           byte
+	IsAluOperation   bool
+	IsStoreOperation bool
+
 	Rd        byte
 	Func3     byte
 	Func7     byte
@@ -140,11 +168,16 @@ type DecodedValues struct {
 	Imm_31_12 int32
 	Imm_11_5  int32
 	Imm_4_0   int32
+
+	Imm32 int32
 }
 
 func (ids *DecodeStage) GetDecodedValues() DecodedValues {
 	return DecodedValues{
-		Opcode:    ids.opcode.GetN(),
+		Opcode:           ids.opcode.GetN(),
+		IsAluOperation:   ids.isAluOperation.GetN(),
+		IsStoreOperation: ids.isStoreOperation.GetN(),
+
 		Rd:        ids.rd.GetN(),
 		Func3:     ids.func3.GetN(),
 		Func7:     ids.func7.GetN(),
@@ -155,5 +188,7 @@ func (ids *DecodeStage) GetDecodedValues() DecodedValues {
 		Imm_31_12: ids.imm_31_12.GetN(),
 		Imm_11_5:  ids.imm_11_5.GetN(),
 		Imm_4_0:   ids.imm_4_0.GetN(),
+
+		Imm32: ids.imm32.GetN(),
 	}
 }
