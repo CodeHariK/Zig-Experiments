@@ -1,6 +1,8 @@
 package pipeline
 
-import . "riscv/system_interface"
+import (
+	. "riscv/system_interface"
+)
 
 type DecodeParams struct {
 	regFile          *[32]RUint32
@@ -22,6 +24,7 @@ type DecodeStage struct {
 	isAluOperation   RBool // R-type or I-type ALU operation
 	isStoreOperation RBool // S-type store operation
 	isLoadOperation  RBool // I-type load operation
+	isLUIOperation   RBool // U-type LUI operation
 
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
@@ -32,10 +35,9 @@ type DecodeStage struct {
 	rs1V RUint32 // 5 bits [19-15]
 	rs2V RUint32 // 5 bits [24-20]
 
-	imm_11_0  RInt32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
-	imm_31_12 RInt32 // 20 bits [31-12]
-	imm_11_5  RInt32 // 7 bits [31-25]
-	imm_4_0   RInt32 // 5 bits [11-7]
+	imm_11_0 RInt32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
+	imm_11_5 RInt32 // 7 bits [31-25]
+	imm_4_0  RInt32 // 5 bits [11-7]
 
 	imm32 RInt32 // Sign-extend 12-bit immediate to 32 bits
 
@@ -54,6 +56,7 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 	ids.isAluOperation = NewRBool(false)
 	ids.isStoreOperation = NewRBool(false)
 	ids.isLoadOperation = NewRBool(false)
+	ids.isLUIOperation = NewRBool(false)
 
 	ids.opcode = NewRByte(0)
 
@@ -68,7 +71,6 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 	ids.shamt = NewRByte(0)
 
 	ids.imm_11_0 = NewRInt32(0)
-	ids.imm_31_12 = NewRInt32(0)
 	ids.imm_11_5 = NewRInt32(0)
 	ids.imm_4_0 = NewRInt32(0)
 
@@ -86,6 +88,7 @@ func (ids *DecodeStage) Compute() {
 		ids.isAluOperation.SetN(ids.opcode.GetN()&0b1011111 == 0b0010011)
 		ids.isStoreOperation.SetN(ids.opcode.GetN() == 0b0100011)
 		ids.isLoadOperation.SetN(ids.opcode.GetN() == 0b0000011)
+		ids.isLUIOperation.SetN(ids.opcode.GetN() == 0b0110111)
 
 		ids.rd.SetN(byte((ids.instruction.GetN() >> 7) & 0x1F))
 
@@ -109,9 +112,6 @@ func (ids *DecodeStage) Compute() {
 		// Immediate extraction for I-type instructions
 		ids.imm_11_0.SetN(int32(ids.instruction.GetN()) >> 20)
 
-		// Immediate extraction for U-type instructions
-		ids.imm_31_12.SetN(int32(ids.instruction.GetN() & 0xFFFFF000))
-
 		// Immediate extraction for S-type instructions
 		ids.imm_4_0.SetN(int32((ids.instruction.GetN() >> 7) & 0x1F))
 		ids.imm_11_5.SetN(int32((ids.instruction.GetN() >> 25) & 0x7F))
@@ -119,10 +119,15 @@ func (ids *DecodeStage) Compute() {
 		storeImm := (ids.imm_11_5.GetN() << 5) | ids.imm_4_0.GetN()
 		aluImm := (ids.imm_11_0.GetN() << 20) >> 20
 
+		// Immediate extraction for U-type instructions
+		uImm := ids.instruction.GetN() & 0xFFFFF000
+
 		if ids.isStoreOperation.GetN() {
 			ids.imm32.SetN(storeImm)
 		} else if ids.isAluOperation.GetN() || ids.isLoadOperation.GetN() {
 			ids.imm32.SetN(aluImm)
+		} else if ids.isLUIOperation.GetN() {
+			ids.imm32.SetN(int32(uImm))
 		} else {
 			panic("Unknown operation")
 		}
@@ -136,6 +141,7 @@ func (ids *DecodeStage) LatchNext() {
 	ids.isAluOperation.LatchNext()
 	ids.isStoreOperation.LatchNext()
 	ids.isLoadOperation.LatchNext()
+	ids.isLUIOperation.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -149,9 +155,6 @@ func (ids *DecodeStage) LatchNext() {
 	// Immediate extraction for I-type instructions
 	ids.imm_11_0.LatchNext()
 
-	// Immediate extraction for U-type instructions
-	ids.imm_31_12.LatchNext()
-
 	// Immediate extraction for S-type instructions
 	ids.imm_4_0.LatchNext()
 	ids.imm_11_5.LatchNext()
@@ -162,17 +165,17 @@ type DecodedValues struct {
 	IsAluOperation   bool
 	IsStoreOperation bool
 	IsLoadOperation  bool
+	isLUIOperation   bool
 
-	Rd        byte
-	Func3     byte
-	Func7     byte
-	Rs1V      uint32
-	Rs2V      uint32
-	Shamt     byte
-	Imm_11_0  int32
-	Imm_31_12 int32
-	Imm_11_5  int32
-	Imm_4_0   int32
+	Rd       byte
+	Func3    byte
+	Func7    byte
+	Rs1V     uint32
+	Rs2V     uint32
+	Shamt    byte
+	Imm_11_0 int32
+	Imm_11_5 int32
+	Imm_4_0  int32
 
 	Imm32 int32
 }
@@ -183,17 +186,17 @@ func (ids *DecodeStage) GetDecodedValues() DecodedValues {
 		IsAluOperation:   ids.isAluOperation.GetN(),
 		IsStoreOperation: ids.isStoreOperation.GetN(),
 		IsLoadOperation:  ids.isLoadOperation.GetN(),
+		isLUIOperation:   ids.isLUIOperation.GetN(),
 
-		Rd:        ids.rd.GetN(),
-		Func3:     ids.func3.GetN(),
-		Func7:     ids.func7.GetN(),
-		Rs1V:      ids.rs1V.GetN(),
-		Rs2V:      ids.rs2V.GetN(),
-		Shamt:     ids.shamt.GetN(),
-		Imm_11_0:  ids.imm_11_0.GetN(),
-		Imm_31_12: ids.imm_31_12.GetN(),
-		Imm_11_5:  ids.imm_11_5.GetN(),
-		Imm_4_0:   ids.imm_4_0.GetN(),
+		Rd:       ids.rd.GetN(),
+		Func3:    ids.func3.GetN(),
+		Func7:    ids.func7.GetN(),
+		Rs1V:     ids.rs1V.GetN(),
+		Rs2V:     ids.rs2V.GetN(),
+		Shamt:    ids.shamt.GetN(),
+		Imm_11_0: ids.imm_11_0.GetN(),
+		Imm_11_5: ids.imm_11_5.GetN(),
+		Imm_4_0:  ids.imm_4_0.GetN(),
 
 		Imm32: ids.imm32.GetN(),
 	}

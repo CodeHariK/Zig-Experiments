@@ -34,11 +34,11 @@ func (rd *RAM_Device) Read(addr uint32, width MEMORY_WIDTH) (uint32, error) {
 		case 2:
 			value = value & 0xFFFF
 		default:
-			return 0, fmt.Errorf("Unaligned halfword read at address 0x%X", addr)
+			return 0, fmt.Errorf("Unaligned halfword read at address 0x%08X", addr)
 		}
 	case MEMORY_WIDTH_WORD:
 		if offset != 0 {
-			return 0, fmt.Errorf("Unaligned word read at address 0x%X", addr)
+			return 0, fmt.Errorf("Unaligned word read at address 0x%08X", addr)
 		}
 	}
 
@@ -71,13 +71,13 @@ func (rd *RAM_Device) Write(addr uint32, value uint32, width MEMORY_WIDTH) error
 			case 2:
 				rd.memory[maskedAddr] = ((currentValue & 0xFFFF0000) | (value & 0xFFFF))
 			default:
-				return fmt.Errorf("Unaligned halfword write at address 0x%X", addr)
+				return fmt.Errorf("Unaligned halfword write at address 0x%08X", addr)
 			}
 		}
 	case MEMORY_WIDTH_WORD:
 		{
 			if offset != 0 {
-				return fmt.Errorf("Unaligned word write at address 0x%X", addr)
+				return fmt.Errorf("Unaligned word write at address 0x%08X", addr)
 			}
 			rd.memory[maskedAddr] = (value & 0xFFFFFFFF)
 		}

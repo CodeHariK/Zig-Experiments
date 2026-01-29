@@ -35,11 +35,11 @@ func (rd *ROM_Device) Read(addr uint32, width MEMORY_WIDTH) (uint32, error) {
 		case 1:
 			value = value & 0xFFFF
 		default:
-			return 0, fmt.Errorf("Unaligned halfword read at address 0x%X", addr)
+			return 0, fmt.Errorf("Unaligned halfword read at address 0x%08X", addr)
 		}
 	case MEMORY_WIDTH_WORD:
 		if offset != 0 {
-			return 0, fmt.Errorf("Unaligned word read at address 0x%X", addr)
+			return 0, fmt.Errorf("Unaligned word read at address 0x%08X", addr)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (rd *ROM_Device) Load(data []uint32) {
 
 func (rd *ROM_Device) PrintRom() {
 	for i := 0; i < int(rd.ProgramSize); i++ {
-		fmt.Printf("ROM[%d] = 0x%X\n", i, rd.memory[i])
+		fmt.Printf("ROM[%d] = 0x%08X\n", i, rd.memory[i])
 	}
 }
 

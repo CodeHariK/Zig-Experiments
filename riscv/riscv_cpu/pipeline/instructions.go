@@ -31,6 +31,13 @@ func SType(rs1 byte, rs2 byte, imm int32, func3 byte) uint32 {
 		0b0100011
 }
 
+// imm[31:12] rd opcode
+func UType(rd byte, imm int32, opcode byte) uint32 {
+	return ((uint32(imm) & 0xFFFFF) << 12) |
+		(uint32(rd)&0x1F)<<7 |
+		uint32(opcode&0x7F)
+}
+
 // x[rd] = x[rs1] + sign-extended(immediate)
 func ADDI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 000 rd 0010011
@@ -179,4 +186,14 @@ func LBU(rd byte, rs1 byte, imm int32) uint32 {
 func LHU(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 101 rd 0000011
 	return IType(rd, rs1, imm, 0b101, 0b0000011)
+}
+
+func LUI(rd byte, imm int32) uint32 {
+	// imm[31:12] rd 0110111
+	return UType(rd, imm, 0b0110111)
+}
+
+func AUIPC(rd byte, imm int32) uint32 {
+	// imm[31:12] rd 0010111
+	return UType(rd, imm, 0b0010111)
 }

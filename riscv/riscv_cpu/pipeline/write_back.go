@@ -38,7 +38,11 @@ func NewWriteBackStage(params *WriteBackParams) *WriteBackStage {
 func (ma *WriteBackStage) Compute() {
 	if !ma.shouldStall() {
 		memoryAccessValues := ma.getMemoryAccessValuesIn()
-		if memoryAccessValues.isAluOperation || memoryAccessValues.isLoadOperation {
+
+		if memoryAccessValues.isAluOperation ||
+			memoryAccessValues.isLoadOperation ||
+			memoryAccessValues.isLUIOperation {
+
 			// Write-back to register file (x0 is hardwired zero)
 			if ma.regFile != nil && memoryAccessValues.rd != 0 {
 				ma.regFile[memoryAccessValues.rd].SetN(memoryAccessValues.writeBackValue)

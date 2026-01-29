@@ -23,10 +23,10 @@ func TestROMLoadAndRead(t *testing.T) {
 		addr := 0x10000000 + uint32(i*4)
 		v, err := rv.bus.Read(addr, MEMORY_WIDTH_WORD)
 		if err != nil {
-			t.Fatalf("error reading ROM at 0x%X: %v", addr, err)
+			t.Fatalf("error reading ROM at 0x%08X: %v", addr, err)
 		}
 		if uint32(v) != want {
-			t.Fatalf("ROM[%d] = 0x%X; want 0x%X", i, uint32(v), want)
+			t.Fatalf("ROM[%d] = 0x%08X; want 0x%08X", i, uint32(v), want)
 		}
 	}
 }
@@ -35,13 +35,13 @@ func TestRAMWrite(t *testing.T) {
 	rv.bus.Write(0x20000000, 0x12345678, MEMORY_WIDTH_WORD)
 	v, _ := rv.bus.Read(0x20000000, MEMORY_WIDTH_WORD)
 	if v != 0x12345678 {
-		t.Fatalf("RAM[0] = 0x%X; want 0x12345678", v)
+		t.Fatalf("RAM[0] = 0x%08X; want 0x12345678", v)
 	}
 
 	rv.bus.Write(0x20400000, 0x87654321, MEMORY_WIDTH_WORD)
 	v, _ = rv.bus.Read(0x20400000, MEMORY_WIDTH_WORD)
 	if v != 0x87654321 {
-		t.Fatalf("RAM[0] = 0x%X; want 0x87654321", v)
+		t.Fatalf("RAM[0] = 0x%08X; want 0x87654321", v)
 	}
 
 }
@@ -480,6 +480,17 @@ func TestInstruction(t *testing.T) {
 			MEM_ZERO_VALUE, &DEST_REG_20,
 			nil, MEMORY_WIDTH_WORD, true,
 		},
+
+		{
+			LUI(DEST_REG_20, int32(MEM_ONE_VALUE&0xFFFFF000)>>12),
+			(MEM_ONE_VALUE & 0xFFFFF000), &DEST_REG_20,
+			nil, MEMORY_WIDTH_WORD, false,
+		},
+		{
+			ADDI(DEST_REG_20, DEST_REG_20, int32(MEM_ONE_VALUE)&0x00000FFF),
+			MEM_ONE_VALUE, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
 	}
 
 	instructions := []uint32{}
@@ -503,21 +514,21 @@ func TestInstruction(t *testing.T) {
 		if tc.destRam == nil {
 			v := rv.regFile[*tc.destReg].GetN()
 			if !tc.expectReadError && v != tc.expected {
-				t.Fatalf("Test case %d: After instruction, R%d => 0x%X; want 0x%X", i, *tc.destReg, v, tc.expected)
+				t.Fatalf("Test case %d: After instruction, R%d => 0x%08X; want 0x%08X", i, *tc.destReg, v, tc.expected)
 			}
 		} else {
 			v, err := rv.bus.Read(*tc.destRam, tc.readWidth)
 			if tc.expectReadError {
 				if err == nil {
-					t.Fatalf("Test case %d: expected error reading RAM at 0x%X; got 0x%X", i, *tc.destRam, v)
+					t.Fatalf("Test case %d: expected error reading RAM at 0x%08X; got 0x%08X", i, *tc.destRam, v)
 				}
 				continue
 			}
 			if err != nil {
-				t.Fatalf("Test case %d: error reading RAM at 0x%X: %v", i, *tc.destRam, err)
+				t.Fatalf("Test case %d: error reading RAM at 0x%08X: %v", i, *tc.destRam, err)
 			}
 			if uint32(v) != tc.expected {
-				t.Fatalf("Test case %d: RAM[0x%X] = 0x%X; want 0x%X", i, *tc.destRam, uint32(v), tc.expected)
+				t.Fatalf("Test case %d: RAM[0x%08X] = 0x%08X; want 0x%08X", i, *tc.destRam, uint32(v), tc.expected)
 			}
 		}
 	}

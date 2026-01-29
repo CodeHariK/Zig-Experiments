@@ -13,6 +13,7 @@ type ExecutedValues struct {
 	isAluOperation   bool
 	isStoreOperation bool
 	isLoadOperation  bool
+	isLUIOperation   bool
 	imm32            int32
 	func3            byte
 }
@@ -54,6 +55,7 @@ type MemoryAccessStage struct {
 	rd              RByte
 	isAluOperation  RBool
 	isLoadOperation RBool
+	isLUIOperation  RBool
 }
 
 func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
@@ -68,6 +70,7 @@ func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
 	ma.rd = NewRByte(0)
 	ma.isAluOperation = NewRBool(false)
 	ma.isLoadOperation = NewRBool(false)
+	ma.isLUIOperation = NewRBool(false)
 
 	return ma
 }
@@ -80,6 +83,7 @@ func (ma *MemoryAccessStage) Compute() {
 		ma.rd.SetN(ev.rd)
 		ma.isAluOperation.SetN(ev.isAluOperation)
 		ma.isLoadOperation.SetN(ev.isLoadOperation)
+		ma.isLUIOperation.SetN(ev.isLUIOperation)
 
 		addr := uint32(int32(ev.rs1V) + ev.imm32)
 
@@ -89,15 +93,15 @@ func (ma *MemoryAccessStage) Compute() {
 			case STORE_FUNC3_SB:
 				// Store Byte
 				err := ma.bus.Write(addr, ev.rs2V&0xFF, MEMORY_WIDTH_BYTE)
-				fmt.Printf("STORE  : SB    Addr=0x%X, Value=0x%X, %v \n", addr, ev.rs2V&0xFF, err)
+				fmt.Printf("STORE  : SB    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFF, err)
 			case STORE_FUNC3_SH:
 				// Store Halfword
 				err := ma.bus.Write(addr, ev.rs2V&0xFFFF, MEMORY_WIDTH_HALF)
-				fmt.Printf("STORE  : SH    Addr=0x%X, Value=0x%X, %v \n", addr, ev.rs2V&0xFFFF, err)
+				fmt.Printf("STORE  : SH    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFFFF, err)
 			case STORE_FUNC3_SW:
 				// Store Word
 				err := ma.bus.Write(addr, ev.rs2V, MEMORY_WIDTH_WORD)
-				fmt.Printf("STORE  : SW    Addr=0x%X, Value=0x%X, %v \n", addr, ev.rs2V, err)
+				fmt.Printf("STORE  : SW    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V, err)
 			default:
 				panic(fmt.Sprintf("Unsupported store func3: 0b%03b", ev.func3))
 			}
@@ -117,10 +121,10 @@ func (ma *MemoryAccessStage) Compute() {
 				}
 				if shouldSignExtend {
 					value = uint32(int32(int8(memvalue & 0xFF)))
-					fmt.Printf("LOAD   : LB    Addr=0x%X, Value=0x%X -> R%d", addr, value, ev.rd)
+					fmt.Printf("LOAD   : LB    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
 				} else {
 					value = memvalue & 0xFF
-					fmt.Printf("LOAD   : LBU   Addr=0x%X, Value=0x%X -> R%d", addr, value, ev.rd)
+					fmt.Printf("LOAD   : LBU   Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
 				}
 			case LOAD_FUNC3_LH:
 				// Load Halfword (sign-extended)
@@ -131,10 +135,10 @@ func (ma *MemoryAccessStage) Compute() {
 				}
 				if shouldSignExtend {
 					value = uint32(int32(int16(memvalue & 0xFFFF)))
-					fmt.Printf("LOAD   : LH    Addr=0x%X, Value=0x%X -> R%d", addr, value, ev.rd)
+					fmt.Printf("LOAD   : LH    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
 				} else {
 					value = memvalue & 0xFFFF
-					fmt.Printf("LOAD   : LHU   Addr=0x%X, Value=0x%X -> R%d", addr, value, ev.rd)
+					fmt.Printf("LOAD   : LHU   Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
 				}
 			case LOAD_FUNC3_LW:
 				// Load Word
@@ -144,12 +148,15 @@ func (ma *MemoryAccessStage) Compute() {
 					break
 				}
 				value = memvalue
-				fmt.Printf("LOAD   : LW    Addr=0x%X, Value=0x%X -> R%d", addr, value, ev.rd)
+				fmt.Printf("LOAD   : LW    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
 			default:
 				panic(fmt.Sprintf("Unsupported load func3: 0b%03b", ev.func3))
 			}
 
 			ma.writeBackValue.SetN(value)
+		} else if ev.isLUIOperation {
+			ma.writeBackValue.SetN(uint32(ev.imm32))
+			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X -> 0x%08X", ev.rd, uint32(ev.imm32), ma.writeBackValue.GetN())
 		}
 	}
 }
@@ -159,6 +166,7 @@ func (ma *MemoryAccessStage) LatchNext() {
 	ma.rd.LatchNext()
 	ma.isAluOperation.LatchNext()
 	ma.isLoadOperation.LatchNext()
+	ma.isLUIOperation.LatchNext()
 }
 
 func (ma *MemoryAccessStage) GetMemoryAccessValuesOut() ExecutedValues {
@@ -167,5 +175,6 @@ func (ma *MemoryAccessStage) GetMemoryAccessValuesOut() ExecutedValues {
 		rd:              ma.rd.GetN(),
 		isAluOperation:  ma.isAluOperation.GetN(),
 		isLoadOperation: ma.isLoadOperation.GetN(),
+		isLUIOperation:  ma.isLUIOperation.GetN(),
 	}
 }
