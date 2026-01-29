@@ -1,6 +1,9 @@
 package pipeline
 
-import . "riscv/system_interface"
+import (
+	"fmt"
+	. "riscv/system_interface"
+)
 
 type WriteBackParams struct {
 	regFile                 *[32]RUint32
@@ -35,10 +38,13 @@ func NewWriteBackStage(params *WriteBackParams) *WriteBackStage {
 func (ma *WriteBackStage) Compute() {
 	if !ma.shouldStall() {
 		memoryAccessValues := ma.getMemoryAccessValuesIn()
-		if memoryAccessValues.isAluOperation {
+		if memoryAccessValues.isAluOperation || memoryAccessValues.isLoadOperation {
 			// Write-back to register file (x0 is hardwired zero)
 			if ma.regFile != nil && memoryAccessValues.rd != 0 {
-				ma.regFile[memoryAccessValues.rd].SetN(memoryAccessValues.aluResult)
+				ma.regFile[memoryAccessValues.rd].SetN(memoryAccessValues.writeBackValue)
+				fmt.Println()
+			} else {
+				fmt.Print(" (discarded)\n")
 			}
 		}
 	}

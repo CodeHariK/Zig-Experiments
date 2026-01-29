@@ -21,6 +21,7 @@ type DecodeStage struct {
 
 	isAluOperation   RBool // R-type or I-type ALU operation
 	isStoreOperation RBool // S-type store operation
+	isLoadOperation  RBool // I-type load operation
 
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
@@ -52,6 +53,7 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 	ids.isAluOperation = NewRBool(false)
 	ids.isStoreOperation = NewRBool(false)
+	ids.isLoadOperation = NewRBool(false)
 
 	ids.opcode = NewRByte(0)
 
@@ -83,6 +85,7 @@ func (ids *DecodeStage) Compute() {
 		ids.opcode.SetN(byte(ids.instruction.GetN() & 0x7F))
 		ids.isAluOperation.SetN(ids.opcode.GetN()&0b1011111 == 0b0010011)
 		ids.isStoreOperation.SetN(ids.opcode.GetN() == 0b0100011)
+		ids.isLoadOperation.SetN(ids.opcode.GetN() == 0b0000011)
 
 		ids.rd.SetN(byte((ids.instruction.GetN() >> 7) & 0x1F))
 
@@ -118,7 +121,7 @@ func (ids *DecodeStage) Compute() {
 
 		if ids.isStoreOperation.GetN() {
 			ids.imm32.SetN(storeImm)
-		} else if ids.isAluOperation.GetN() {
+		} else if ids.isAluOperation.GetN() || ids.isLoadOperation.GetN() {
 			ids.imm32.SetN(aluImm)
 		} else {
 			panic("Unknown operation")
@@ -132,6 +135,7 @@ func (ids *DecodeStage) LatchNext() {
 	ids.opcode.LatchNext()
 	ids.isAluOperation.LatchNext()
 	ids.isStoreOperation.LatchNext()
+	ids.isLoadOperation.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -157,6 +161,7 @@ type DecodedValues struct {
 	Opcode           byte
 	IsAluOperation   bool
 	IsStoreOperation bool
+	IsLoadOperation  bool
 
 	Rd        byte
 	Func3     byte
@@ -177,6 +182,7 @@ func (ids *DecodeStage) GetDecodedValues() DecodedValues {
 		Opcode:           ids.opcode.GetN(),
 		IsAluOperation:   ids.isAluOperation.GetN(),
 		IsStoreOperation: ids.isStoreOperation.GetN(),
+		IsLoadOperation:  ids.isLoadOperation.GetN(),
 
 		Rd:        ids.rd.GetN(),
 		Func3:     ids.func3.GetN(),

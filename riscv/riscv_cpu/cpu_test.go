@@ -1,6 +1,7 @@
 package riscv
 
 import (
+	. "riscv/pipeline"
 	. "riscv/system_interface"
 	"testing"
 )
@@ -48,168 +49,436 @@ func TestRAMWrite(t *testing.T) {
 type romTestCase struct {
 	instruction     uint32
 	expected        uint32
-	read            *uint32
+	destReg         *byte
+	destRam         *uint32
 	readWidth       MEMORY_WIDTH
 	expectReadError bool
 }
 
 func TestInstruction(t *testing.T) {
-	rv.regFile[1] = NewRUint32(0x01020304)
-	rv.regFile[2] = NewRUint32(0x02030405)
-	rv.regFile[5] = NewRUint32(0x00000001)
-	rv.regFile[6] = NewRUint32(0x20000000)
+	rv.regFile[1] = NewRUint32(0xffffffff)
+	rv.regFile[2] = NewRUint32(0x00000001)
+	rv.regFile[3] = NewRUint32(0x80000000)
+	rv.regFile[8] = NewRUint32(0x20000000)
+	rv.regFile[15] = NewRUint32(0x01020304)
+	rv.regFile[16] = NewRUint32(0x02030405)
 
-	ramTestStoreLocation0 := uint32(0x20000000)
-	ramTestStoreLocation2 := uint32(0x20000000 + 2)
-	ramTestStoreLocation3 := uint32(0x20000000 + 3)
+	var ZERO_REG byte = 0
+	var MINUS_ONE_REG byte = 1
+	var ONE_REG byte = 2
+	var NEG_MAX_REG byte = 3
+	var RAM_START_REG byte = 8
+	var RAM_START_0_VAL uint32 = 0x20000000
+	var RAM_START_1_VAL uint32 = 0x20000001
+	var RAM_START_2_VAL uint32 = 0x20000002
+	var RAM_START_3_VAL uint32 = 0x20000003
+	var SRC_REG_15 byte = 15
+	var SRC_REG_15_VAL uint32 = 0x01020304
+	var SRC_REG_16 byte = 16
+	var SRC_REG_16_VAL uint32 = 0x02030405
+	var DEST_REG_20 byte = 20
+	// var DEST_REG_21 byte = 21
+	var MEM_ZERO_VALUE uint32 = 0x12345678
+	var MEM_ONE_VALUE uint32 = 0xF1F2F3F4
+
+	// ramTestStoreLocation0 := uint32(0x20000000)
+	// ramTestStoreLocation2 := uint32(0x20000000 + 2)
+	// ramTestStoreLocation3 := uint32(0x20000000 + 3)
 
 	testCases := []romTestCase{
 		{
-			// imm[11:0] rs1 000 rd 0010011 ADDI => x[rd] = x[rs1] + sign-extended(immediate)
-			0b000000000001_00001_000_00011_0010011, // ADDI x3, x1, 1 => x3 = x1 + 1
-			0x01020305,
+			ADDI(DEST_REG_20, SRC_REG_15, 2),
+			SRC_REG_15_VAL + 2, &DEST_REG_20,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
 		{
-			// imm[11:0] rs1 000 rd 0010011 ADDI => x[rd] = x[rs1] + sign-extended(immediate)
-			0b111111111111_00001_000_00011_0010011, // ADDI x3, x1, 1 => x3 = x1 - 1
-			0x01020303,
+			ADDI(DEST_REG_20, SRC_REG_15, -1),
+			SRC_REG_15_VAL - 1, &DEST_REG_20,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
-
+		// Zero immediate
 		{
-			// 0000000 rs2 rs1 000 rd 0110011 ADD => x[rd] = x[rs1] + x[rs2]
-			0b0000000_00001_00010_000_00011_0110011, // ADD x3, x1, x2 => x3 = x1 + x2
-			0x03050709,
+			ADDI(DEST_REG_20, SRC_REG_15, 0),
+			SRC_REG_15_VAL, &DEST_REG_20,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
+		// rd = x0 (discard)
 		{
-			// 0100000 rs2 rs1 000 rd 0110011 SUB => x[rd] = x[rs1] - x[rs2]
-			0b0100000_00010_00001_000_00011_0110011, // SUB x3, x1, x2 => x3 = x1 - x2 (rs2=00010, rs1=00001)
-			0xFEFEFEFF,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// 0000000 rs2 rs1 001 rd 0110011 SLL => x[rd] = x[rs1] << (x[rs2] & 0x1F)
-			0b0000000_00101_00001_001_00011_0110011, // SLL x3, x1, x5 => x3 = x1 << (x5 & 0x1F)
-			0x01020304 << 1,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// 0000000 shamt rs1 001 rd 0010011 SLLI => x[rd] = x[rs1] << shamt
-			0b0000000_00011_00001_001_00011_0010011, // SLLI x3, x1, 1 => x3 = x1 << 3
-			0x01020304 << 3,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// 0000000 rs2 rs1 010 rd 0110011 SLT => x[rd] = (int32(x[rs1]) < int32(x[rs2])) ? 1 : 0
-			0b0000000_00010_00001_010_00011_0110011, // SLT x3, x1, x2 => x3 = (int32(x1) < int32(x2)) ? 1 : 0
-			1,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// imm[11:0] rs1 010 rd 0010011 SLTI => x[rd] = (int32(x[rs1]) < sign-extended(immediate)) ? 1 : 0
-			0b000000000010_00001_010_00011_0010011, // SLTI x3, x1, 2 => x3 = (int32(x1) < 2) ? 1 : 0
+			ADDI(ZERO_REG, SRC_REG_15, 123),
 			0,
+			&ZERO_REG,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
-
+		// Max positive 12-bit immediate
 		{
-			// 0000000 rs2 rs1 011 rd 0110011 SLTU => x[rd] = (x[rs1] < x[rs2]) ? 1 : 0
-			0b0000000_00101_00001_011_00011_0110011, // SLTU x3, x1, x5 => x3 = (x1 < x5) ? 1 : 0
-			0,
+			ADDI(DEST_REG_20, SRC_REG_15, 2047),
+			SRC_REG_15_VAL + 2047,
+			&DEST_REG_20,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
+		// Max negative 12-bit immediate (-2048)
 		{
-			// imm[11:0] rs1 011 rd 0010011 SLTIU => x[rd] = (x[rs1] < zero-extended(immediate)) ? 1 : 0
-			0b000000000001_00001_011_00011_0010011, // SLTIU x3, x1, 1 => x3 = (x1 < 1) ? 1 : 0
-			0,
+			ADDI(DEST_REG_20, SRC_REG_15, -2048),
+			SRC_REG_15_VAL - 2048,
+			&DEST_REG_20,
 			nil, MEMORY_WIDTH_BYTE, false,
 		},
-
+		// Wraparound: 0xFFFFFFFF + 1
 		{
-			// 0000000 rs2 rs1 100 rd 0110011 XOR => x[rd] = x[rs1] ^ x[rs2]
-			instruction: 0b0000000_00010_00001_100_00011_0110011, // XOR x3, x1, x2 => x3 = x1 ^ x2
-			expected:    0x01020304 ^ 0x02030405,
-			read:        nil, readWidth: MEMORY_WIDTH_BYTE,
-		},
-		{
-			// imm[11:0] rs1 100 rd 0010011 XORI => x[rd] = x[rs1] ^ sign-extended(immediate)
-			0b000000000011_00001_100_00011_0010011, // XORI x3, x1, 3 => x3 = x1 ^ 3
-			0x01020304 ^ 3,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// 0000000 rs2 rs1 101 rd 0110011 SRL => x[rd] = x[rs1] >> (x[rs2] & 0x1F)
-			0b0000000_00101_00001_101_00011_0110011, // SRL x3, x1, x5 => x3 = x1 >> (x5 & 0x1F)
-			0x01020304 >> 1,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// 0000000 shamt rs1 101 rd 0010011 SRLI => x[rd] = x[rs1] >> shamt
-			0b0000000_00011_00001_101_00011_0010011, // SRLI x3, x1, 3 => x3 = x1 >> 3
-			0x01020304 >> 3,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// 0000000 rs2 rs1 110 rd 0110011 OR => x[rd] = x[rs1] | x[rs2]
-			0b0000000_00010_00001_110_00011_0110011, // OR x3, x1, x2 => x3 = x1 | x2
-			0x01020304 | 0x02030405,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// imm[11:0] rs1 110 rd 0010011 ORI => x[rd] = x[rs1] | sign-extended(immediate)
-			0b000000000011_00001_110_00011_0010011, // ORI x3, x1, 3 => x3 = x1 | 3
-			0x01020304 | 3,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// 0000000 rs2 rs1 111 rd 0110011 AND => x[rd] = x[rs1] & x[rs2]
-			0b0000000_00010_00001_111_00011_0110011, // AND x3, x1, x2 => x3 = x1 & x2
-			0x01020304 & 0x02030405,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// imm[11:0] rs1 111 rd 0010011 ANDI => x[rd] = x[rs1] & sign-extended(immediate)
-			0b000000001111_00001_111_00011_0010011, // ANDI x3, x1, 15 => x3 = x1 & 15
-			0x01020304 & 15,
-			nil, MEMORY_WIDTH_BYTE, false,
-		},
-
-		{
-			// imm[11:5] rs2 rs1 000 imm[4:0] 0100011 SB => M[rs1 + imm] = rs2
-			0b0000000_00010_00110_000_00011_0100011, // M[x6 + 3] = x2
-			0x05,                                    // expect lowest byte of x2
-			&ramTestStoreLocation3, MEMORY_WIDTH_BYTE, false,
-		},
-		{
-			// imm[11:5] rs2 rs1 001 imm[4:0] 0100011 SH => M[rs1 + imm] = rs2
-			0b0000000_00010_00110_001_00010_0100011, // M[x6 + 2] = x2
-			0x0405,                                  // expect lowest 2 bytes of x2
-			&ramTestStoreLocation2, MEMORY_WIDTH_HALF, false,
-		},
-		{
-			// imm[11:5] rs2 rs1 010 imm[4:0] 0100011 SW => M[rs1 + imm] = rs2
-			0b0000000_00010_00110_010_00000_0100011, // M[x6 + 0] = x2
-			0x02030405,                              // expect lowest 2 bytes of x2
-			&ramTestStoreLocation0, MEMORY_WIDTH_WORD, false,
-		},
-		{
-			// imm[11:5] rs2 rs1 001 imm[4:0] 0100011 SH (misaligned) => M[x6 + 3] = x2 (misaligned)
-			0b0000000_00010_00110_001_00011_0100011, // M[x6 + 3] = x2 (misaligned halfword)
+			ADDI(DEST_REG_20, MINUS_ONE_REG, 1),
 			0x0,
-			&ramTestStoreLocation3, MEMORY_WIDTH_HALF, true,
+			&DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			ADD(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL + SRC_REG_16_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
 		},
 		{
-			// imm[11:5] rs2 rs1 010 imm[4:0] 0100011 SW (misaligned) => M[x6 + 3] = x2 (misaligned)
-			0b0000000_00010_00110_010_00011_0100011, // M[x6 + 3] = x2 (misaligned word)
-			0x0,
-			&ramTestStoreLocation3, MEMORY_WIDTH_WORD, true,
+			ADD(DEST_REG_20, SRC_REG_15, ZERO_REG),
+			SRC_REG_15_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ADD(DEST_REG_20, MINUS_ONE_REG, ONE_REG),
+			0x00000000, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ADD(DEST_REG_20, ONE_REG, MINUS_ONE_REG),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ADD(ZERO_REG, SRC_REG_15, SRC_REG_16),
+			0, &ZERO_REG,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ADD(DEST_REG_20, NEG_MAX_REG, NEG_MAX_REG),
+			0x00000000, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SUB(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL - SRC_REG_16_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SUB(DEST_REG_20, SRC_REG_15, ZERO_REG),
+			SRC_REG_15_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SUB(DEST_REG_20, SRC_REG_15, SRC_REG_15),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SUB(DEST_REG_20, ZERO_REG, ONE_REG),
+			0xFFFFFFFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			SLL(DEST_REG_20, SRC_REG_15, ONE_REG),
+			SRC_REG_15_VAL << 1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLL(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL << (SRC_REG_16_VAL & 0x1F), &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLL(DEST_REG_20, SRC_REG_15, ZERO_REG),
+			SRC_REG_15_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLL(ZERO_REG, SRC_REG_15, ONE_REG),
+			0, &ZERO_REG,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLLI(DEST_REG_20, SRC_REG_15, 2),
+			SRC_REG_15_VAL << 2, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLLI(DEST_REG_20, ONE_REG, 31),
+			uint32(1 << 31), &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLLI(DEST_REG_20, ONE_REG, 32), // encoded shamt = 0
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			SLT(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLT(DEST_REG_20, MINUS_ONE_REG, ONE_REG),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLT(DEST_REG_20, ONE_REG, MINUS_ONE_REG),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLT(DEST_REG_20, SRC_REG_15, SRC_REG_15),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTI(DEST_REG_20, MINUS_ONE_REG, 2),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTI(DEST_REG_20, ONE_REG, -1),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTU(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTU(DEST_REG_20, MINUS_ONE_REG, ONE_REG),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTU(DEST_REG_20, ONE_REG, MINUS_ONE_REG),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTIU(DEST_REG_20, MINUS_ONE_REG, 2),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTIU(DEST_REG_20, ONE_REG, -1),
+			1, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SLTIU(DEST_REG_20, MINUS_ONE_REG, -1),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			XOR(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL ^ SRC_REG_16_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			XORI(DEST_REG_20, SRC_REG_15, 3),
+			SRC_REG_15_VAL ^ 3, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			SRL(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL >> (SRC_REG_16_VAL & 0x1F), &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SRLI(DEST_REG_20, SRC_REG_15, 3),
+			SRC_REG_15_VAL >> 3, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			OR(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL | SRC_REG_16_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ORI(DEST_REG_20, SRC_REG_15, 3),
+			SRC_REG_15_VAL | 3, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			AND(DEST_REG_20, SRC_REG_15, SRC_REG_16),
+			SRC_REG_15_VAL & SRC_REG_16_VAL, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			ANDI(DEST_REG_20, SRC_REG_15, 3),
+			SRC_REG_15_VAL & 3, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			SB(RAM_START_REG, ONE_REG, 0),
+			1, nil,
+			&RAM_START_0_VAL, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SB(RAM_START_REG, ONE_REG, 1),
+			1, nil,
+			&RAM_START_1_VAL, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SB(RAM_START_REG, ONE_REG, 2),
+			1, nil,
+			&RAM_START_2_VAL, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			SB(RAM_START_REG, ONE_REG, 3),
+			1, nil,
+			&RAM_START_3_VAL, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			SH(RAM_START_REG, SRC_REG_15, 0),
+			SRC_REG_15_VAL & 0xFFFF, nil,
+			&RAM_START_0_VAL, MEMORY_WIDTH_HALF, false,
+		},
+		{
+			SH(RAM_START_REG, SRC_REG_15, 1),
+			SRC_REG_15_VAL & 0xFFFF, nil,
+			&RAM_START_1_VAL, MEMORY_WIDTH_HALF, true,
+		},
+		{
+			SH(RAM_START_REG, SRC_REG_15, 2),
+			SRC_REG_15_VAL & 0xFFFF, nil,
+			&RAM_START_2_VAL, MEMORY_WIDTH_HALF, false,
+		},
+		{
+			SH(RAM_START_REG, SRC_REG_15, 3),
+			SRC_REG_15_VAL & 0xFFFF, nil,
+			&RAM_START_3_VAL, MEMORY_WIDTH_HALF, true,
+		},
+
+		{
+			SW(RAM_START_REG, SRC_REG_15, 0),
+			SRC_REG_15_VAL, nil,
+			&RAM_START_0_VAL, MEMORY_WIDTH_WORD, false,
+		},
+		{
+			SW(RAM_START_REG, SRC_REG_15, 1),
+			SRC_REG_15_VAL, nil,
+			&RAM_START_1_VAL, MEMORY_WIDTH_WORD, true,
+		},
+		{
+			SW(RAM_START_REG, SRC_REG_15, 2),
+			SRC_REG_15_VAL, nil,
+			&RAM_START_2_VAL, MEMORY_WIDTH_WORD, true,
+		},
+		{
+			SW(RAM_START_REG, SRC_REG_15, 3),
+			SRC_REG_15_VAL, nil,
+			&RAM_START_3_VAL, MEMORY_WIDTH_WORD, true,
+		},
+
+		{
+			LB(DEST_REG_20, RAM_START_REG, 0),
+			(MEM_ZERO_VALUE >> 24) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LB(DEST_REG_20, RAM_START_REG, 1),
+			(MEM_ZERO_VALUE >> 16) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LB(DEST_REG_20, RAM_START_REG, 2),
+			(MEM_ZERO_VALUE >> 8) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LB(DEST_REG_20, RAM_START_REG, 3),
+			MEM_ZERO_VALUE & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			LBU(DEST_REG_20, RAM_START_REG, 4),
+			(MEM_ONE_VALUE >> 24) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LBU(DEST_REG_20, RAM_START_REG, 5),
+			(MEM_ONE_VALUE >> 16) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LBU(DEST_REG_20, RAM_START_REG, 6),
+			(MEM_ONE_VALUE >> 8) & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+		{
+			LBU(DEST_REG_20, RAM_START_REG, 7),
+			MEM_ONE_VALUE & 0xFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_BYTE, false,
+		},
+
+		{
+			LH(DEST_REG_20, RAM_START_REG, 0),
+			(MEM_ZERO_VALUE >> 16) & 0xFFFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, false,
+		},
+		{
+			LH(DEST_REG_20, RAM_START_REG, 1),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, true,
+		},
+		{
+			LH(DEST_REG_20, RAM_START_REG, 2),
+			MEM_ZERO_VALUE & 0xFFFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, false,
+		},
+		{
+			LH(DEST_REG_20, RAM_START_REG, 3),
+			0, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, true,
+		},
+
+		{
+			LHU(DEST_REG_20, RAM_START_REG, 4),
+			(MEM_ONE_VALUE >> 16) & 0xFFFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, false,
+		},
+		{
+			LHU(DEST_REG_20, RAM_START_REG, 6),
+			MEM_ONE_VALUE & 0xFFFF, &DEST_REG_20,
+			nil, MEMORY_WIDTH_HALF, false,
+		},
+
+		{
+			LW(DEST_REG_20, RAM_START_REG, 0),
+			MEM_ZERO_VALUE, &DEST_REG_20,
+			nil, MEMORY_WIDTH_WORD, false,
+		},
+		{
+			LW(DEST_REG_20, RAM_START_REG, 1),
+			MEM_ZERO_VALUE, &DEST_REG_20,
+			nil, MEMORY_WIDTH_WORD, true,
+		},
+		{
+			LW(DEST_REG_20, RAM_START_REG, 2),
+			MEM_ZERO_VALUE, &DEST_REG_20,
+			nil, MEMORY_WIDTH_WORD, true,
+		},
+		{
+			LW(DEST_REG_20, RAM_START_REG, 3),
+			MEM_ZERO_VALUE, &DEST_REG_20,
+			nil, MEMORY_WIDTH_WORD, true,
 		},
 	}
 
@@ -221,28 +490,34 @@ func TestInstruction(t *testing.T) {
 	rv.rom.Load(instructions)
 
 	for i, tc := range testCases {
+
+		// Reset ram
+		rv.bus.Write(0x20000000, MEM_ZERO_VALUE, MEMORY_WIDTH_WORD)
+		rv.bus.Write(0x20000004, MEM_ONE_VALUE, MEMORY_WIDTH_WORD)
+		//
+
 		// Each instruction needs 5 cycles (IF -> DE -> EX -> MA -> WB) in this pipeline
 		for cycle := 0; cycle < 5; cycle++ {
 			rv.Cycle()
 		}
-		if tc.read == nil {
-			v := rv.regFile[3].GetN()
-			if v != tc.expected {
-				t.Fatalf("Test case %d: After instruction, x3 = 0x%X; want 0x%X", i, v, tc.expected)
+		if tc.destRam == nil {
+			v := rv.regFile[*tc.destReg].GetN()
+			if !tc.expectReadError && v != tc.expected {
+				t.Fatalf("Test case %d: After instruction, R%d => 0x%X; want 0x%X", i, *tc.destReg, v, tc.expected)
 			}
 		} else {
-			v, err := rv.bus.Read(*tc.read, tc.readWidth)
+			v, err := rv.bus.Read(*tc.destRam, tc.readWidth)
 			if tc.expectReadError {
 				if err == nil {
-					t.Fatalf("Test case %d: expected error reading RAM at 0x%X; got 0x%X", i, *tc.read, v)
+					t.Fatalf("Test case %d: expected error reading RAM at 0x%X; got 0x%X", i, *tc.destRam, v)
 				}
 				continue
 			}
 			if err != nil {
-				t.Fatalf("Test case %d: error reading RAM at 0x%X: %v", i, *tc.read, err)
+				t.Fatalf("Test case %d: error reading RAM at 0x%X: %v", i, *tc.destRam, err)
 			}
 			if uint32(v) != tc.expected {
-				t.Fatalf("Test case %d: RAM[0x%X] = 0x%X; want 0x%X", i, *tc.read, uint32(v), tc.expected)
+				t.Fatalf("Test case %d: RAM[0x%X] = 0x%X; want 0x%X", i, *tc.destRam, uint32(v), tc.expected)
 			}
 		}
 	}
