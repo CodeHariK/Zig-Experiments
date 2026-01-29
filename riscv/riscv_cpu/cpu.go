@@ -11,10 +11,12 @@ const (
 	EXECUTE
 	MEMORY_ACCESS
 	WRITE_BACK
+
+	TERMINATE
 )
 
 type RVI32System struct {
-	state byte
+	State byte
 
 	ram     RAM_Device
 	rom     ROM_Device
@@ -32,7 +34,7 @@ type RVI32System struct {
 func NewRVI32System() *RVI32System {
 	sys := &RVI32System{}
 
-	sys.state = INSTRUCTION_FETCH
+	sys.State = INSTRUCTION_FETCH
 
 	sys.ram = RAM_Device{}
 	sys.rom = ROM_Device{}
@@ -43,8 +45,15 @@ func NewRVI32System() *RVI32System {
 
 	ifsParams := NewInstructionFetchParams(
 		&sys.bus,
+		func() uint32 {
+			return uint32(sys.DE.GetDecodedValuesOut().BranchAddress)
+		},
 		func() bool {
-			return sys.state != INSTRUCTION_FETCH
+			d := sys.DE.GetDecodedValuesOut()
+			return d.IsJALOperation || d.IsJALROperation
+		},
+		func() bool {
+			return sys.State != INSTRUCTION_FETCH
 		},
 	)
 	sys.IF = NewInstructionFetchStage(ifsParams)
@@ -52,17 +61,17 @@ func NewRVI32System() *RVI32System {
 	decodeParams := NewDecodeParams(
 		&sys.regFile,
 		func() bool {
-			return sys.state != DECODE
+			return sys.State != DECODE
 		},
-		sys.IF.GetInstructionOut,
+		sys.IF.GetFetchValuesOut,
 	)
 	sys.DE = NewDecodeStage(decodeParams)
 
 	executeParams := NewExecuteParams(
 		func() bool {
-			return sys.state != EXECUTE
+			return sys.State != EXECUTE
 		},
-		sys.DE.GetDecodedValues,
+		sys.DE.GetDecodedValuesOut,
 		&sys.regFile,
 	)
 	sys.EX = NewExecuteStage(executeParams)
@@ -70,7 +79,7 @@ func NewRVI32System() *RVI32System {
 	memoryAccessParams := NewMemoryAccessParams(
 		sys.bus,
 		func() bool {
-			return sys.state != MEMORY_ACCESS
+			return sys.State != MEMORY_ACCESS
 		},
 		sys.EX.GetExecutionValuesOut,
 	)
@@ -79,7 +88,7 @@ func NewRVI32System() *RVI32System {
 	writeBackParams := NewWriteBackParams(
 		&sys.regFile,
 		func() bool {
-			return sys.state != WRITE_BACK
+			return sys.State != WRITE_BACK
 		},
 		sys.MA.GetMemoryAccessValuesOut,
 	)
@@ -109,19 +118,23 @@ func (sys *RVI32System) LatchNext() {
 }
 
 func (sys *RVI32System) Cycle() {
+	if sys.IF.GetFetchValuesOut().Instruction == 0xFFFFFFFF {
+		sys.State = TERMINATE
+		return
+	}
 	sys.Compute()
 	sys.LatchNext()
 
-	switch sys.state {
+	switch sys.State {
 	case INSTRUCTION_FETCH:
-		sys.state = DECODE
+		sys.State = DECODE
 	case DECODE:
-		sys.state = EXECUTE
+		sys.State = EXECUTE
 	case EXECUTE:
-		sys.state = MEMORY_ACCESS
+		sys.State = MEMORY_ACCESS
 	case MEMORY_ACCESS:
-		sys.state = WRITE_BACK
+		sys.State = WRITE_BACK
 	case WRITE_BACK:
-		sys.state = INSTRUCTION_FETCH
+		sys.State = INSTRUCTION_FETCH
 	}
 }

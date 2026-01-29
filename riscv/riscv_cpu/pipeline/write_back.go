@@ -8,10 +8,10 @@ import (
 type WriteBackParams struct {
 	regFile                 *[32]RUint32
 	shouldStall             func() bool
-	getMemoryAccessValuesIn func() ExecutedValues
+	getMemoryAccessValuesIn func() MemoryAccessValues
 }
 
-func NewWriteBackParams(regFile *[32]RUint32, shouldStall func() bool, getMemoryAccessValuesIn func() ExecutedValues) *WriteBackParams {
+func NewWriteBackParams(regFile *[32]RUint32, shouldStall func() bool, getMemoryAccessValuesIn func() MemoryAccessValues) *WriteBackParams {
 	return &WriteBackParams{
 		regFile:                 regFile,
 		shouldStall:             shouldStall,
@@ -22,30 +22,28 @@ func NewWriteBackParams(regFile *[32]RUint32, shouldStall func() bool, getMemory
 type WriteBackStage struct {
 	regFile                 *[32]RUint32
 	shouldStall             func() bool
-	getMemoryAccessValuesIn func() ExecutedValues
+	getMemoryAccessValuesIn func() MemoryAccessValues
 }
 
 func NewWriteBackStage(params *WriteBackParams) *WriteBackStage {
 
-	ma := &WriteBackStage{}
+	wb := &WriteBackStage{}
 
-	ma.regFile = params.regFile
-	ma.shouldStall = params.shouldStall
-	ma.getMemoryAccessValuesIn = params.getMemoryAccessValuesIn
-	return ma
+	wb.regFile = params.regFile
+	wb.shouldStall = params.shouldStall
+	wb.getMemoryAccessValuesIn = params.getMemoryAccessValuesIn
+	return wb
 }
 
-func (ma *WriteBackStage) Compute() {
-	if !ma.shouldStall() {
-		memoryAccessValues := ma.getMemoryAccessValuesIn()
+func (wb *WriteBackStage) Compute() {
+	if !wb.shouldStall() {
+		mv := wb.getMemoryAccessValuesIn()
 
-		if memoryAccessValues.isAluOperation ||
-			memoryAccessValues.isLoadOperation ||
-			memoryAccessValues.isLUIOperation {
+		if mv.writeBackValid {
 
 			// Write-back to register file (x0 is hardwired zero)
-			if ma.regFile != nil && memoryAccessValues.rd != 0 {
-				ma.regFile[memoryAccessValues.rd].SetN(memoryAccessValues.writeBackValue)
+			if wb.regFile != nil && mv.rd != 0 {
+				wb.regFile[mv.rd].SetN(mv.writeBackValue)
 				fmt.Println()
 			} else {
 				fmt.Print(" (discarded)\n")
@@ -54,5 +52,5 @@ func (ma *WriteBackStage) Compute() {
 	}
 }
 
-func (ma *WriteBackStage) LatchNext() {
+func (wb *WriteBackStage) LatchNext() {
 }

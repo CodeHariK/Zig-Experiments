@@ -6,16 +6,23 @@ import (
 )
 
 type ExecutedValues struct {
-	writeBackValue   uint32
-	rd               byte
-	rs1V             uint32
-	rs2V             uint32
 	isAluOperation   bool
 	isStoreOperation bool
 	isLoadOperation  bool
 	isLUIOperation   bool
-	imm32            int32
-	func3            byte
+	isJALOperation   bool
+	isJALROperation  bool
+
+	writeBackValue uint32
+	rd             byte
+	rs1V           uint32
+	rs2V           uint32
+	rs2Addr        byte
+
+	imm32 int32
+	func3 byte
+
+	pcPlus4 uint32
 }
 
 type MemoryAccessParams struct {
@@ -51,11 +58,10 @@ type MemoryAccessStage struct {
 
 	bus SystemInterface
 
-	writeBackValue  RUint32
-	rd              RByte
-	isAluOperation  RBool
-	isLoadOperation RBool
-	isLUIOperation  RBool
+	writeBackValue RUint32
+	rd             RByte
+
+	writeBackValueValid RBool
 }
 
 func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
@@ -66,12 +72,6 @@ func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
 	ma.getExecutionValuesIn = params.getExecutionValuesIn
 	ma.bus = params.bus
 
-	ma.writeBackValue = NewRUint32(0)
-	ma.rd = NewRByte(0)
-	ma.isAluOperation = NewRBool(false)
-	ma.isLoadOperation = NewRBool(false)
-	ma.isLUIOperation = NewRBool(false)
-
 	return ma
 }
 
@@ -81,9 +81,13 @@ func (ma *MemoryAccessStage) Compute() {
 
 		ma.writeBackValue.SetN(ev.writeBackValue)
 		ma.rd.SetN(ev.rd)
-		ma.isAluOperation.SetN(ev.isAluOperation)
-		ma.isLoadOperation.SetN(ev.isLoadOperation)
-		ma.isLUIOperation.SetN(ev.isLUIOperation)
+
+		ma.writeBackValueValid.SetN(
+			ev.isAluOperation ||
+				ev.isLoadOperation ||
+				ev.isLUIOperation ||
+				ev.isJALOperation ||
+				ev.isJALROperation)
 
 		addr := uint32(int32(ev.rs1V) + ev.imm32)
 
@@ -156,7 +160,10 @@ func (ma *MemoryAccessStage) Compute() {
 			ma.writeBackValue.SetN(value)
 		} else if ev.isLUIOperation {
 			ma.writeBackValue.SetN(uint32(ev.imm32))
-			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X -> 0x%08X", ev.rd, uint32(ev.imm32), ma.writeBackValue.GetN())
+			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X", ev.rd, uint32(ev.imm32))
+		} else if ev.isJALOperation || ev.isJALROperation {
+			ma.writeBackValue.SetN(ev.pcPlus4)
+			fmt.Printf("LOAD   : JAL/R rd=%2d  return_addr=0x%08X", ev.rd, ev.pcPlus4)
 		}
 	}
 }
@@ -164,17 +171,19 @@ func (ma *MemoryAccessStage) Compute() {
 func (ma *MemoryAccessStage) LatchNext() {
 	ma.writeBackValue.LatchNext()
 	ma.rd.LatchNext()
-	ma.isAluOperation.LatchNext()
-	ma.isLoadOperation.LatchNext()
-	ma.isLUIOperation.LatchNext()
+	ma.writeBackValueValid.LatchNext()
 }
 
-func (ma *MemoryAccessStage) GetMemoryAccessValuesOut() ExecutedValues {
-	return ExecutedValues{
-		writeBackValue:  ma.writeBackValue.GetN(),
-		rd:              ma.rd.GetN(),
-		isAluOperation:  ma.isAluOperation.GetN(),
-		isLoadOperation: ma.isLoadOperation.GetN(),
-		isLUIOperation:  ma.isLUIOperation.GetN(),
+type MemoryAccessValues struct {
+	writeBackValid bool
+	writeBackValue uint32
+	rd             byte
+}
+
+func (ma *MemoryAccessStage) GetMemoryAccessValuesOut() MemoryAccessValues {
+	return MemoryAccessValues{
+		writeBackValid: ma.writeBackValueValid.GetN(),
+		writeBackValue: ma.writeBackValue.GetN(),
+		rd:             ma.rd.GetN(),
 	}
 }

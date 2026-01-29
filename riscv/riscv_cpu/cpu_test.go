@@ -8,16 +8,11 @@ import (
 
 var rv *RVI32System = NewRVI32System()
 
-var data []uint32 = []uint32{0xCAFEBABE, 0x8BADF00D, 0xC0DECAFE}
-
-func init() {
-	rv.rom.Load(data)
-
-	rv.rom.PrintRom()
-
-}
-
 func TestROMLoadAndRead(t *testing.T) {
+
+	var data []uint32 = []uint32{0xCAFEBABE, 0x8BADF00D, 0xC0DECAFE}
+	rv.rom.Load(data)
+	rv.rom.PrintRom()
 
 	for i, want := range data {
 		addr := 0x10000000 + uint32(i*4)

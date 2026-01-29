@@ -1,30 +1,33 @@
 package pipeline
 
 import (
+	"fmt"
 	. "riscv/system_interface"
 )
 
 type DecodeParams struct {
 	regFile          *[32]RUint32
 	shouldStall      func() bool
-	getInstructionIn func() uint32
+	getFetchValuesIn func() FetchValues
 }
 
-func NewDecodeParams(regFile *[32]RUint32, shouldStall func() bool, getInstructionIn func() uint32) *DecodeParams {
+func NewDecodeParams(regFile *[32]RUint32, shouldStall func() bool, getFetchValuesIn func() FetchValues) *DecodeParams {
 	return &DecodeParams{
 		regFile:          regFile,
 		shouldStall:      shouldStall,
-		getInstructionIn: getInstructionIn,
+		getFetchValuesIn: getFetchValuesIn,
 	}
 }
 
 type DecodeStage struct {
 	instruction RUint32
 
-	isAluOperation   RBool // R-type or I-type ALU operation
-	isStoreOperation RBool // S-type store operation
-	isLoadOperation  RBool // I-type load operation
-	isLUIOperation   RBool // U-type LUI operation
+	isAluOperation   RBool
+	isStoreOperation RBool
+	isLoadOperation  RBool
+	isLUIOperation   RBool
+	isJALOperation   RBool
+	isJALROperation  RBool
 
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
@@ -35,68 +38,54 @@ type DecodeStage struct {
 	rs1V RUint32 // 5 bits [19-15]
 	rs2V RUint32 // 5 bits [24-20]
 
-	imm_11_0 RInt32 // Sign-extend 12-bits [31-20] signed integer for arithmetic shift
-	imm_11_5 RInt32 // 7 bits [31-25]
-	imm_4_0  RInt32 // 5 bits [11-7]
-
 	imm32 RInt32 // Sign-extend 12-bit immediate to 32 bits
+
+	branchAddress RUint32 // Calculated branch address
+	pc            RUint32
+	pcPlus4       RUint32
 
 	regFile *[32]RUint32
 
 	shouldStall      func() bool
-	getInstructionIn func() uint32
+	getInstructionIn func() FetchValues
 }
 
 func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 	ids := &DecodeStage{}
 
-	ids.instruction = NewRUint32(0)
-
-	ids.isAluOperation = NewRBool(false)
-	ids.isStoreOperation = NewRBool(false)
-	ids.isLoadOperation = NewRBool(false)
-	ids.isLUIOperation = NewRBool(false)
-
-	ids.opcode = NewRByte(0)
-
-	ids.rd = NewRByte(0)
-
-	ids.func3 = NewRByte(0)
-	ids.func7 = NewRByte(0)
-
-	ids.rs1V = NewRUint32(0)
-	ids.rs2V = NewRUint32(0)
-
-	ids.shamt = NewRByte(0)
-
-	ids.imm_11_0 = NewRInt32(0)
-	ids.imm_11_5 = NewRInt32(0)
-	ids.imm_4_0 = NewRInt32(0)
-
 	ids.regFile = params.regFile
 	ids.shouldStall = params.shouldStall
-	ids.getInstructionIn = params.getInstructionIn
+	ids.getInstructionIn = params.getFetchValuesIn
 	return ids
 }
 
 func (ids *DecodeStage) Compute() {
 	if !ids.shouldStall() {
-		ids.instruction.SetN(ids.getInstructionIn())
+		fv := ids.getInstructionIn()
+		ins := fv.Instruction
+		ids.instruction.SetN(ins)
 
-		ids.opcode.SetN(byte(ids.instruction.GetN() & 0x7F))
-		ids.isAluOperation.SetN(ids.opcode.GetN()&0b1011111 == 0b0010011)
-		ids.isStoreOperation.SetN(ids.opcode.GetN() == 0b0100011)
-		ids.isLoadOperation.SetN(ids.opcode.GetN() == 0b0000011)
-		ids.isLUIOperation.SetN(ids.opcode.GetN() == 0b0110111)
+		ids.opcode.SetN(byte(ins & 0x7F))
+		opcode := ids.opcode.GetN()
 
-		ids.rd.SetN(byte((ids.instruction.GetN() >> 7) & 0x1F))
+		ids.pc.SetN(fv.pc)
+		ids.pcPlus4.SetN(fv.pcPlus4)
 
-		ids.func3.SetN(byte((ids.instruction.GetN() >> 12) & 0x07))
-		ids.func7.SetN(byte((ids.instruction.GetN() >> 25) & 0x7F))
+		ids.isAluOperation.SetN(opcode&0b1011111 == 0b0010011)
+		ids.isStoreOperation.SetN(opcode == 0b0100011)
+		ids.isLoadOperation.SetN(opcode == 0b0000011)
+		ids.isLUIOperation.SetN(opcode == 0b0110111)
+		ids.isJALOperation.SetN(opcode == JAL_OPCODE)
+		ids.isJALROperation.SetN(opcode == JALR_OPCODE)
 
-		rs1Address := byte((ids.instruction.GetN() >> 15) & 0x1F)
-		rs2Address := byte((ids.instruction.GetN() >> 20) & 0x1F)
+		ids.rd.SetN(byte((ins >> 7) & 0x1F))
+
+		ids.func3.SetN(byte((ins >> 12) & 0x07))
+		ids.func7.SetN(byte((ins >> 25) & 0x7F))
+
+		rs1Address := byte((ins >> 15) & 0x1F)
+		rs2Address := byte((ins >> 20) & 0x1F)
 
 		ids.shamt.SetN(rs2Address) // For shift instructions, shamt is in rs2 field
 
@@ -110,26 +99,31 @@ func (ids *DecodeStage) Compute() {
 		}
 
 		// Immediate extraction for I-type instructions
-		ids.imm_11_0.SetN(int32(ids.instruction.GetN()) >> 20)
-
+		imm_11_0 := int32(ins) >> 20
 		// Immediate extraction for S-type instructions
-		ids.imm_4_0.SetN(int32((ids.instruction.GetN() >> 7) & 0x1F))
-		ids.imm_11_5.SetN(int32((ids.instruction.GetN() >> 25) & 0x7F))
+		imm_4_0 := int32((ins >> 7) & 0x1F)
+		imm_11_5 := (int32((ins >> 25) & 0x7F))
 
-		storeImm := (ids.imm_11_5.GetN() << 5) | ids.imm_4_0.GetN()
-		aluImm := (ids.imm_11_0.GetN() << 20) >> 20
+		sImm := (imm_11_5 << 5) | imm_4_0
+		iImm := (imm_11_0 << 20) >> 20
+		uImm := ins & 0xFFFFF000
 
-		// Immediate extraction for U-type instructions
-		uImm := ids.instruction.GetN() & 0xFFFFF000
+		jins := JTypeDecode(ins)
 
 		if ids.isStoreOperation.GetN() {
-			ids.imm32.SetN(storeImm)
+			ids.imm32.SetN(sImm)
 		} else if ids.isAluOperation.GetN() || ids.isLoadOperation.GetN() {
-			ids.imm32.SetN(aluImm)
+			ids.imm32.SetN(iImm)
 		} else if ids.isLUIOperation.GetN() {
 			ids.imm32.SetN(int32(uImm))
+		} else if ids.isJALOperation.GetN() {
+			ids.imm32.SetN(jins.imm32)
+			ids.branchAddress.SetN(uint32(int32(fv.pc) + jins.imm32))
+		} else if ids.isJALROperation.GetN() {
+			ids.imm32.SetN(iImm)
+			ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + iImm))
 		} else {
-			panic("Unknown operation")
+			panic(fmt.Sprintf("Unknown operation 0x%x", ins))
 		}
 	}
 }
@@ -142,6 +136,8 @@ func (ids *DecodeStage) LatchNext() {
 	ids.isStoreOperation.LatchNext()
 	ids.isLoadOperation.LatchNext()
 	ids.isLUIOperation.LatchNext()
+	ids.isJALOperation.LatchNext()
+	ids.isJALROperation.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -150,14 +146,13 @@ func (ids *DecodeStage) LatchNext() {
 
 	ids.rs1V.LatchNext()
 	ids.rs2V.LatchNext()
-	ids.shamt.LatchNext() // For shift instructions, shamt is in rs2 field
+	ids.shamt.LatchNext()
 
-	// Immediate extraction for I-type instructions
-	ids.imm_11_0.LatchNext()
+	ids.imm32.LatchNext()
+	ids.branchAddress.LatchNext()
 
-	// Immediate extraction for S-type instructions
-	ids.imm_4_0.LatchNext()
-	ids.imm_11_5.LatchNext()
+	ids.pc.LatchNext()
+	ids.pcPlus4.LatchNext()
 }
 
 type DecodedValues struct {
@@ -166,38 +161,46 @@ type DecodedValues struct {
 	IsStoreOperation bool
 	IsLoadOperation  bool
 	isLUIOperation   bool
+	IsJALOperation   bool
+	IsJALROperation  bool
 
-	Rd       byte
-	Func3    byte
-	Func7    byte
-	Rs1V     uint32
-	Rs2V     uint32
-	Shamt    byte
-	Imm_11_0 int32
-	Imm_11_5 int32
-	Imm_4_0  int32
+	Rd      byte
+	Func3   byte
+	Func7   byte
+	Rs1V    uint32
+	Rs2V    uint32
+	Rs1Addr byte
+	Rs2Addr byte
+	Shamt   byte
 
 	Imm32 int32
+
+	BranchAddress uint32
+	pc            uint32
+	pcPlus4       uint32
 }
 
-func (ids *DecodeStage) GetDecodedValues() DecodedValues {
+func (ids *DecodeStage) GetDecodedValuesOut() DecodedValues {
 	return DecodedValues{
 		Opcode:           ids.opcode.GetN(),
 		IsAluOperation:   ids.isAluOperation.GetN(),
 		IsStoreOperation: ids.isStoreOperation.GetN(),
 		IsLoadOperation:  ids.isLoadOperation.GetN(),
 		isLUIOperation:   ids.isLUIOperation.GetN(),
+		IsJALOperation:   ids.isJALOperation.GetN(),
+		IsJALROperation:  ids.isJALROperation.GetN(),
 
-		Rd:       ids.rd.GetN(),
-		Func3:    ids.func3.GetN(),
-		Func7:    ids.func7.GetN(),
-		Rs1V:     ids.rs1V.GetN(),
-		Rs2V:     ids.rs2V.GetN(),
-		Shamt:    ids.shamt.GetN(),
-		Imm_11_0: ids.imm_11_0.GetN(),
-		Imm_11_5: ids.imm_11_5.GetN(),
-		Imm_4_0:  ids.imm_4_0.GetN(),
+		Rd:    ids.rd.GetN(),
+		Func3: ids.func3.GetN(),
+		Func7: ids.func7.GetN(),
+		Rs1V:  ids.rs1V.GetN(),
+		Rs2V:  ids.rs2V.GetN(),
+		Shamt: ids.shamt.GetN(),
 
 		Imm32: ids.imm32.GetN(),
+
+		BranchAddress: ids.branchAddress.GetN(),
+		pc:            ids.pc.GetN(),
+		pcPlus4:       ids.pcPlus4.GetN(),
 	}
 }
