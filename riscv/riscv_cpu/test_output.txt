@@ -30,6 +30,8 @@ Execute: SLL   rd= 0  rs1=0x01020304  rs2=0x00000001 -> 0x02040608 (discarded)
 Execute: SLLI  rd=20  rs1=0x01020304  sha=0x00000002 -> 0x04080C10
 Execute: SLLI  rd=20  rs1=0x00000001  sha=0x0000001F -> 0x80000000
 Execute: SLLI  rd=20  rs1=0x00000001  sha=0x00000000 -> 0x00000001
+Execute: SRL   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00081018
+Execute: SRLI  rd=20  rs1=0x01020304  sha=0x00000003 -> 0x00204060
 Execute: SLT   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00000001
 Execute: SLT   rd=20  rs1=0xFFFFFFFF  rs2=0x00000001 -> 0x00000001
 Execute: SLT   rd=20  rs1=0x00000001  rs2=0xFFFFFFFF -> 0x00000000
@@ -44,8 +46,6 @@ Execute: SLTIU rd=20  rs1=0x00000001  imm=0x-0000001 -> 0x00000001
 Execute: SLTIU rd=20  rs1=0xFFFFFFFF  imm=0x-0000001 -> 0x00000000
 Execute: XOR   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x03010701
 Execute: XORI  rd=20  rs1=0x01020304  imm=0x00000003 -> 0x01020307
-Execute: SRL   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00081018
-Execute: SRLI  rd=20  rs1=0x01020304  sha=0x00000003 -> 0x00204060
 Execute: OR    rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x03030705
 Execute: ORI   rd=20  rs1=0x01020304  imm=0x00000003 -> 0x01020307
 Execute: AND   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00020004
@@ -84,6 +84,6 @@ LOAD   : LUI   rd=20  imm=0xF1F2F000 -> 0xF1F2F000
 Execute: ADDI  rd=20  rs1=0xF1F2F000  imm=0x000003F4 -> 0xF1F2F3F4
 --- PASS: TestInstruction (0.00s)
 PASS
-ok  	riscv	0.009s
+ok  	riscv	0.006s
 ?   	riscv/pipeline	[no test files]
 ?   	riscv/system_interface	[no test files]
