@@ -9,6 +9,15 @@ const STORE_OPCODE = 0b0100011
 const JAL_OPCODE = 0b1101111
 const JALR_OPCODE = 0b1100111
 
+func Bits(v uint32, lo, hi uint) uint32 {
+	return (v >> lo) & ((1 << (hi - lo + 1)) - 1)
+}
+
+func SignExtend(v uint32, bits uint) int32 {
+	shift := 32 - bits
+	return int32(v<<shift) >> shift
+}
+
 type Instruction interface {
 	Encode() uint32
 	String() string
@@ -32,8 +41,8 @@ func (i I_INS) Encode() uint32 {
 }
 
 func (i I_INS) String() string {
-	return fmt.Sprintf("I-Type: %s Opcode=0x%02X, Rd=x%d, Funct3=0b%03b, Rs1=x%d, Imm=%d",
-		i.Name, i.Opcode, i.Rd, i.Funct3, i.Rs1, i.Imm)
+	return fmt.Sprintf("I-Type: %s Rd=x%d, Funct3=0b%03b, Rs1=x%d, Imm=%d",
+		i.Name, i.Rd, i.Funct3, i.Rs1, i.Imm)
 }
 
 type R_INS struct {
@@ -56,8 +65,8 @@ func (r R_INS) Encode() uint32 {
 }
 
 func (r R_INS) String() string {
-	return fmt.Sprintf("R-Type: %s Opcode=0x%02X, Rd=x%d, Funct3=0b%03b, Rs1=x%d, Rs2=x%d, Funct7=0b%07b",
-		r.Name, r.Opcode, r.Rd, r.Funct3, r.Rs1, r.Rs2, r.Funct7)
+	return fmt.Sprintf("R-Type: %s  Rd=x%d, Funct3=0b%03b, Rs1=x%d, Rs2=x%d, Funct7=0b%07b",
+		r.Name, r.Rd, r.Funct3, r.Rs1, r.Rs2, r.Funct7)
 }
 
 type U_INS struct {
@@ -128,76 +137,67 @@ func (j J_INS) Encode() uint32 {
 }
 
 func (j J_INS) String() string {
-	return fmt.Sprintf("J-Type: %s Opcode=0x%02X, Rd=x%d, Imm=%d",
-		j.Name, j.Opcode, j.Rd, j.Imm)
-}
-
-func bits(v uint32, lo, hi uint) uint32 {
-	return (v >> lo) & ((1 << (hi - lo + 1)) - 1)
-}
-
-func signExtend(v uint32, bits uint) int32 {
-	shift := 32 - bits
-	return int32(v<<shift) >> shift
+	return fmt.Sprintf("J-Type: %s Rd=x%d, Imm=%d",
+		j.Name, j.Rd, j.Imm)
 }
 
 func Decode(instr uint32) Instruction {
-	opcode := bits(instr, 0, 6)
+	opcode := Bits(instr, 0, 6)
 
 	switch opcode {
 
-	case 0x13, LOAD_OPCODE: // I-Type (e.g. ADDI, LW)
+	case 0x13, LOAD_OPCODE, JALR_OPCODE: // I-Type (e.g. ADDI, LW)
 		return I_INS{
 			Opcode: uint8(opcode),
-			Rd:     uint8(bits(instr, 7, 11)),
-			Funct3: uint8(bits(instr, 12, 14)),
-			Rs1:    uint8(bits(instr, 15, 19)),
-			Imm:    signExtend(bits(instr, 20, 31), 12),
+			Rd:     uint8(Bits(instr, 7, 11)),
+			Funct3: uint8(Bits(instr, 12, 14)),
+			Rs1:    uint8(Bits(instr, 15, 19)),
+			Imm:    SignExtend(Bits(instr, 20, 31), 12),
 		}
 
 	case 0x33: // R-Type (e.g. ADD)
 		return R_INS{
 			Opcode: uint8(opcode),
-			Rd:     uint8(bits(instr, 7, 11)),
-			Funct3: uint8(bits(instr, 12, 14)),
-			Rs1:    uint8(bits(instr, 15, 19)),
-			Rs2:    uint8(bits(instr, 20, 24)),
-			Funct7: uint8(bits(instr, 25, 31)),
+			Rd:     uint8(Bits(instr, 7, 11)),
+			Funct3: uint8(Bits(instr, 12, 14)),
+			Rs1:    uint8(Bits(instr, 15, 19)),
+			Rs2:    uint8(Bits(instr, 20, 24)),
+			Funct7: uint8(Bits(instr, 25, 31)),
 		}
 
 	case 0x37, 0x17: // U-Type (LUI, AUIPC)
-		imm := bits(instr, 12, 31) << 12
+		imm := Bits(instr, 12, 31) << 12
 
 		return U_INS{
 			Opcode: uint8(opcode),
-			Rd:     uint8(bits(instr, 7, 11)),
+			Rd:     uint8(Bits(instr, 7, 11)),
 			Imm:    int32(imm),
 		}
 
 	case 0x23: // S-Type (SB, SH, SW)
 		imm :=
-			(bits(instr, 25, 31) << 5) |
-				bits(instr, 7, 11)
+			(Bits(instr, 25, 31) << 5) |
+				Bits(instr, 7, 11)
 
 		return S_INS{
 			Opcode: uint8(opcode),
-			Funct3: uint8(bits(instr, 12, 14)),
-			Rs1:    uint8(bits(instr, 15, 19)),
-			Rs2:    uint8(bits(instr, 20, 24)),
-			Imm:    signExtend(imm, 12),
+			Funct3: uint8(Bits(instr, 12, 14)),
+			Rs1:    uint8(Bits(instr, 15, 19)),
+			Rs2:    uint8(Bits(instr, 20, 24)),
+			Imm:    SignExtend(imm, 12),
 		}
 
-	case JAL_OPCODE, JALR_OPCODE: // J-Type (JAL)
+	case JAL_OPCODE: // J-Type (JAL)
 		imm :=
-			(bits(instr, 31, 31) << 20) |
-				(bits(instr, 21, 30) << 1) |
-				(bits(instr, 20, 20) << 11) |
-				(bits(instr, 12, 19) << 12)
+			(Bits(instr, 31, 31) << 20) |
+				(Bits(instr, 21, 30) << 1) |
+				(Bits(instr, 20, 20) << 11) |
+				(Bits(instr, 12, 19) << 12)
 
 		return J_INS{
 			Opcode: uint8(opcode),
-			Rd:     uint8(bits(instr, 7, 11)),
-			Imm:    signExtend(imm, 21),
+			Rd:     uint8(Bits(instr, 7, 11)),
+			Imm:    SignExtend(imm, 21),
 		}
 
 	}

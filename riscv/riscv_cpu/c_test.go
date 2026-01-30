@@ -62,19 +62,19 @@ func Test_C_CODE(t *testing.T) {
 	v, _ := sys.bus.Read(0x20000000, MEMORY_WIDTH_WORD)
 	fmt.Printf("Final value at 0x20000000 = 0x%08X\n", v)
 	if v != 0xAE0 {
-		// t.Fatalf("Final value at 0x20000000 = 0x%08X; want 0xAE0", v)
+		t.Fatalf("Final value at 0x20000000 = 0x%08X; want 0xAE0", v)
 	}
 
 	v, _ = sys.bus.Read(0x20000004, MEMORY_WIDTH_WORD)
 	fmt.Printf("Final value at 0x20000004 = 0x%08X\n", v)
 	if v != 0xAE4 {
-		// t.Fatalf("Final value at 0x20000004 = 0x%08X; want 0xAE4", v)
+		t.Fatalf("Final value at 0x20000004 = 0x%08X; want 0xAE4", v)
 	}
 
 	v, _ = sys.bus.Read(0x20000008, MEMORY_WIDTH_WORD)
 	fmt.Printf("Final value at 0x20000008 = 0x%08X\n", v)
 	if v != 0xAE8 {
-		// t.Fatalf("Final value at 0x20000008 = 0x%08X; want 0xAE8", v)
+		t.Fatalf("Final value at 0x20000008 = 0x%08X; want 0xAE8", v)
 	}
 
 }

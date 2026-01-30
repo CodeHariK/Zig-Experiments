@@ -50,7 +50,7 @@ func NewRVI32System() *RVI32System {
 		},
 		func() bool {
 			d := sys.DE.GetDecodedValuesOut()
-			return d.IsJALOperation || d.IsJALROperation
+			return d.IsJUMPOp
 		},
 		func() bool {
 			return sys.State != INSTRUCTION_FETCH

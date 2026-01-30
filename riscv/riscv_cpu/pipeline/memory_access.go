@@ -6,18 +6,16 @@ import (
 )
 
 type ExecutedValues struct {
-	isAluOperation   bool
-	isStoreOperation bool
-	isLoadOperation  bool
-	isLUIOperation   bool
-	isJALOperation   bool
-	isJALROperation  bool
+	isAluOp   bool
+	isStoreOp bool
+	isLoadOp  bool
+	isLUIOp   bool
+	isJUMPOp  bool
 
 	writeBackValue uint32
 	rd             byte
 	rs1V           uint32
 	rs2V           uint32
-	rs2Addr        byte
 
 	imm32 int32
 	func3 byte
@@ -84,16 +82,11 @@ func (ma *MemoryAccessStage) Compute() {
 		ma.writeBackValue.SetN(ev.writeBackValue)
 		ma.rd.SetN(ev.rd)
 
-		ma.writeBackValueValid.SetN(
-			ev.isAluOperation ||
-				ev.isLoadOperation ||
-				ev.isLUIOperation ||
-				ev.isJALOperation ||
-				ev.isJALROperation)
+		ma.writeBackValueValid.SetN(ev.isAluOp || ev.isLoadOp || ev.isLUIOp || ev.isJUMPOp)
 
 		addr := uint32(int32(ev.rs1V) + ev.imm32)
 
-		if ev.isStoreOperation {
+		if ev.isStoreOp {
 
 			switch ev.func3 {
 			case STORE_FUNC3_SB:
@@ -112,7 +105,7 @@ func (ma *MemoryAccessStage) Compute() {
 				panic(fmt.Sprintf("Unsupported store func3: 0b%03b", ev.func3))
 			}
 
-		} else if ev.isLoadOperation {
+		} else if ev.isLoadOp {
 			shouldSignExtend := (ev.func3 & 0b100) == 0
 
 			var value uint32
@@ -160,10 +153,10 @@ func (ma *MemoryAccessStage) Compute() {
 			}
 
 			ma.writeBackValue.SetN(value)
-		} else if ev.isLUIOperation {
+		} else if ev.isLUIOp {
 			ma.writeBackValue.SetN(uint32(ev.imm32))
 			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X", ev.rd, uint32(ev.imm32))
-		} else if ev.isJALOperation || ev.isJALROperation {
+		} else if ev.isJUMPOp {
 			ma.writeBackValue.SetN(ev.pcPlus4)
 			fmt.Printf("JUMP   : JAL/R rd=%2d  return_addr=0x%08X", ev.rd, ev.pcPlus4)
 		}

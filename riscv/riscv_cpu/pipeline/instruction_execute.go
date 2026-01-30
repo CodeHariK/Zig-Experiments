@@ -37,12 +37,11 @@ type ExecuteStage struct {
 	rs1V RUint32
 	rs2V RUint32
 
-	isAluOperation   RBool
-	isStoreOperation RBool
-	isLoadOperation  RBool
-	isLUIOperation   RBool
-	isJALOperation   RBool
-	isJALROperation  RBool
+	isAluOp   RBool
+	isStoreOp RBool
+	isLoadOp  RBool
+	isLUIOp   RBool
+	isJUMPOp  RBool
 
 	imm32 RInt32
 	func3 RByte
@@ -72,138 +71,137 @@ func (ies *ExecuteStage) Compute() {
 
 		decoded := ies.getDecodedValuesIn()
 
-		ies.isAluOperation.SetN(decoded.IsAluOperation)
-		ies.isStoreOperation.SetN(decoded.IsStoreOperation)
-		ies.isLoadOperation.SetN(decoded.IsLoadOperation)
-		ies.isLUIOperation.SetN(decoded.isLUIOperation)
-		ies.isJALOperation.SetN(decoded.IsJALOperation)
-		ies.isJALROperation.SetN(decoded.IsJALROperation)
+		ies.isAluOp.SetN(decoded.isAluOp)
+		ies.isStoreOp.SetN(decoded.isStoreOp)
+		ies.isLoadOp.SetN(decoded.isLoadOp)
+		ies.isLUIOp.SetN(decoded.isLUIOp)
+		ies.isJUMPOp.SetN(decoded.IsJUMPOp)
 
 		ies.pcPlus4.SetN(decoded.pcPlus4)
 
-		ies.imm32.SetN(decoded.Imm32)
-		ies.func3.SetN(decoded.Func3)
+		ies.imm32.SetN(decoded.imm)
+		ies.func3.SetN(decoded.func3)
 
-		imm32 := decoded.Imm32
+		imm32 := decoded.imm
 
 		// Save destination register for write-back in the latch phase
-		ies.rd.SetN(decoded.Rd)
-		ies.rs1V.SetN(decoded.Rs1V)
-		ies.rs2V.SetN(decoded.Rs2V)
+		ies.rd.SetN(decoded.rd)
+		ies.rs1V.SetN(decoded.rs1V)
+		ies.rs2V.SetN(decoded.rs2V)
 
-		isRegisterOp := decoded.Opcode>>5 == 1     // Check if opcode indicates register-register operation
-		isAlternate := (decoded.Func7 & 0x20) != 0 // Use funct7 bit to distinguish SUB (0100000)
+		isRegisterOp := decoded.opcode>>5 == 1     // Check if opcode indicates register-register operation
+		isAlternate := (decoded.func7 & 0x20) != 0 // Use funct7 bit to distinguish SUB (0100000)
 
-		if decoded.IsAluOperation == false {
+		if decoded.isAluOp == false {
 			// Not an ALU operation; nothing to do here
 			return
 		}
 
 		// Perform ALU operation
-		switch decoded.Func3 {
+		switch decoded.func3 {
 		case OP_ADD_SUB:
 			{
 				if isRegisterOp {
 					if isAlternate {
-						ies.aluResult.SetN(decoded.Rs1V - decoded.Rs2V)
-						fmt.Printf("Exec   : SUB   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+						ies.aluResult.SetN(decoded.rs1V - decoded.rs2V)
+						fmt.Printf("Exec   : SUB   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 					} else {
-						ies.aluResult.SetN(decoded.Rs1V + decoded.Rs2V)
-						fmt.Printf("Exec   : ADD   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+						ies.aluResult.SetN(decoded.rs1V + decoded.rs2V)
+						fmt.Printf("Exec   : ADD   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 					}
 				} else {
-					ies.aluResult.SetN(decoded.Rs1V + uint32(imm32))
-					fmt.Printf("Exec   : ADDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V + uint32(imm32))
+					fmt.Printf("Exec   : ADDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLL:
 			{
 				if isRegisterOp {
-					shiftAmount := decoded.Rs2V & 0x1F
-					ies.aluResult.SetN(decoded.Rs1V << shiftAmount)
-					fmt.Printf("Exec   : SLL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					shiftAmount := decoded.rs2V & 0x1F
+					ies.aluResult.SetN(decoded.rs1V << shiftAmount)
+					fmt.Printf("Exec   : SLL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					shiftAmount := decoded.Shamt & 0x1F
-					ies.aluResult.SetN(decoded.Rs1V << shiftAmount)
-					fmt.Printf("Exec   : SLLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, shiftAmount, ies.aluResult.GetN())
+					shiftAmount := decoded.shamt & 0x1F
+					ies.aluResult.SetN(decoded.rs1V << shiftAmount)
+					fmt.Printf("Exec   : SLLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLT:
 			{
 				if isRegisterOp {
-					if int32(decoded.Rs1V) < int32(decoded.Rs2V) {
+					if int32(decoded.rs1V) < int32(decoded.rs2V) {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLT   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					fmt.Printf("Exec   : SLT   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					if int32(decoded.Rs1V) < imm32 {
+					if int32(decoded.rs1V) < imm32 {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf("Exec   : SLTI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLTU:
 			{
 				if isRegisterOp {
-					if decoded.Rs1V < decoded.Rs2V {
+					if decoded.rs1V < decoded.rs2V {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTU  rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					fmt.Printf("Exec   : SLTU  rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					if decoded.Rs1V < uint32(imm32) {
+					if decoded.rs1V < uint32(imm32) {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTIU rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf("Exec   : SLTIU rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_XOR:
 			{
 				if isRegisterOp {
-					ies.aluResult.SetN(decoded.Rs1V ^ decoded.Rs2V)
-					fmt.Printf("Exec   : XOR   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V ^ decoded.rs2V)
+					fmt.Printf("Exec   : XOR   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					ies.aluResult.SetN(decoded.Rs1V ^ uint32(imm32))
-					fmt.Printf("Exec   : XORI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V ^ uint32(imm32))
+					fmt.Printf("Exec   : XORI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SRL:
 			{
 				if isRegisterOp {
-					shiftAmount := decoded.Rs2V & 0x1F
-					ies.aluResult.SetN(decoded.Rs1V >> shiftAmount)
-					fmt.Printf("Exec   : SRL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					shiftAmount := decoded.rs2V & 0x1F
+					ies.aluResult.SetN(decoded.rs1V >> shiftAmount)
+					fmt.Printf("Exec   : SRL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					shiftAmount := decoded.Shamt & 0x1F
-					ies.aluResult.SetN(decoded.Rs1V >> shiftAmount)
-					fmt.Printf("Exec   : SRLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, shiftAmount, ies.aluResult.GetN())
+					shiftAmount := decoded.shamt & 0x1F
+					ies.aluResult.SetN(decoded.rs1V >> shiftAmount)
+					fmt.Printf("Exec   : SRLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
 				}
 			}
 		case OP_OR:
 			{
 				if isRegisterOp {
-					ies.aluResult.SetN(decoded.Rs1V | decoded.Rs2V)
-					fmt.Printf("Exec   : OR    rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V | decoded.rs2V)
+					fmt.Printf("Exec   : OR    rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					ies.aluResult.SetN(decoded.Rs1V | uint32(imm32))
-					fmt.Printf("Exec   : ORI   rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V | uint32(imm32))
+					fmt.Printf("Exec   : ORI   rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_AND:
 			{
 				if isRegisterOp {
-					ies.aluResult.SetN(decoded.Rs1V & decoded.Rs2V)
-					fmt.Printf("Exec   : AND   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, decoded.Rs2V, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V & decoded.rs2V)
+					fmt.Printf("Exec   : AND   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
-					ies.aluResult.SetN(decoded.Rs1V & uint32(imm32))
-					fmt.Printf("Exec   : ANDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.Rd, decoded.Rs1V, imm32, ies.aluResult.GetN())
+					ies.aluResult.SetN(decoded.rs1V & uint32(imm32))
+					fmt.Printf("Exec   : ANDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		}
@@ -216,12 +214,11 @@ func (ies *ExecuteStage) LatchNext() {
 	ies.rs1V.LatchNext()
 	ies.rs2V.LatchNext()
 
-	ies.isAluOperation.LatchNext()
-	ies.isStoreOperation.LatchNext()
-	ies.isLoadOperation.LatchNext()
-	ies.isLUIOperation.LatchNext()
-	ies.isJALOperation.LatchNext()
-	ies.isJALROperation.LatchNext()
+	ies.isAluOp.LatchNext()
+	ies.isStoreOp.LatchNext()
+	ies.isLoadOp.LatchNext()
+	ies.isLUIOp.LatchNext()
+	ies.isJUMPOp.LatchNext()
 
 	ies.pcPlus4.LatchNext()
 
@@ -231,12 +228,11 @@ func (ies *ExecuteStage) LatchNext() {
 
 func (ies *ExecuteStage) GetExecutionValuesOut() ExecutedValues {
 	return ExecutedValues{
-		isAluOperation:   ies.isAluOperation.GetN(),
-		isStoreOperation: ies.isStoreOperation.GetN(),
-		isLoadOperation:  ies.isLoadOperation.GetN(),
-		isLUIOperation:   ies.isLUIOperation.GetN(),
-		isJALOperation:   ies.isJALOperation.GetN(),
-		isJALROperation:  ies.isJALROperation.GetN(),
+		isAluOp:   ies.isAluOp.GetN(),
+		isStoreOp: ies.isStoreOp.GetN(),
+		isLoadOp:  ies.isLoadOp.GetN(),
+		isLUIOp:   ies.isLUIOp.GetN(),
+		isJUMPOp:  ies.isJUMPOp.GetN(),
 
 		writeBackValue: ies.aluResult.GetN(),
 		rd:             ies.rd.GetN(),
