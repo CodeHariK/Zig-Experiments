@@ -99,7 +99,7 @@ func (ids *DecodeStage) Compute() {
 
 		decodedIns := Decode(ins)
 		if decodedIns != nil {
-			fmt.Println("$ ", decodedIns.String())
+			fmt.Print(decodedIns.String())
 		} else {
 			fmt.Printf("$ Unknown instruction: 0x%08X\n", ins)
 		}
@@ -110,7 +110,7 @@ func (ids *DecodeStage) Compute() {
 
 			if ids.isJUMPOp.GetN() {
 				ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + ins.Imm))
-				fmt.Printf("@ Decode : JALR  rd=%2d rs1=0x%08X imm32=0x%08X target=0x%08X\n", ids.rd.GetN(), ids.rs1V.GetN(), ins.Imm, ids.branchAddress.GetN())
+				fmt.Printf(" [JALR] target=0x%08X", ids.branchAddress.GetN())
 			}
 		case R_INS:
 			ids.func7.SetN(ins.Funct7)
@@ -122,11 +122,13 @@ func (ids *DecodeStage) Compute() {
 			ids.imm.SetN(ins.Imm)
 			if ids.isJUMPOp.GetN() {
 				ids.branchAddress.SetN(uint32(int32(fv.pc) + ins.Imm))
-				fmt.Printf("@ Decode : JAL   rd=%2d rd=%2d imm32=0x%08X target=0x%08X\n", ids.rd.GetN(), ins.Rd, ins.Imm, ids.branchAddress.GetN())
+				fmt.Printf(" [JAL] target=0x%08X", ids.branchAddress.GetN())
 			}
 		default:
 			panic(fmt.Sprintf("Unhandled instruction type for decoding immediate: 0x%08X", ins))
 		}
+
+		fmt.Print(" => ")
 	}
 }
 

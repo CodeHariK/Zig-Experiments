@@ -116,7 +116,7 @@ func TestInstruction(t *testing.T) {
 		if tc.destRam == nil {
 			v := rv.regFile[*tc.destReg].GetN()
 			if !tc.expectReadError && v != tc.expected {
-				t.Fatalf("Test case %d: After instruction, R%2d => 0x%08X; want 0x%08X", i, *tc.destReg, v, tc.expected)
+				t.Fatalf("Test case %d: After instruction, R%02d => 0x%08X; want 0x%08X", i, *tc.destReg, v, tc.expected)
 			}
 		} else {
 			v, err := rv.bus.Read(*tc.destRam, tc.readWidth)

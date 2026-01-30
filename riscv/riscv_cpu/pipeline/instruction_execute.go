@@ -104,14 +104,14 @@ func (ies *ExecuteStage) Compute() {
 				if isRegisterOp {
 					if isAlternate {
 						ies.aluResult.SetN(decoded.rs1V - decoded.rs2V)
-						fmt.Printf("Exec   : SUB   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+						fmt.Printf(" SUB   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 					} else {
 						ies.aluResult.SetN(decoded.rs1V + decoded.rs2V)
-						fmt.Printf("Exec   : ADD   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+						fmt.Printf(" ADD   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 					}
 				} else {
 					ies.aluResult.SetN(decoded.rs1V + uint32(imm32))
-					fmt.Printf("Exec   : ADDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" ADDI  Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLL:
@@ -119,11 +119,11 @@ func (ies *ExecuteStage) Compute() {
 				if isRegisterOp {
 					shiftAmount := decoded.rs2V & 0x1F
 					ies.aluResult.SetN(decoded.rs1V << shiftAmount)
-					fmt.Printf("Exec   : SLL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" SLL   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					shiftAmount := decoded.shamt & 0x1F
 					ies.aluResult.SetN(decoded.rs1V << shiftAmount)
-					fmt.Printf("Exec   : SLLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
+					fmt.Printf(" SLLI  Rd=%02d  Rs1v=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLT:
@@ -134,14 +134,14 @@ func (ies *ExecuteStage) Compute() {
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLT   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" SLT   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					if int32(decoded.rs1V) < imm32 {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" SLTI  Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SLTU:
@@ -152,24 +152,24 @@ func (ies *ExecuteStage) Compute() {
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTU  rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" SLTU  Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					if decoded.rs1V < uint32(imm32) {
 						ies.aluResult.SetN(1)
 					} else {
 						ies.aluResult.SetN(0)
 					}
-					fmt.Printf("Exec   : SLTIU rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" SLTIU Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_XOR:
 			{
 				if isRegisterOp {
 					ies.aluResult.SetN(decoded.rs1V ^ decoded.rs2V)
-					fmt.Printf("Exec   : XOR   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" XOR   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					ies.aluResult.SetN(decoded.rs1V ^ uint32(imm32))
-					fmt.Printf("Exec   : XORI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" XORI  Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_SRL:
@@ -177,31 +177,31 @@ func (ies *ExecuteStage) Compute() {
 				if isRegisterOp {
 					shiftAmount := decoded.rs2V & 0x1F
 					ies.aluResult.SetN(decoded.rs1V >> shiftAmount)
-					fmt.Printf("Exec   : SRL   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" SRL   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					shiftAmount := decoded.shamt & 0x1F
 					ies.aluResult.SetN(decoded.rs1V >> shiftAmount)
-					fmt.Printf("Exec   : SRLI  rd=%2d  rs1=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
+					fmt.Printf(" SRLI  Rd=%02d  Rs1v=0x%08X  sha=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, shiftAmount, ies.aluResult.GetN())
 				}
 			}
 		case OP_OR:
 			{
 				if isRegisterOp {
 					ies.aluResult.SetN(decoded.rs1V | decoded.rs2V)
-					fmt.Printf("Exec   : OR    rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" OR    Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					ies.aluResult.SetN(decoded.rs1V | uint32(imm32))
-					fmt.Printf("Exec   : ORI   rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" ORI   Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		case OP_AND:
 			{
 				if isRegisterOp {
 					ies.aluResult.SetN(decoded.rs1V & decoded.rs2V)
-					fmt.Printf("Exec   : AND   rd=%2d  rs1=0x%08X  rs2=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
+					fmt.Printf(" AND   Rd=%02d  Rs1v=0x%08X  Rs2v=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, decoded.rs2V, ies.aluResult.GetN())
 				} else {
 					ies.aluResult.SetN(decoded.rs1V & uint32(imm32))
-					fmt.Printf("Exec   : ANDI  rd=%2d  rs1=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
+					fmt.Printf(" ANDI  Rd=%02d  Rs1v=0x%08X  imm=0x%08X -> 0x%08X", decoded.rd, decoded.rs1V, imm32, ies.aluResult.GetN())
 				}
 			}
 		}

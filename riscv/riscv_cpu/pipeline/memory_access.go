@@ -92,15 +92,15 @@ func (ma *MemoryAccessStage) Compute() {
 			case STORE_FUNC3_SB:
 				// Store Byte
 				err := ma.bus.Write(addr, ev.rs2V&0xFF, MEMORY_WIDTH_BYTE)
-				fmt.Printf("STORE  : SB    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFF, err)
+				fmt.Printf(" SB  Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFF, err)
 			case STORE_FUNC3_SH:
 				// Store Halfword
 				err := ma.bus.Write(addr, ev.rs2V&0xFFFF, MEMORY_WIDTH_HALF)
-				fmt.Printf("STORE  : SH    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFFFF, err)
+				fmt.Printf(" SH  Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V&0xFFFF, err)
 			case STORE_FUNC3_SW:
 				// Store Word
 				err := ma.bus.Write(addr, ev.rs2V, MEMORY_WIDTH_WORD)
-				fmt.Printf("STORE  : SW    Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V, err)
+				fmt.Printf(" SW  Addr=0x%08X, Value=0x%08X, %v \n", addr, ev.rs2V, err)
 			default:
 				panic(fmt.Sprintf("Unsupported store func3: 0b%03b", ev.func3))
 			}
@@ -115,39 +115,39 @@ func (ma *MemoryAccessStage) Compute() {
 				// Load Byte (sign-extended)
 				memvalue, err := ma.bus.Read(addr, MEMORY_WIDTH_BYTE)
 				if err != nil {
-					fmt.Printf("LOAD   : LB/U  ERROR: %s", err.Error())
+					fmt.Printf(" LB/U  ERROR: %s", err.Error())
 					break
 				}
 				if shouldSignExtend {
 					value = uint32(int32(int8(memvalue & 0xFF)))
-					fmt.Printf("LOAD   : LB    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
+					fmt.Printf(" LB  Addr=0x%08X, Value=0x%08X -> R%02d", addr, value, ev.rd)
 				} else {
 					value = memvalue & 0xFF
-					fmt.Printf("LOAD   : LBU   Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
+					fmt.Printf(" LBU  Addr=0x%08X, Value=0x%08X -> R%02d", addr, value, ev.rd)
 				}
 			case LOAD_FUNC3_LH:
 				// Load Halfword (sign-extended)
 				memvalue, err := ma.bus.Read(addr, MEMORY_WIDTH_HALF)
 				if err != nil {
-					fmt.Printf("LOAD   : LH/U  ERROR: %s", err.Error())
+					fmt.Printf(" LH/U  ERROR: %s", err.Error())
 					break
 				}
 				if shouldSignExtend {
 					value = uint32(int32(int16(memvalue & 0xFFFF)))
-					fmt.Printf("LOAD   : LH    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
+					fmt.Printf(" LH  Addr=0x%08X, Value=0x%08X -> R%02d", addr, value, ev.rd)
 				} else {
 					value = memvalue & 0xFFFF
-					fmt.Printf("LOAD   : LHU   Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
+					fmt.Printf(" LHU Addr=0x%08X, Value=0x%08X -> R%02d", addr, value, ev.rd)
 				}
 			case LOAD_FUNC3_LW:
 				// Load Word
 				memvalue, err := ma.bus.Read(addr, MEMORY_WIDTH_WORD)
 				if err != nil {
-					fmt.Printf("LOAD   : LW    ERROR: %s", err.Error())
+					fmt.Printf(" LW   ERROR: %s", err.Error())
 					break
 				}
 				value = memvalue
-				fmt.Printf("LOAD   : LW    Addr=0x%08X, Value=0x%08X -> R%d", addr, value, ev.rd)
+				fmt.Printf(" LW  Addr=0x%08X, Value=0x%08X -> R%02d", addr, value, ev.rd)
 			default:
 				panic(fmt.Sprintf("Unsupported load func3: 0b%03b", ev.func3))
 			}
@@ -155,10 +155,10 @@ func (ma *MemoryAccessStage) Compute() {
 			ma.writeBackValue.SetN(value)
 		} else if ev.isLUIOp {
 			ma.writeBackValue.SetN(uint32(ev.imm32))
-			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X", ev.rd, uint32(ev.imm32))
+			fmt.Printf(" LUI rd=R%02d  imm=0x%08X", ev.rd, uint32(ev.imm32))
 		} else if ev.isJUMPOp {
 			ma.writeBackValue.SetN(ev.pcPlus4)
-			fmt.Printf("JUMP   : JAL/R rd=%2d  return_addr=0x%08X", ev.rd, ev.pcPlus4)
+			fmt.Printf("JUMP : JAL/R  return_addr=0x%08X", ev.pcPlus4)
 		}
 	}
 }

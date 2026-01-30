@@ -24,7 +24,6 @@ type Instruction interface {
 }
 
 type I_INS struct {
-	Name   string
 	Opcode byte
 	Rd     byte
 	Funct3 byte
@@ -41,12 +40,10 @@ func (i I_INS) Encode() uint32 {
 }
 
 func (i I_INS) String() string {
-	return fmt.Sprintf("I-Type: %s Rd=x%d, Funct3=0b%03b, Rs1=x%d, Imm=%d",
-		i.Name, i.Rd, i.Funct3, i.Rs1, i.Imm)
+	return fmt.Sprintf("I Rd=R%02d, Rs1=R%02d, Imm=%d", i.Rd, i.Rs1, i.Imm)
 }
 
 type R_INS struct {
-	Name   string
 	Opcode byte
 	Rd     byte
 	Funct3 byte
@@ -65,12 +62,10 @@ func (r R_INS) Encode() uint32 {
 }
 
 func (r R_INS) String() string {
-	return fmt.Sprintf("R-Type: %s  Rd=x%d, Funct3=0b%03b, Rs1=x%d, Rs2=x%d, Funct7=0b%07b",
-		r.Name, r.Rd, r.Funct3, r.Rs1, r.Rs2, r.Funct7)
+	return fmt.Sprintf("R Rd=R%02d, Rs1=R%02d, Rs2=R%02d", r.Rd, r.Rs1, r.Rs2)
 }
 
 type U_INS struct {
-	Name   string
 	Opcode uint8
 	Rd     uint8
 	Imm    int32 // full 32-bit immediate (already << 12)
@@ -83,11 +78,10 @@ func (u U_INS) Encode() uint32 {
 }
 
 func (u U_INS) String() string {
-	return fmt.Sprintf("U-Type: %s x%d, 0x%x", u.Name, u.Rd, u.Imm>>12)
+	return fmt.Sprintf("U R%02d, 0x%x", u.Rd, u.Imm>>12)
 }
 
 type S_INS struct {
-	Name   string
 	Opcode uint8
 	Funct3 uint8
 	Rs1    uint8
@@ -107,8 +101,7 @@ func (s S_INS) Encode() uint32 {
 }
 
 func (s S_INS) String() string {
-	return fmt.Sprintf("S-Type: %s x%d, %d(x%d)",
-		s.Name, s.Rs2, s.Imm, s.Rs1)
+	return fmt.Sprintf("S R%02d, Imm=%2d Rs1=R%02d", s.Rs2, s.Imm, s.Rs1)
 }
 
 type J_INS struct {
@@ -137,7 +130,7 @@ func (j J_INS) Encode() uint32 {
 }
 
 func (j J_INS) String() string {
-	return fmt.Sprintf("J-Type: %s Rd=x%d, Imm=%d",
+	return fmt.Sprintf("J %s Rd=R%02d, Imm=%d",
 		j.Name, j.Rd, j.Imm)
 }
 
@@ -206,9 +199,8 @@ func Decode(instr uint32) Instruction {
 }
 
 // funct7 rs2 rs1 funct3 rd opcode
-func RType(name string, rd byte, rs1 byte, rs2_shamt byte, func7 byte, func3 byte, opcode byte) uint32 {
+func RType(rd byte, rs1 byte, rs2_shamt byte, func7 byte, func3 byte, opcode byte) uint32 {
 	ins := R_INS{
-		Name:   name,
 		Opcode: opcode,
 		Rd:     rd,
 		Funct3: func3,
@@ -227,10 +219,9 @@ func RType(name string, rd byte, rs1 byte, rs2_shamt byte, func7 byte, func3 byt
 }
 
 // imm[11:0] rs1 funct3 rd opcode
-func IType(name string, rd byte, rs1 byte, imm int32, func3 byte, opcode byte) uint32 {
+func IType(rd byte, rs1 byte, imm int32, func3 byte, opcode byte) uint32 {
 
 	ins := I_INS{
-		Name:   name,
 		Opcode: opcode,
 		Rd:     rd,
 		Funct3: func3,
@@ -248,10 +239,9 @@ func IType(name string, rd byte, rs1 byte, imm int32, func3 byte, opcode byte) u
 }
 
 // imm[11:5] rs2 rs1 funct3 imm[4:0] opcode
-func SType(name string, rs1 byte, rs2 byte, imm int32, func3 byte, opcode byte) uint32 {
+func SType(rs1 byte, rs2 byte, imm int32, func3 byte, opcode byte) uint32 {
 
 	ins := S_INS{
-		Name:   name,
 		Opcode: opcode,
 		Funct3: func3,
 		Rs1:    rs1,
@@ -272,10 +262,9 @@ func SType(name string, rs1 byte, rs2 byte, imm int32, func3 byte, opcode byte) 
 }
 
 // imm[20|10:1|11|19:12] rd opcode J-type
-func JType(name string, rd byte, imm int32, opcode byte) uint32 {
+func JType(rd byte, imm int32, opcode byte) uint32 {
 
 	ins := J_INS{
-		Name:   name,
 		Opcode: opcode,
 		Rd:     rd,
 		Imm:    imm,
@@ -315,10 +304,9 @@ func JType(name string, rd byte, imm int32, opcode byte) uint32 {
 // }
 
 // imm[31:12] rd opcode
-func UType(name string, rd byte, imm int32, opcode byte) uint32 {
+func UType(rd byte, imm int32, opcode byte) uint32 {
 
 	ins := U_INS{
-		Name:   name,
 		Opcode: opcode,
 		Rd:     rd,
 		Imm:    imm,
@@ -333,168 +321,168 @@ func UType(name string, rd byte, imm int32, opcode byte) uint32 {
 // x[rd] = x[rs1] + sign-extended(immediate)
 func ADDI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 000 rd 0010011
-	return IType("ADDI", rd, rs1, imm, 0b000, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b000, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = x[rs1] + x[rs2]
 func ADD(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 000 rd 0110011
-	return RType("ADD", rd, rs1, rs2, 0b0000000, 0b000, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b000, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] - x[rs2]
 func SUB(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0100000 rs2 rs1 000 rd 0110011
-	return RType("SUB", rd, rs1, rs2, 0b0100000, 0b000, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0100000, 0b000, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] << (x[rs2] & 0x1F)
 func SLL(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 001 rd 0110011
-	return RType("SLL", rd, rs1, rs2, 0b0000000, 0b001, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b001, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] << shamt
 func SLLI(rd byte, rs1 byte, shamt byte) uint32 {
 	// 0000000 shamt rs1 001 rd 0010011
-	return RType("SLLI", rd, rs1, shamt, 0b0000000, 0b001, IMMEDIATE_OPCODE)
+	return RType(rd, rs1, shamt, 0b0000000, 0b001, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = (int32(x[rs1]) < int32(x[rs2])) ? 1 : 0
 func SLT(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 010 rd 0110011
-	return RType("SLT", rd, rs1, rs2, 0b0000000, 0b010, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b010, REGISTER_OPCODE)
 }
 
 // x[rd] = (int32(x[rs1]) < sign-extended(immediate)) ? 1 : 0
 func SLTI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 010 rd 0010011
-	return IType("SLTI", rd, rs1, imm, 0b010, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b010, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = (x[rs1] < x[rs2]) ? 1 : 0
 func SLTU(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 011 rd 0110011
-	return RType("SLTU", rd, rs1, rs2, 0b0000000, 0b011, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b011, REGISTER_OPCODE)
 }
 
 // x[rd] = (x[rs1] < uint32(immediate)) ? 1 : 0
 func SLTIU(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 011 rd 0010011
-	return IType("SLTIU", rd, rs1, imm, 0b011, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b011, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = x[rs1] ^ x[rs2]
 func XOR(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 100 rd 0110011
-	return RType("XOR", rd, rs1, rs2, 0b0000000, 0b100, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b100, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] ^ sign-extended(immediate)
 func XORI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 100 rd 0010011
-	return IType("XORI", rd, rs1, imm, 0b100, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b100, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = x[rs1] >> (x[rs2] & 0x1F)
 func SRL(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 101 rd 0110011
-	return RType("SRL", rd, rs1, rs2, 0b0000000, 0b101, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b101, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] >> shamt
 func SRLI(rd byte, rs1 byte, shamt byte) uint32 {
 	// 0000000 shamt rs1 101 rd 0010011
-	return RType("SRLI", rd, rs1, shamt, 0b0000000, 0b101, IMMEDIATE_OPCODE)
+	return RType(rd, rs1, shamt, 0b0000000, 0b101, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = x[rs1] | x[rs2]
 func OR(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 110 rd 0110011
-	return RType("OR", rd, rs1, rs2, 0b0000000, 0b110, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b110, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] | sign-extended(immediate)
 func ORI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 110 rd 0010011
-	return IType("ORI", rd, rs1, imm, 0b110, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b110, IMMEDIATE_OPCODE)
 }
 
 // x[rd] = x[rs1] & x[rs2]
 func AND(rd byte, rs1 byte, rs2 byte) uint32 {
 	// 0000000 rs2 rs1 111 rd 0110011
-	return RType("AND", rd, rs1, rs2, 0b0000000, 0b111, REGISTER_OPCODE)
+	return RType(rd, rs1, rs2, 0b0000000, 0b111, REGISTER_OPCODE)
 }
 
 // x[rd] = x[rs1] & sign-extended(immediate)
 func ANDI(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 111 rd 0010011
-	return IType("ANDI", rd, rs1, imm, 0b111, IMMEDIATE_OPCODE)
+	return IType(rd, rs1, imm, 0b111, IMMEDIATE_OPCODE)
 }
 
 // Mem[rs1 + imm] = rs2[7:0]
 func SB(rs1 byte, rs2 byte, imm int32) uint32 {
 	// imm[11:5] rs2 rs1 000 imm[4:0] 0100011
-	return SType("SB", rs1, rs2, imm, 0b000, STORE_OPCODE)
+	return SType(rs1, rs2, imm, 0b000, STORE_OPCODE)
 }
 
 // Mem[rs1 + imm] = rs2[15:0]
 func SH(rs1 byte, rs2 byte, imm int32) uint32 {
 	// imm[11:5] rs2 rs1 001 imm[4:0] 0100011
-	return SType("SH", rs1, rs2, imm, 0b001, STORE_OPCODE)
+	return SType(rs1, rs2, imm, 0b001, STORE_OPCODE)
 }
 
 // Mem[rs1 + imm] = rs2
 func SW(rs1 byte, rs2 byte, imm int32) uint32 {
 	// imm[11:5] rs2 rs1 010 imm[4:0] 0100011
-	return SType("SW", rs1, rs2, imm, 0b010, STORE_OPCODE)
+	return SType(rs1, rs2, imm, 0b010, STORE_OPCODE)
 }
 
 // x[rd] = sign-extended(Mem[rs1 + imm])
 func LB(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 000 rd 0000011
-	return IType("LB", rd, rs1, imm, 0b000, LOAD_OPCODE)
+	return IType(rd, rs1, imm, 0b000, LOAD_OPCODE)
 }
 
 // x[rd] = sign-extended(Mem[rs1 + imm])
 func LH(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 001 rd 0000011
-	return IType("LH", rd, rs1, imm, 0b001, LOAD_OPCODE)
+	return IType(rd, rs1, imm, 0b001, LOAD_OPCODE)
 }
 
 // x[rd] = Mem[rs1 + imm]
 func LW(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 010 rd 0000011
-	return IType("LW", rd, rs1, imm, 0b010, LOAD_OPCODE)
+	return IType(rd, rs1, imm, 0b010, LOAD_OPCODE)
 }
 
 // x[rd] = zero-extended(Mem[rs1 + imm])
 func LBU(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 100 rd 0000011
-	return IType("LBU", rd, rs1, imm, 0b100, LOAD_OPCODE)
+	return IType(rd, rs1, imm, 0b100, LOAD_OPCODE)
 }
 
 // x[rd] = zero-extended(Mem[rs1 + imm])
 func LHU(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 101 rd 0000011
-	return IType("LHU", rd, rs1, imm, 0b101, LOAD_OPCODE)
+	return IType(rd, rs1, imm, 0b101, LOAD_OPCODE)
 }
 
 func LUI(rd byte, imm int32) uint32 {
 	// imm[31:12] rd 0110111
-	return UType("LUI", rd, imm, 0b0110111)
+	return UType(rd, imm, 0b0110111)
 }
 
 func AUIPC(rd byte, imm int32) uint32 {
 	// imm[31:12] rd 0010111
-	return UType("AUIPC", rd, imm, 0b0010111)
+	return UType(rd, imm, 0b0010111)
 }
 
 func JAL(rd byte, imm int32) uint32 {
-	return JType("JAL", rd, imm, JAL_OPCODE)
+	return JType(rd, imm, JAL_OPCODE)
 }
 
 func JALR(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 000 rd 1100111
-	return IType("JALR", rd, rs1, imm, 0b000, JALR_OPCODE)
+	return IType(rd, rs1, imm, 0b000, JALR_OPCODE)
 }
