@@ -118,10 +118,6 @@ func (sys *RVI32System) LatchNext() {
 }
 
 func (sys *RVI32System) Cycle() {
-	if sys.IF.GetFetchValuesOut().Instruction == 0xFFFFFFFF {
-		sys.State = TERMINATE
-		return
-	}
 	sys.Compute()
 	sys.LatchNext()
 
@@ -136,5 +132,10 @@ func (sys *RVI32System) Cycle() {
 		sys.State = WRITE_BACK
 	case WRITE_BACK:
 		sys.State = INSTRUCTION_FETCH
+	}
+
+	if sys.IF.GetFetchValuesOut().Instruction == 0 {
+		sys.State = TERMINATE
+		return
 	}
 }

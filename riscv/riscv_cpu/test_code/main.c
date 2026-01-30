@@ -1,16 +1,17 @@
 #define WRITE_TO(addr, value) (*((volatile unsigned int *)(addr)) = value)
 #define RAM_START 0x20000000
 
-int fortyTwoWithSideEffects() {
-  WRITE_TO(RAM_START, 0x30040f00);
+int sideEffect() {
+  WRITE_TO(RAM_START, 0xAE0);
 
-  return 42;
+  return 0xAE4;
 }
 
 int main() {
-  int result = fortyTwoWithSideEffects();
+  int result = sideEffect();
 
   WRITE_TO(RAM_START + 4, result);
+  WRITE_TO(RAM_START + 8, 0xAE8);
 
   return 0;
 }

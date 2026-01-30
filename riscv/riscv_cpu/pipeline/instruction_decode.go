@@ -62,6 +62,8 @@ func NewDecodeStage(params *DecodeParams) *DecodeStage {
 
 func (ids *DecodeStage) Compute() {
 	if !ids.shouldStall() {
+		// fmt.Println("@ DECODE")
+
 		fv := ids.getInstructionIn()
 		ins := fv.Instruction
 		ids.instruction.SetN(ins)
@@ -108,7 +110,13 @@ func (ids *DecodeStage) Compute() {
 		iImm := (imm_11_0 << 20) >> 20
 		uImm := ins & 0xFFFFF000
 
-		jins := JTypeDecode(ins)
+		// jins := JTypeDecode(ins)
+		decodedIns := Decode(ins)
+		if decodedIns != nil {
+			fmt.Println("$ ", decodedIns.String())
+		} else {
+			fmt.Printf("$ Unknown instruction: 0x%08X\n", ins)
+		}
 
 		if ids.isStoreOperation.GetN() {
 			ids.imm32.SetN(sImm)
@@ -117,11 +125,14 @@ func (ids *DecodeStage) Compute() {
 		} else if ids.isLUIOperation.GetN() {
 			ids.imm32.SetN(int32(uImm))
 		} else if ids.isJALOperation.GetN() {
-			ids.imm32.SetN(jins.imm32)
-			ids.branchAddress.SetN(uint32(int32(fv.pc) + jins.imm32))
+			jins := decodedIns.(J_INS)
+			ids.imm32.SetN(jins.Imm)
+			ids.branchAddress.SetN(uint32(int32(fv.pc) + jins.Imm))
+			fmt.Printf("@ Decode : JAL   rd=%2d rd=%2d imm32=0x%08X target=0x%08X\n", ids.rd.GetN(), jins.Rd, jins.Imm, ids.branchAddress.GetN())
 		} else if ids.isJALROperation.GetN() {
 			ids.imm32.SetN(iImm)
 			ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + iImm))
+			fmt.Printf("@ Decode : JALR  rd=%2d rs1=0x%08X imm32=0x%08X target=0x%08X\n", ids.rd.GetN(), ids.rs1V.GetN(), iImm, ids.branchAddress.GetN())
 		} else {
 			panic(fmt.Sprintf("Unknown operation 0x%x", ins))
 		}

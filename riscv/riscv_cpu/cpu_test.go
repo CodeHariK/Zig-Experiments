@@ -1,6 +1,7 @@
 package riscv
 
 import (
+	"fmt"
 	. "riscv/pipeline"
 	. "riscv/system_interface"
 	"testing"
@@ -9,6 +10,8 @@ import (
 var rv *RVI32System = NewRVI32System()
 
 func TestROMLoadAndRead(t *testing.T) {
+
+	fmt.Println("")
 
 	var data []uint32 = []uint32{0xCAFEBABE, 0x8BADF00D, 0xC0DECAFE}
 	rv.rom.Load(data)
@@ -27,6 +30,8 @@ func TestROMLoadAndRead(t *testing.T) {
 }
 
 func TestRAMWrite(t *testing.T) {
+	fmt.Println("")
+
 	rv.bus.Write(0x20000000, 0x12345678, MEMORY_WIDTH_WORD)
 	v, _ := rv.bus.Read(0x20000000, MEMORY_WIDTH_WORD)
 	if v != 0x12345678 {
@@ -70,6 +75,9 @@ var MEM_ZERO_VALUE uint32 = 0x12345678
 var MEM_ONE_VALUE uint32 = 0xF1F2F3F4
 
 func TestInstruction(t *testing.T) {
+
+	fmt.Println("")
+
 	rv.regFile[1] = NewRUint32(0xffffffff)
 	rv.regFile[2] = NewRUint32(0x00000001)
 	rv.regFile[3] = NewRUint32(0x80000000)

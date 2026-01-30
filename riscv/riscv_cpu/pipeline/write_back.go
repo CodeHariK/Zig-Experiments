@@ -37,6 +37,8 @@ func NewWriteBackStage(params *WriteBackParams) *WriteBackStage {
 
 func (wb *WriteBackStage) Compute() {
 	if !wb.shouldStall() {
+		// fmt.Println("@ WRITE_BACK")
+
 		mv := wb.getMemoryAccessValuesIn()
 
 		if mv.writeBackValid {

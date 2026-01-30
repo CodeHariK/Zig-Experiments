@@ -1,6 +1,9 @@
 package pipeline
 
-import . "riscv/system_interface"
+import (
+	"fmt"
+	. "riscv/system_interface"
+)
 
 type InstructionFetchParams struct {
 	bus *SystemInterface
@@ -41,7 +44,7 @@ func NewInstructionFetchStage(params *InstructionFetchParams) *InstructionFetchS
 	ifs := &InstructionFetchStage{}
 
 	ifs.pc = NewRUint32(MEMORY_MAP_ROM_START)
-	ifs.pcPlus4 = NewRUint32(MEMORY_MAP_ROM_START + 4)
+	ifs.pcPlus4 = NewRUint32(MEMORY_MAP_ROM_START)
 	ifs.instruction = NewRUint32(0)
 
 	ifs.bus = params.bus
@@ -61,18 +64,24 @@ func (ifs *InstructionFetchStage) readyToReceive() bool {
 
 func (ifs *InstructionFetchStage) Compute() {
 	if !ifs.shouldStall() {
+
+		if ifs.getBranchAddressValid() {
+			ifs.pc.SetN(ifs.getBranchAddress())
+			fmt.Println()
+		} else {
+			ifs.pc.SetN(ifs.pcPlus4.GetN())
+		}
+
+		// fmt.Println("@ INSTRUCTION_FETCH")
+
+		ifs.pcPlus4.SetN(ifs.pc.GetN() + 4)
+
 		ins, err := ifs.bus.Read(ifs.pc.GetN(), MEMORY_WIDTH_WORD)
 		if err != nil {
 			panic(err)
 		}
 
-		if ifs.getBranchAddressValid() {
-			ifs.pc.SetN(ifs.getBranchAddress())
-		} else {
-			ifs.pc.SetN(ifs.pcPlus4.GetN())
-		}
-
-		ifs.pcPlus4.SetN(ifs.pc.GetN() + 4)
+		fmt.Printf("> PC=0x%08X , Instruction=0x%08X\n", ifs.pc.GetN(), ins)
 
 		ifs.instruction.SetN(ins)
 	}

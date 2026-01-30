@@ -77,6 +77,8 @@ func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
 
 func (ma *MemoryAccessStage) Compute() {
 	if !ma.shouldStall() {
+		// fmt.Println("@ MEMORY_ACCESS")
+
 		ev := ma.getExecutionValuesIn()
 
 		ma.writeBackValue.SetN(ev.writeBackValue)
@@ -163,7 +165,7 @@ func (ma *MemoryAccessStage) Compute() {
 			fmt.Printf("LOAD   : LUI   rd=%2d  imm=0x%08X", ev.rd, uint32(ev.imm32))
 		} else if ev.isJALOperation || ev.isJALROperation {
 			ma.writeBackValue.SetN(ev.pcPlus4)
-			fmt.Printf("LOAD   : JAL/R rd=%2d  return_addr=0x%08X", ev.rd, ev.pcPlus4)
+			fmt.Printf("JUMP   : JAL/R rd=%2d  return_addr=0x%08X", ev.rd, ev.pcPlus4)
 		}
 	}
 }

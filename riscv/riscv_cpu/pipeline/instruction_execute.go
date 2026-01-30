@@ -68,6 +68,8 @@ func NewExecuteStage(params *ExecuteParams) *ExecuteStage {
 
 func (ies *ExecuteStage) Compute() {
 	if !ies.shouldStall() {
+		// fmt.Println("@ EXECUTE")
+
 		decoded := ies.getDecodedValuesIn()
 
 		ies.isAluOperation.SetN(decoded.IsAluOperation)

@@ -1,120 +1,133 @@
 === RUN   Test_C_CODE
+> PC=0x10000000 , Instruction=0x20400137
+$  U-Type:  x2, 0x20400
 LOAD   : LUI   rd= 2  imm=0x20400000
+> PC=0x10000004 , Instruction=0xFFC10113
+$  I-Type:  Opcode=0x13, Rd=x2, Funct3=0b000, Rs1=x2, Imm=-4
 Exec   : ADDI  rd= 2  rs1=0x20400000  imm=0x-0000004 -> 0x203FFFFC
-LOAD   : JAL/R rd= 0  return_addr=0x10000010 (discarded)
-Exec   : ADDI  rd= 2  rs1=0x203FFFFC  imm=0x-0000010 -> 0x203FFFEC
-STORE  : SW    Addr=0x20400008, Value=0x00000000, <nil> 
-STORE  : SW    Addr=0x20400004, Value=0x00000000, <nil> 
-Exec   : ADDI  rd= 8  rs1=0x203FFFEC  imm=0x00000020 -> 0x2040000C
-LOAD   : JAL/R rd= 1  return_addr=0x1000005C
-STORE  : SW    Addr=0x20400FF8, Value=0x00000000, <nil> 
-STORE  : SW    Addr=0x203FFFF8, Value=0x1000005C, <nil> 
-STORE  : SW    Addr=0x203FFFF4, Value=0x2040000C, <nil> 
-Exec   : ADDI  rd= 8  rs1=0x203FFFEC  imm=0x00000010 -> 0x203FFFFC
-LOAD   : LUI   rd=15  imm=0x20000000
-LOAD   : LUI   rd=14  imm=0x30041000
-Exec   : ADDI  rd=14  rs1=0x30041000  imm=0x-0000100 -> 0x30040F00
-STORE  : SW    Addr=0x20000000, Value=0x30040F00, <nil> 
-Exec   : ADDI  rd=15  rs1=0x00000000  imm=0x0000002A -> 0x0000002A
-Exec   : ADDI  rd=10  rs1=0x0000002A  imm=0x00000000 -> 0x0000002A
-LOAD   : LW    Addr=0x203FFFF8, Value=0x1000005C -> R1
-LOAD   : LW    Addr=0x203FFFF4, Value=0x2040000C -> R8
-Exec   : ADDI  rd= 2  rs1=0x203FFFEC  imm=0x00000010 -> 0x203FFFFC
-LOAD   : JAL/R rd= 0  return_addr=0x10000048 (discarded)
+> PC=0x10000008 , Instruction=0x0400006F
+$  J-Type:  Opcode=0x6F, Rd=x0, Imm=64
+@ Decode : JAL   rd= 0 rd= 0 imm32=0x00000040 target=0x10000048
+JUMP   : JAL/R rd= 0  return_addr=0x1000000C (discarded)
+
+> PC=0x10000048 , Instruction=0xFE010113
+$  I-Type:  Opcode=0x13, Rd=x2, Funct3=0b000, Rs1=x2, Imm=-32
 Exec   : ADDI  rd= 2  rs1=0x203FFFFC  imm=0x-0000020 -> 0x203FFFDC
+> PC=0x1000004C , Instruction=0x00112E23
+$  S-Type:  x1, 28(x2)
+STORE  : SW    Addr=0x203FFFF8, Value=0x00000000, <nil> 
+> PC=0x10000050 , Instruction=0x00812C23
+$  S-Type:  x8, 24(x2)
+STORE  : SW    Addr=0x203FFFF4, Value=0x00000000, <nil> 
+> PC=0x10000054 , Instruction=0x02010413
+$  I-Type:  Opcode=0x13, Rd=x8, Funct3=0b000, Rs1=x2, Imm=32
+Exec   : ADDI  rd= 8  rs1=0x203FFFDC  imm=0x00000020 -> 0x203FFFFC
+> PC=0x10000058 , Instruction=0xFB5FF0EF
+$  J-Type:  Opcode=0x6F, Rd=x1, Imm=-76
+@ Decode : JAL   rd= 1 rd= 1 imm32=0x-000004C target=0x1000000C
+JUMP   : JAL/R rd= 1  return_addr=0x1000005C
+
+> PC=0x1000000C , Instruction=0xFF010113
+$  I-Type:  Opcode=0x13, Rd=x2, Funct3=0b000, Rs1=x2, Imm=-16
+Exec   : ADDI  rd= 2  rs1=0x203FFFDC  imm=0x-0000010 -> 0x203FFFCC
+> PC=0x10000010 , Instruction=0x00112623
+$  S-Type:  x1, 12(x2)
+STORE  : SW    Addr=0x203FFFD8, Value=0x1000005C, <nil> 
+> PC=0x10000014 , Instruction=0x00812423
+$  S-Type:  x8, 8(x2)
+STORE  : SW    Addr=0x203FFFD4, Value=0x203FFFFC, <nil> 
+> PC=0x10000018 , Instruction=0x01010413
+$  I-Type:  Opcode=0x13, Rd=x8, Funct3=0b000, Rs1=x2, Imm=16
+Exec   : ADDI  rd= 8  rs1=0x203FFFCC  imm=0x00000010 -> 0x203FFFDC
+> PC=0x1000001C , Instruction=0x200007B7
+$  U-Type:  x15, 0x20000
 LOAD   : LUI   rd=15  imm=0x20000000
+> PC=0x10000020 , Instruction=0x00001737
+$  U-Type:  x14, 0x1
+LOAD   : LUI   rd=14  imm=0x00001000
+> PC=0x10000024 , Instruction=0xAE070713
+$  I-Type:  Opcode=0x13, Rd=x14, Funct3=0b000, Rs1=x14, Imm=-1312
+Exec   : ADDI  rd=14  rs1=0x00001000  imm=0x-0000520 -> 0x00000AE0
+> PC=0x10000028 , Instruction=0x00E7A023
+$  S-Type:  x14, 0(x15)
+STORE  : SW    Addr=0x20000000, Value=0x00000AE0, <nil> 
+> PC=0x1000002C , Instruction=0x000017B7
+$  U-Type:  x15, 0x1
+LOAD   : LUI   rd=15  imm=0x00001000
+> PC=0x10000030 , Instruction=0xAE478793
+$  I-Type:  Opcode=0x13, Rd=x15, Funct3=0b000, Rs1=x15, Imm=-1308
+Exec   : ADDI  rd=15  rs1=0x00001000  imm=0x-000051C -> 0x00000AE4
+> PC=0x10000034 , Instruction=0x00078513
+$  I-Type:  Opcode=0x13, Rd=x10, Funct3=0b000, Rs1=x15, Imm=0
+Exec   : ADDI  rd=10  rs1=0x00000AE4  imm=0x00000000 -> 0x00000AE4
+> PC=0x10000038 , Instruction=0x00C12083
+$  I-Type:  Opcode=0x03, Rd=x1, Funct3=0b010, Rs1=x2, Imm=12
+LOAD   : LW    Addr=0x203FFFD8, Value=0x1000005C -> R1
+> PC=0x1000003C , Instruction=0x00812403
+$  I-Type:  Opcode=0x03, Rd=x8, Funct3=0b010, Rs1=x2, Imm=8
+LOAD   : LW    Addr=0x203FFFD4, Value=0x203FFFFC -> R8
+> PC=0x10000040 , Instruction=0x01010113
+$  I-Type:  Opcode=0x13, Rd=x2, Funct3=0b000, Rs1=x2, Imm=16
+Exec   : ADDI  rd= 2  rs1=0x203FFFCC  imm=0x00000010 -> 0x203FFFDC
+> PC=0x10000044 , Instruction=0x00008067
+$  J-Type:  Opcode=0x67, Rd=x0, Imm=32768
+@ Decode : JALR  rd= 0 rs1=0x1000005C imm32=0x00000000 target=0x1000005C
+JUMP   : JAL/R rd= 0  return_addr=0x10000048 (discarded)
+
+> PC=0x1000005C , Instruction=0xFEA42623
+$  S-Type:  x10, -20(x8)
+STORE  : SW    Addr=0x20400FE8, Value=0x00000AE4, <nil> 
+> PC=0x10000060 , Instruction=0x200007B7
+$  U-Type:  x15, 0x20000
+LOAD   : LUI   rd=15  imm=0x20000000
+> PC=0x10000064 , Instruction=0x00478793
+$  I-Type:  Opcode=0x13, Rd=x15, Funct3=0b000, Rs1=x15, Imm=4
 Exec   : ADDI  rd=15  rs1=0x20000000  imm=0x00000004 -> 0x20000004
-LOAD   : LW    Addr=0x203FFFF8, Value=0x1000005C -> R14
-STORE  : SW    Addr=0x20000004, Value=0x1000005C, <nil> 
+> PC=0x10000068 , Instruction=0xFEC42703
+$  I-Type:  Opcode=0x03, Rd=x14, Funct3=0b010, Rs1=x8, Imm=-20
+LOAD   : LW    Addr=0x203FFFE8, Value=0x00000000 -> R14
+> PC=0x1000006C , Instruction=0x00E7A023
+$  S-Type:  x14, 0(x15)
+STORE  : SW    Addr=0x20000004, Value=0x00000000, <nil> 
+> PC=0x10000070 , Instruction=0x200007B7
+$  U-Type:  x15, 0x20000
+LOAD   : LUI   rd=15  imm=0x20000000
+> PC=0x10000074 , Instruction=0x00878793
+$  I-Type:  Opcode=0x13, Rd=x15, Funct3=0b000, Rs1=x15, Imm=8
+Exec   : ADDI  rd=15  rs1=0x20000000  imm=0x00000008 -> 0x20000008
+> PC=0x10000078 , Instruction=0x00001737
+$  U-Type:  x14, 0x1
+LOAD   : LUI   rd=14  imm=0x00001000
+> PC=0x1000007C , Instruction=0xAE870713
+$  I-Type:  Opcode=0x13, Rd=x14, Funct3=0b000, Rs1=x14, Imm=-1304
+Exec   : ADDI  rd=14  rs1=0x00001000  imm=0x-0000518 -> 0x00000AE8
+> PC=0x10000080 , Instruction=0x00E7A023
+$  S-Type:  x14, 0(x15)
+STORE  : SW    Addr=0x20000008, Value=0x00000AE8, <nil> 
+> PC=0x10000084 , Instruction=0x00000793
+$  I-Type:  Opcode=0x13, Rd=x15, Funct3=0b000, Rs1=x0, Imm=0
 Exec   : ADDI  rd=15  rs1=0x00000000  imm=0x00000000 -> 0x00000000
-Final value at 0x20000000 = 0x30040F00
+> PC=0x10000088 , Instruction=0x00078513
+$  I-Type:  Opcode=0x13, Rd=x10, Funct3=0b000, Rs1=x15, Imm=0
+Exec   : ADDI  rd=10  rs1=0x00000000  imm=0x00000000 -> 0x00000000
+> PC=0x1000008C , Instruction=0x01C12083
+$  I-Type:  Opcode=0x03, Rd=x1, Funct3=0b010, Rs1=x2, Imm=28
+LOAD   : LW    Addr=0x203FFFF8, Value=0x00000000 -> R1
+> PC=0x10000090 , Instruction=0x01812403
+$  I-Type:  Opcode=0x03, Rd=x8, Funct3=0b010, Rs1=x2, Imm=24
+LOAD   : LW    Addr=0x203FFFF4, Value=0x00000000 -> R8
+> PC=0x10000094 , Instruction=0x02010113
+$  I-Type:  Opcode=0x13, Rd=x2, Funct3=0b000, Rs1=x2, Imm=32
+Exec   : ADDI  rd= 2  rs1=0x203FFFDC  imm=0x00000020 -> 0x203FFFFC
+> PC=0x10000098 , Instruction=0x00008067
+$  J-Type:  Opcode=0x67, Rd=x0, Imm=32768
+@ Decode : JALR  rd= 0 rs1=0x00000000 imm32=0x00000000 target=0x00000000
+JUMP   : JAL/R rd= 0  return_addr=0x1000009C (discarded)
+
+> PC=0x00000000 , Instruction=0x00000000
+Final value at 0x20000000 = 0x00000AE0
+Final value at 0x20000004 = 0x00000000
+Final value at 0x20000008 = 0x00000AE8
 --- PASS: Test_C_CODE (0.00s)
-=== RUN   TestROMLoadAndRead
-ROM[0] = 0xCAFEBABE
-ROM[1] = 0x8BADF00D
-ROM[2] = 0xC0DECAFE
---- PASS: TestROMLoadAndRead (0.00s)
-=== RUN   TestRAMWrite
---- PASS: TestRAMWrite (0.00s)
-=== RUN   TestInstruction
-Exec   : ADDI  rd=20  rs1=0x01020304  imm=0x00000002 -> 0x01020306
-Exec   : ADDI  rd=20  rs1=0x01020304  imm=0x-0000001 -> 0x01020303
-Exec   : ADDI  rd=20  rs1=0x01020304  imm=0x00000000 -> 0x01020304
-Exec   : ADDI  rd= 0  rs1=0x01020304  imm=0x0000007B -> 0x0102037F (discarded)
-Exec   : ADDI  rd=20  rs1=0x01020304  imm=0x000007FF -> 0x01020B03
-Exec   : ADDI  rd=20  rs1=0x01020304  imm=0x-0000800 -> 0x0101FB04
-Exec   : ADDI  rd=20  rs1=0xFFFFFFFF  imm=0x00000001 -> 0x00000000
-Exec   : ADD   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x03050709
-Exec   : ADD   rd=20  rs1=0x01020304  rs2=0x00000000 -> 0x01020304
-Exec   : ADD   rd=20  rs1=0xFFFFFFFF  rs2=0x00000001 -> 0x00000000
-Exec   : ADD   rd=20  rs1=0x00000001  rs2=0xFFFFFFFF -> 0x00000000
-Exec   : ADD   rd= 0  rs1=0x01020304  rs2=0x02030405 -> 0x03050709 (discarded)
-Exec   : ADD   rd=20  rs1=0x80000000  rs2=0x80000000 -> 0x00000000
-Exec   : SUB   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0xFEFEFEFF
-Exec   : SUB   rd=20  rs1=0x01020304  rs2=0x00000000 -> 0x01020304
-Exec   : SUB   rd=20  rs1=0x01020304  rs2=0x01020304 -> 0x00000000
-Exec   : SUB   rd=20  rs1=0x00000000  rs2=0x00000001 -> 0xFFFFFFFF
-Exec   : SLL   rd=20  rs1=0x01020304  rs2=0x00000001 -> 0x02040608
-Exec   : SLL   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x20406080
-Exec   : SLL   rd=20  rs1=0x01020304  rs2=0x00000000 -> 0x01020304
-Exec   : SLL   rd= 0  rs1=0x01020304  rs2=0x00000001 -> 0x02040608 (discarded)
-Exec   : SLLI  rd=20  rs1=0x01020304  sha=0x00000002 -> 0x04080C10
-Exec   : SLLI  rd=20  rs1=0x00000001  sha=0x0000001F -> 0x80000000
-Exec   : SLLI  rd=20  rs1=0x00000001  sha=0x00000000 -> 0x00000001
-Exec   : SRL   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00081018
-Exec   : SRLI  rd=20  rs1=0x01020304  sha=0x00000003 -> 0x00204060
-Exec   : SLT   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00000001
-Exec   : SLT   rd=20  rs1=0xFFFFFFFF  rs2=0x00000001 -> 0x00000001
-Exec   : SLT   rd=20  rs1=0x00000001  rs2=0xFFFFFFFF -> 0x00000000
-Exec   : SLT   rd=20  rs1=0x01020304  rs2=0x01020304 -> 0x00000000
-Exec   : SLTI  rd=20  rs1=0xFFFFFFFF  imm=0x00000002 -> 0x00000001
-Exec   : SLTI  rd=20  rs1=0x00000001  imm=0x-0000001 -> 0x00000000
-Exec   : SLTU  rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00000001
-Exec   : SLTU  rd=20  rs1=0xFFFFFFFF  rs2=0x00000001 -> 0x00000000
-Exec   : SLTU  rd=20  rs1=0x00000001  rs2=0xFFFFFFFF -> 0x00000001
-Exec   : SLTIU rd=20  rs1=0xFFFFFFFF  imm=0x00000002 -> 0x00000000
-Exec   : SLTIU rd=20  rs1=0x00000001  imm=0x-0000001 -> 0x00000001
-Exec   : SLTIU rd=20  rs1=0xFFFFFFFF  imm=0x-0000001 -> 0x00000000
-Exec   : XOR   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x03010701
-Exec   : XORI  rd=20  rs1=0x01020304  imm=0x00000003 -> 0x01020307
-Exec   : OR    rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x03030705
-Exec   : ORI   rd=20  rs1=0x01020304  imm=0x00000003 -> 0x01020307
-Exec   : AND   rd=20  rs1=0x01020304  rs2=0x02030405 -> 0x00020004
-Exec   : ANDI  rd=20  rs1=0x01020304  imm=0x00000003 -> 0x00000000
-STORE  : SB    Addr=0x20000000, Value=0x00000001, <nil> 
-STORE  : SB    Addr=0x20000001, Value=0x00000001, <nil> 
-STORE  : SB    Addr=0x20000002, Value=0x00000001, <nil> 
-STORE  : SB    Addr=0x20000003, Value=0x00000001, <nil> 
-STORE  : SH    Addr=0x20000000, Value=0x00000304, <nil> 
-STORE  : SH    Addr=0x20000001, Value=0x00000304, Unaligned halfword write at address 0x00000001 
-STORE  : SH    Addr=0x20000002, Value=0x00000304, <nil> 
-STORE  : SH    Addr=0x20000003, Value=0x00000304, Unaligned halfword write at address 0x00000003 
-STORE  : SW    Addr=0x20000000, Value=0x01020304, <nil> 
-STORE  : SW    Addr=0x20000001, Value=0x01020304, Unaligned word write at address 0x00000001 
-STORE  : SW    Addr=0x20000002, Value=0x01020304, Unaligned word write at address 0x00000002 
-STORE  : SW    Addr=0x20000003, Value=0x01020304, Unaligned word write at address 0x00000003 
-LOAD   : LB    Addr=0x20000000, Value=0x00000012 -> R20
-LOAD   : LB    Addr=0x20000001, Value=0x00000034 -> R20
-LOAD   : LB    Addr=0x20000002, Value=0x00000056 -> R20
-LOAD   : LB    Addr=0x20000003, Value=0x00000078 -> R20
-LOAD   : LBU   Addr=0x20000004, Value=0x000000F1 -> R20
-LOAD   : LBU   Addr=0x20000005, Value=0x000000F2 -> R20
-LOAD   : LBU   Addr=0x20000006, Value=0x000000F3 -> R20
-LOAD   : LBU   Addr=0x20000007, Value=0x000000F4 -> R20
-LOAD   : LH    Addr=0x20000000, Value=0x00001234 -> R20
-LOAD   : LH/U  ERROR: Unaligned halfword read at address 0x00000001
-LOAD   : LH    Addr=0x20000002, Value=0x00005678 -> R20
-LOAD   : LH/U  ERROR: Unaligned halfword read at address 0x00000003
-LOAD   : LHU   Addr=0x20000004, Value=0x0000F1F2 -> R20
-LOAD   : LHU   Addr=0x20000006, Value=0x0000F3F4 -> R20
-LOAD   : LW    Addr=0x20000000, Value=0x12345678 -> R20
-LOAD   : LW    ERROR: Unaligned word read at address 0x00000001
-LOAD   : LW    ERROR: Unaligned word read at address 0x00000002
-LOAD   : LW    ERROR: Unaligned word read at address 0x00000003
-LOAD   : LUI   rd=20  imm=0xF1F2F000
-Exec   : ADDI  rd=20  rs1=0xF1F2F000  imm=0x000003F4 -> 0xF1F2F3F4
---- PASS: TestInstruction (0.00s)
 PASS
-ok  	riscv	(cached)
-?   	riscv/pipeline	[no test files]
-?   	riscv/system_interface	[no test files]
+ok  	riscv	0.006s
