@@ -22,11 +22,13 @@ func NewDecodeParams(regFile *[32]RUint32, shouldStall func() bool, getFetchValu
 type DecodeStage struct {
 	instruction RUint32
 
-	isAluOp   RBool
-	isStoreOp RBool
-	isLoadOp  RBool
-	isLUIOp   RBool
-	isJUMPOp  RBool
+	isAluOp    RBool
+	isStoreOp  RBool
+	isLoadOp   RBool
+	isLuiOp    RBool
+	isJumpOp   RBool
+	isJalOp    RBool
+	isBranchOp RBool
 
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
@@ -39,9 +41,8 @@ type DecodeStage struct {
 
 	imm RInt32 // Sign-extend 12-bit immediate to 32 bits
 
-	branchAddress RUint32 // Calculated branch address
-	pc            RUint32
-	pcPlus4       RUint32
+	pc      RUint32
+	pcPlus4 RUint32
 
 	regFile *[32]RUint32
 
@@ -76,8 +77,10 @@ func (ids *DecodeStage) Compute() {
 		ids.isAluOp.SetN(opcode&0b1011111 == 0b0010011)
 		ids.isStoreOp.SetN(opcode == 0b0100011)
 		ids.isLoadOp.SetN(opcode == 0b0000011)
-		ids.isLUIOp.SetN(opcode == 0b0110111)
-		ids.isJUMPOp.SetN(opcode == JAL_OPCODE || opcode == JALR_OPCODE)
+		ids.isLuiOp.SetN(opcode == 0b0110111)
+		ids.isJumpOp.SetN(opcode == JAL_OPCODE || opcode == JALR_OPCODE)
+		ids.isJalOp.SetN(opcode == JAL_OPCODE)
+		ids.isBranchOp.SetN(opcode == BRANCH_OPCODE)
 
 		ids.rd.SetN(byte((ins >> 7) & 0x1F))
 
@@ -106,26 +109,44 @@ func (ids *DecodeStage) Compute() {
 
 		switch ins := decodedIns.(type) {
 		case I_INS:
-			ids.imm.SetN(ins.Imm)
+			{
+				ids.imm.SetN(ins.Imm)
 
-			if ids.isJUMPOp.GetN() {
-				ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + ins.Imm))
-				fmt.Printf(" [JALR] target=0x%08X", ids.branchAddress.GetN())
+				if ids.isJumpOp.GetN() {
+					// ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + ins.Imm))
+					// fmt.Printf(" [JALR] target=0x%08X", ids.branchAddress.GetN())
+					fmt.Print(" JALR ")
+				}
 			}
 		case R_INS:
-			ids.func7.SetN(ins.Funct7)
+			{
+				ids.func7.SetN(ins.Funct7)
+			}
 		case S_INS:
-			ids.imm.SetN(ins.Imm)
+			{
+				ids.imm.SetN(ins.Imm)
+			}
 		case U_INS:
-			ids.imm.SetN(ins.Imm)
+			{
+				ids.imm.SetN(ins.Imm)
+			}
 		case J_INS:
-			ids.imm.SetN(ins.Imm)
-			if ids.isJUMPOp.GetN() {
-				ids.branchAddress.SetN(uint32(int32(fv.pc) + ins.Imm))
-				fmt.Printf(" [JAL] target=0x%08X", ids.branchAddress.GetN())
+			{
+				ids.imm.SetN(ins.Imm)
+				if ids.isJalOp.GetN() {
+					// ids.branchAddress.SetN(uint32(int32(fv.pc) + ins.Imm))
+					// fmt.Printf(" [JAL] target=0x%08X", ids.branchAddress.GetN())
+					fmt.Print(" JAL ")
+				}
+			}
+		case B_INS:
+			{
+				ids.imm.SetN(ins.Imm)
 			}
 		default:
-			panic(fmt.Sprintf("Unhandled instruction type for decoding immediate: 0x%08X", ins))
+			{
+				panic(fmt.Sprintf("Unhandled instruction type for decoding immediate: 0x%08X", ins))
+			}
 		}
 
 		fmt.Print(" => ")
@@ -139,8 +160,10 @@ func (ids *DecodeStage) LatchNext() {
 	ids.isAluOp.LatchNext()
 	ids.isStoreOp.LatchNext()
 	ids.isLoadOp.LatchNext()
-	ids.isLUIOp.LatchNext()
-	ids.isJUMPOp.LatchNext()
+	ids.isLuiOp.LatchNext()
+	ids.isJumpOp.LatchNext()
+	ids.isJalOp.LatchNext()
+	ids.isBranchOp.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -152,19 +175,20 @@ func (ids *DecodeStage) LatchNext() {
 	ids.shamt.LatchNext()
 
 	ids.imm.LatchNext()
-	ids.branchAddress.LatchNext()
 
 	ids.pc.LatchNext()
 	ids.pcPlus4.LatchNext()
 }
 
 type DecodedValues struct {
-	opcode    byte
-	isAluOp   bool
-	isStoreOp bool
-	isLoadOp  bool
-	isLUIOp   bool
-	IsJUMPOp  bool
+	opcode     byte
+	isAluOp    bool
+	isStoreOp  bool
+	isLoadOp   bool
+	isLuiOp    bool
+	IsJumpOp   bool
+	IsJalOp    bool
+	isBranchOp bool
 
 	rd    byte
 	func3 byte
@@ -175,19 +199,20 @@ type DecodedValues struct {
 
 	imm int32
 
-	BranchAddress uint32
-	pc            uint32
-	pcPlus4       uint32
+	pc      uint32
+	pcPlus4 uint32
 }
 
 func (ids *DecodeStage) GetDecodedValuesOut() DecodedValues {
 	return DecodedValues{
-		opcode:    ids.opcode.GetN(),
-		isAluOp:   ids.isAluOp.GetN(),
-		isStoreOp: ids.isStoreOp.GetN(),
-		isLoadOp:  ids.isLoadOp.GetN(),
-		isLUIOp:   ids.isLUIOp.GetN(),
-		IsJUMPOp:  ids.isJUMPOp.GetN(),
+		opcode:     ids.opcode.GetN(),
+		isAluOp:    ids.isAluOp.GetN(),
+		isStoreOp:  ids.isStoreOp.GetN(),
+		isLoadOp:   ids.isLoadOp.GetN(),
+		isLuiOp:    ids.isLuiOp.GetN(),
+		IsJumpOp:   ids.isJumpOp.GetN(),
+		IsJalOp:    ids.isJalOp.GetN(),
+		isBranchOp: ids.isBranchOp.GetN(),
 
 		rd:    ids.rd.GetN(),
 		func3: ids.func3.GetN(),
@@ -198,8 +223,7 @@ func (ids *DecodeStage) GetDecodedValuesOut() DecodedValues {
 
 		imm: ids.imm.GetN(),
 
-		BranchAddress: ids.branchAddress.GetN(),
-		pc:            ids.pc.GetN(),
-		pcPlus4:       ids.pcPlus4.GetN(),
+		pc:      ids.pc.GetN(),
+		pcPlus4: ids.pcPlus4.GetN(),
 	}
 }

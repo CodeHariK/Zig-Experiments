@@ -1,6 +1,7 @@
 package riscv
 
 import (
+	"fmt"
 	. "riscv/pipeline"
 	. "riscv/system_interface"
 )
@@ -46,11 +47,10 @@ func NewRVI32System() *RVI32System {
 	ifsParams := NewInstructionFetchParams(
 		&sys.bus,
 		func() uint32 {
-			return uint32(sys.DE.GetDecodedValuesOut().BranchAddress)
+			return uint32(sys.EX.GetExecutionValuesOut().BranchAddress)
 		},
 		func() bool {
-			d := sys.DE.GetDecodedValuesOut()
-			return d.IsJUMPOp
+			return sys.EX.GetExecutionValuesOut().BranchValid
 		},
 		func() bool {
 			return sys.State != INSTRUCTION_FETCH
@@ -136,6 +136,7 @@ func (sys *RVI32System) Cycle() {
 
 	if sys.IF.GetFetchValuesOut().Instruction == 0 {
 		sys.State = TERMINATE
+		fmt.Print("\n---- TERMINATE ----\n")
 		return
 	}
 }

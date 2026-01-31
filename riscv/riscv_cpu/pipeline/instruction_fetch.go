@@ -81,7 +81,7 @@ func (ifs *InstructionFetchStage) Compute() {
 			panic(err)
 		}
 
-		fmt.Printf("> PC=0x%08X  INS=0x%08X ", ifs.pc.GetN(), ins)
+		fmt.Printf("PC=0x%08X  INS=0x%08X ", ifs.pc.GetN(), ins)
 
 		ifs.instruction.SetN(ins)
 	}

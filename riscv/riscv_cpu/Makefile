@@ -1,12 +1,10 @@
 CROSS = riscv64-elf-
-CFLAGS = -march=rv32ima -mabi=ilp32
+CFLAGS = -march=rv32ima -mabi=ilp32 -fomit-frame-pointer -O0
 
 test:
+	make c_code
 	go test -v ./... > test_output.txt || true
-# 	cat test_output.txt
-
-test_c:
-	go test -run Test_C_CODE -v > test_output.txt || true
+	echo "Fails: $$(grep -ic fail test_output.txt), Passes: $$(grep -ic pass test_output.txt)"
 
 c_code:
 	$(CROSS)gcc $(CFLAGS) -T test_code/link.ld -nostdlib test_code/bootloader.S test_code/main.c -o test_code/build/main
@@ -16,4 +14,4 @@ c_code:
 	file test_code/build/main
 
 run_qemu:
-	qemu-system-riscv32 -machine sifive_e -nographic -bios none -kernel test_code/main -serial mon:stdio
+	qemu-system-riscv32 -machine sifive_e -nographic -bios none -kernel test_code/build/main -serial mon:stdio

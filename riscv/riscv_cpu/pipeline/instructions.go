@@ -8,6 +8,7 @@ const LOAD_OPCODE = 0b0000011
 const STORE_OPCODE = 0b0100011
 const JAL_OPCODE = 0b1101111
 const JALR_OPCODE = 0b1100111
+const BRANCH_OPCODE = 0b1100011
 
 func Bits(v uint32, lo, hi uint) uint32 {
 	return (v >> lo) & ((1 << (hi - lo + 1)) - 1)
@@ -134,6 +135,32 @@ func (j J_INS) String() string {
 		j.Name, j.Rd, j.Imm)
 }
 
+type B_INS struct {
+	Opcode uint8
+	Funct3 uint8
+	Rs1    uint8
+	Rs2    uint8
+	Imm    int32
+}
+
+// imm[12|10:5] rs2 rs1 funct3 imm[4:1|11] opcode B-type
+func (b B_INS) Encode() uint32 {
+	imm := uint32(b.Imm) & 0xFFF
+
+	return uint32(b.Opcode) |
+		((imm>>11)&0x1)<<7 | // imm[12]
+		((imm>>1)&0xF)<<8 | // imm[10:5]
+		uint32(b.Funct3)<<12 |
+		uint32(b.Rs1)<<15 |
+		uint32(b.Rs2)<<20 |
+		((imm>>5)&0x3F)<<25 | // imm[4:1]
+		((imm>>12)&0x1)<<31 // imm[11]
+}
+
+func (b B_INS) String() string {
+	return fmt.Sprintf("B Rs1=R%02d, Rs2=R%02d, Imm=%2d", b.Rs1, b.Rs2, b.Imm)
+}
+
 func Decode(instr uint32) Instruction {
 	opcode := Bits(instr, 0, 6)
 
@@ -191,6 +218,20 @@ func Decode(instr uint32) Instruction {
 			Opcode: uint8(opcode),
 			Rd:     uint8(Bits(instr, 7, 11)),
 			Imm:    SignExtend(imm, 21),
+		}
+
+	case BRANCH_OPCODE: // B-Type (BEQ, BNE, etc.)
+		imm :=
+			(Bits(instr, 31, 31) << 12) |
+				(Bits(instr, 7, 7) << 11) |
+				(Bits(instr, 25, 30) << 5) |
+				(Bits(instr, 8, 11) << 1)
+		return B_INS{
+			Opcode: uint8(opcode),
+			Funct3: uint8(Bits(instr, 12, 14)),
+			Rs1:    uint8(Bits(instr, 15, 19)),
+			Rs2:    uint8(Bits(instr, 20, 24)),
+			Imm:    SignExtend(imm, 13),
 		}
 
 	}
@@ -485,4 +526,30 @@ func JAL(rd byte, imm int32) uint32 {
 func JALR(rd byte, rs1 byte, imm int32) uint32 {
 	// imm[11:0] rs1 000 rd 1100111
 	return IType(rd, rs1, imm, 0b000, JALR_OPCODE)
+}
+
+const FUNC3_BEQ = 0b000
+const FUNC3_BNE = 0b001
+const FUNC3_BLT = 0b100
+const FUNC3_BGE = 0b101
+const FUNC3_BLTU = 0b110
+const FUNC3_BGEU = 0b111
+
+func BEQ(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BEQ, BRANCH_OPCODE)
+}
+func BNE(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BNE, BRANCH_OPCODE)
+}
+func BLT(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BLT, BRANCH_OPCODE)
+}
+func BGE(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BGE, BRANCH_OPCODE)
+}
+func BLTU(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BLTU, BRANCH_OPCODE)
+}
+func BGEU(rs1 byte, rs2 byte, imm int32) uint32 {
+	return SType(rs1, rs2, imm, FUNC3_BGEU, BRANCH_OPCODE)
 }

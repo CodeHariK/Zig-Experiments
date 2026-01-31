@@ -5,24 +5,6 @@ import (
 	. "riscv/system_interface"
 )
 
-type ExecutedValues struct {
-	isAluOp   bool
-	isStoreOp bool
-	isLoadOp  bool
-	isLUIOp   bool
-	isJUMPOp  bool
-
-	writeBackValue uint32
-	rd             byte
-	rs1V           uint32
-	rs2V           uint32
-
-	imm32 int32
-	func3 byte
-
-	pcPlus4 uint32
-}
-
 type MemoryAccessParams struct {
 	bus SystemInterface
 
@@ -82,7 +64,7 @@ func (ma *MemoryAccessStage) Compute() {
 		ma.writeBackValue.SetN(ev.writeBackValue)
 		ma.rd.SetN(ev.rd)
 
-		ma.writeBackValueValid.SetN(ev.isAluOp || ev.isLoadOp || ev.isLUIOp || ev.isJUMPOp)
+		ma.writeBackValueValid.SetN(ev.isAluOp || ev.isLoadOp || ev.isLuiOp || ev.isJumpOp)
 
 		addr := uint32(int32(ev.rs1V) + ev.imm32)
 
@@ -153,10 +135,10 @@ func (ma *MemoryAccessStage) Compute() {
 			}
 
 			ma.writeBackValue.SetN(value)
-		} else if ev.isLUIOp {
+		} else if ev.isLuiOp {
 			ma.writeBackValue.SetN(uint32(ev.imm32))
 			fmt.Printf(" LUI rd=R%02d  imm=0x%08X", ev.rd, uint32(ev.imm32))
-		} else if ev.isJUMPOp {
+		} else if ev.isJumpOp {
 			ma.writeBackValue.SetN(ev.pcPlus4)
 			fmt.Printf("JUMP : JAL/R  return_addr=0x%08X", ev.pcPlus4)
 		}

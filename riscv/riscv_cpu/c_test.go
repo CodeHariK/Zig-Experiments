@@ -52,7 +52,7 @@ func Test_C_CODE(t *testing.T) {
 	}
 
 	// Run a few full instruction cycles to make sure it executes without panic
-	for i := 0; i < 300; i++ {
+	for {
 		sys.Cycle()
 		if sys.State == TERMINATE {
 			break
@@ -73,8 +73,20 @@ func Test_C_CODE(t *testing.T) {
 
 	v, _ = sys.bus.Read(0x20000008, MEMORY_WIDTH_WORD)
 	fmt.Printf("Final value at 0x20000008 = 0x%08X\n", v)
-	if v != 0xAE8 {
-		t.Fatalf("Final value at 0x20000008 = 0x%08X; want 0xAE8", v)
+	if v != 0xBE0 {
+		t.Fatalf("Final value at 0x20000008 = 0x%08X; want 0xBE0", v)
 	}
 
+	v, _ = sys.bus.Read(0x2000000C, MEMORY_WIDTH_WORD)
+	fmt.Printf("Final value at 0x2000000C = 0x%08X\n", v)
+	if v != 0xCE0 {
+		t.Fatalf("Final value at 0x2000000C = 0x%08X; want 0xCE0", v)
+	}
+	v, _ = sys.bus.Read(0x20000010, MEMORY_WIDTH_WORD)
+	fmt.Printf("Final value at 0x20000010 = 0x%08X\n", v)
+	if v != 0xCE1 {
+		t.Fatalf("Final value at 0x20000010 = 0x%08X; want 0xCE1", v)
+	}
+
+	fmt.Println()
 }
