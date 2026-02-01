@@ -189,5 +189,6 @@ PC=0x1000012C  INS=0x3F4A0A13 I Rd=R20, Rs1=R20, Imm=1012 =>  ADDI  Rd=20  Rs1v=
 --- PASS: TestInstruction (0.00s)
 PASS
 ok  	riscv	0.007s
+?   	riscv/csr	[no test files]
 ?   	riscv/pipeline	[no test files]
 ?   	riscv/system_interface	[no test files]

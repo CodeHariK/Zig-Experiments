@@ -54,6 +54,41 @@ func (r *RInt32) LatchNext() {
 
 //  -----------------
 
+type RInt64 struct {
+	value     int64
+	valueNext int64
+}
+
+func NewRInt64(value int64) RInt64 {
+	return RInt64{value: value, valueNext: value}
+}
+
+// func (r *RInt64) Get() int64 {
+// 	return r.value
+// }
+
+func (r *RInt64) GetN() int64 {
+	return r.valueNext
+}
+
+func (r *RInt64) SetN(value int64) {
+	r.valueNext = value
+}
+
+func (r *RInt64) GetValueLow() int32 {
+	return int32(r.value & 0xFFFFFFFF)
+}
+
+func (r *RInt64) GetValueHigh() int32 {
+	return int32(r.value >> 32)
+}
+
+func (r *RInt64) LatchNext() {
+	r.value = r.valueNext
+}
+
+//  -----------------
+
 type RByte struct {
 	value     byte
 	valueNext byte

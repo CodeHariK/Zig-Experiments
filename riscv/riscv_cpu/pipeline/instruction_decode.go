@@ -29,6 +29,7 @@ type DecodeStage struct {
 	isJumpOp   RBool
 	isJalOp    RBool
 	isBranchOp RBool
+	isSystemOp RBool
 
 	opcode RByte // 7 bits [6-0]
 	rd     RByte // 5 bits [11-7]
@@ -43,6 +44,11 @@ type DecodeStage struct {
 
 	pc      RUint32
 	pcPlus4 RUint32
+
+	csrAddress     RUint32
+	csrSource      RUint32
+	csrShouldWrite RBool
+	csrShouldRead  RBool
 
 	regFile *[32]RUint32
 
@@ -81,6 +87,7 @@ func (ids *DecodeStage) Compute() {
 		ids.isJumpOp.SetN(opcode == JAL_OPCODE || opcode == JALR_OPCODE)
 		ids.isJalOp.SetN(opcode == JAL_OPCODE)
 		ids.isBranchOp.SetN(opcode == BRANCH_OPCODE)
+		ids.isSystemOp.SetN(opcode == SYSTEM_OPCODE)
 
 		ids.rd.SetN(byte((ins >> 7) & 0x1F))
 
@@ -111,6 +118,26 @@ func (ids *DecodeStage) Compute() {
 		case I_INS:
 			{
 				ids.imm.SetN(ins.Imm)
+
+				if ins.Opcode == SYSTEM_OPCODE {
+					// System instruction; extract CSR address
+
+					ids.csrAddress.SetN(uint32(ins.Imm & 0xFFF))
+					if ins.Funct3 == FUNC3_CSRRCI || ins.Funct3 == FUNC3_CSRRSI || ins.Funct3 == FUNC3_CSRRWI {
+						zimm := ins.Rs1
+						ids.csrSource.SetN(uint32(zimm))
+					} else {
+						ids.csrSource.SetN(ids.rs1V.GetN())
+					}
+
+					isCsrrw := ins.Funct3 == FUNC3_CSRRW || ins.Funct3 == FUNC3_CSRRWI
+					if isCsrrw || (!isCsrrw && ins.Rd != 0) {
+						ids.csrShouldWrite.SetN(true)
+					}
+					if !isCsrrw || (isCsrrw && ins.Rd != 0) {
+						ids.csrShouldRead.SetN(true)
+					}
+				}
 
 				if ids.isJumpOp.GetN() {
 					// ids.branchAddress.SetN(uint32(int32(ids.rs1V.GetN()) + ins.Imm))
@@ -164,6 +191,12 @@ func (ids *DecodeStage) LatchNext() {
 	ids.isJumpOp.LatchNext()
 	ids.isJalOp.LatchNext()
 	ids.isBranchOp.LatchNext()
+	ids.isSystemOp.LatchNext()
+
+	ids.csrAddress.LatchNext()
+	ids.csrSource.LatchNext()
+	ids.csrShouldWrite.LatchNext()
+	ids.csrShouldRead.LatchNext()
 
 	ids.rd.LatchNext()
 
@@ -189,6 +222,12 @@ type DecodedValues struct {
 	IsJumpOp   bool
 	IsJalOp    bool
 	isBranchOp bool
+	isSystemOp bool
+
+	csrAddress     uint32
+	csrSource      uint32
+	csrShouldWrite bool
+	csrShouldRead  bool
 
 	rd    byte
 	func3 byte
@@ -213,6 +252,12 @@ func (ids *DecodeStage) GetDecodedValuesOut() DecodedValues {
 		IsJumpOp:   ids.isJumpOp.GetN(),
 		IsJalOp:    ids.isJalOp.GetN(),
 		isBranchOp: ids.isBranchOp.GetN(),
+		isSystemOp: ids.isSystemOp.GetN(),
+
+		csrAddress:     ids.csrAddress.GetN(),
+		csrSource:      ids.csrSource.GetN(),
+		csrShouldWrite: ids.csrShouldWrite.GetN(),
+		csrShouldRead:  ids.csrShouldRead.GetN(),
 
 		rd:    ids.rd.GetN(),
 		func3: ids.func3.GetN(),

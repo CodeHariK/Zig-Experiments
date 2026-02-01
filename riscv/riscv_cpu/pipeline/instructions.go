@@ -9,6 +9,7 @@ const STORE_OPCODE = 0b0100011
 const JAL_OPCODE = 0b1101111
 const JALR_OPCODE = 0b1100111
 const BRANCH_OPCODE = 0b1100011
+const SYSTEM_OPCODE = 0b1110011
 
 func Bits(v uint32, lo, hi uint) uint32 {
 	return (v >> lo) & ((1 << (hi - lo + 1)) - 1)
@@ -166,13 +167,18 @@ func Decode(instr uint32) Instruction {
 
 	switch opcode {
 
-	case 0x13, LOAD_OPCODE, JALR_OPCODE: // I-Type (e.g. ADDI, LW)
+	case 0x13, LOAD_OPCODE, JALR_OPCODE, SYSTEM_OPCODE: // I-Type (e.g. ADDI, LW)
+		uimm := Bits(instr, 20, 31)
+		imm := int32(uimm)
+		if opcode != SYSTEM_OPCODE {
+			imm = SignExtend(uimm, 12)
+		}
 		return I_INS{
 			Opcode: uint8(opcode),
 			Rd:     uint8(Bits(instr, 7, 11)),
 			Funct3: uint8(Bits(instr, 12, 14)),
 			Rs1:    uint8(Bits(instr, 15, 19)),
-			Imm:    SignExtend(Bits(instr, 20, 31), 12),
+			Imm:    imm,
 		}
 
 	case 0x33: // R-Type (e.g. ADD)
@@ -552,4 +558,39 @@ func BLTU(rs1 byte, rs2 byte, imm int32) uint32 {
 }
 func BGEU(rs1 byte, rs2 byte, imm int32) uint32 {
 	return SType(rs1, rs2, imm, FUNC3_BGEU, BRANCH_OPCODE)
+}
+
+func ECALL() uint32 {
+	// 0000000 00000 00000 000 00000 1110011
+	return SYSTEM_OPCODE
+}
+func EBREAK() uint32 {
+	// 0000000 00001 00000 000 00000 1110011
+	return SYSTEM_OPCODE | (1 << 20)
+}
+
+const FUNC3_CSRRW = 0b001
+const FUNC3_CSRRS = 0b010
+const FUNC3_CSRRC = 0b011
+const FUNC3_CSRRWI = 0b101
+const FUNC3_CSRRSI = 0b110
+const FUNC3_CSRRCI = 0b111
+
+func CSRRW(rd byte, rs1 byte, csr int32) uint32 {
+	return IType(rd, rs1, csr, FUNC3_CSRRW, SYSTEM_OPCODE)
+}
+func CSRRS(rd byte, rs1 byte, csr int32) uint32 {
+	return IType(rd, rs1, csr, FUNC3_CSRRS, SYSTEM_OPCODE)
+}
+func CSRRC(rd byte, rs1 byte, csr int32) uint32 {
+	return IType(rd, rs1, csr, FUNC3_CSRRC, SYSTEM_OPCODE)
+}
+func CSRRWI(rd byte, zimm byte, csr int32) uint32 {
+	return IType(rd, zimm, csr, FUNC3_CSRRWI, SYSTEM_OPCODE)
+}
+func CSRRSI(rd byte, zimm byte, csr int32) uint32 {
+	return IType(rd, zimm, csr, FUNC3_CSRRSI, SYSTEM_OPCODE)
+}
+func CSRRCI(rd byte, zimm byte, csr int32) uint32 {
+	return IType(rd, zimm, csr, FUNC3_CSRRCI, SYSTEM_OPCODE)
 }

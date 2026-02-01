@@ -29,5 +29,8 @@ int main() {
     i++;
   }
 
+  // asm("rdinstret %0"
+  //     : "=r"(result))
+
   return 0;
 }

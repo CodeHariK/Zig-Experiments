@@ -2,6 +2,7 @@ package riscv
 
 import (
 	"fmt"
+	. "riscv/csr"
 	. "riscv/pipeline"
 	. "riscv/system_interface"
 )
@@ -24,6 +25,8 @@ type RVI32System struct {
 	regFile [32]RUint32
 
 	bus SystemInterface
+
+	csr CSRInterface
 
 	IF *InstructionFetchStage
 	DE *DecodeStage
@@ -78,6 +81,7 @@ func NewRVI32System() *RVI32System {
 
 	memoryAccessParams := NewMemoryAccessParams(
 		sys.bus,
+		sys.csr,
 		func() bool {
 			return sys.State != MEMORY_ACCESS
 		},
@@ -103,6 +107,8 @@ func (sys *RVI32System) Compute() {
 	sys.EX.Compute()
 	sys.MA.Compute()
 	sys.WB.Compute()
+
+	sys.csr.Compute()
 }
 
 func (sys *RVI32System) LatchNext() {
@@ -111,6 +117,8 @@ func (sys *RVI32System) LatchNext() {
 	sys.EX.LatchNext()
 	sys.MA.LatchNext()
 	sys.WB.LatchNext()
+
+	sys.csr.LatchNext()
 
 	for i := range sys.regFile {
 		sys.regFile[i].LatchNext()
@@ -132,6 +140,9 @@ func (sys *RVI32System) Cycle() {
 		sys.State = WRITE_BACK
 	case WRITE_BACK:
 		sys.State = INSTRUCTION_FETCH
+
+		// Increment instruction retired count
+		sys.csr.Instret.SetN(sys.csr.Instret.GetN() + 1)
 	}
 
 	if sys.IF.GetFetchValuesOut().Instruction == 0 {

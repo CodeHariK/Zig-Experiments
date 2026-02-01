@@ -37,11 +37,17 @@ type ExecuteStage struct {
 	rs1V RUint32
 	rs2V RUint32
 
-	isAluOp   RBool
-	isStoreOp RBool
-	isLoadOp  RBool
-	isLuiOp   RBool
-	isJumpOp  RBool
+	isAluOp    RBool
+	isStoreOp  RBool
+	isLoadOp   RBool
+	isLuiOp    RBool
+	isJumpOp   RBool
+	isSystemOp RBool
+
+	csrAddress     RUint32
+	csrSource      RUint32
+	csrShouldWrite RBool
+	csrShouldRead  RBool
 
 	imm32 RInt32
 	func3 RByte
@@ -78,6 +84,12 @@ func (ies *ExecuteStage) Compute() {
 		ies.isLoadOp.SetN(decoded.isLoadOp)
 		ies.isLuiOp.SetN(decoded.isLuiOp)
 		ies.isJumpOp.SetN(decoded.IsJumpOp)
+		ies.isSystemOp.SetN(decoded.isSystemOp)
+
+		ies.csrAddress.SetN(decoded.csrAddress)
+		ies.csrSource.SetN(decoded.csrSource)
+		ies.csrShouldWrite.SetN(decoded.csrShouldWrite)
+		ies.csrShouldRead.SetN(decoded.csrShouldRead)
 
 		ies.pcPlus4.SetN(decoded.pcPlus4)
 
@@ -248,16 +260,23 @@ func (ies *ExecuteStage) Compute() {
 }
 
 func (ies *ExecuteStage) LatchNext() {
-	ies.aluResult.LatchNext()
-	ies.rd.LatchNext()
-	ies.rs1V.LatchNext()
-	ies.rs2V.LatchNext()
 
 	ies.isAluOp.LatchNext()
 	ies.isStoreOp.LatchNext()
 	ies.isLoadOp.LatchNext()
 	ies.isLuiOp.LatchNext()
 	ies.isJumpOp.LatchNext()
+	ies.isSystemOp.LatchNext()
+
+	ies.csrAddress.LatchNext()
+	ies.csrSource.LatchNext()
+	ies.csrShouldWrite.LatchNext()
+	ies.csrShouldRead.LatchNext()
+
+	ies.aluResult.LatchNext()
+	ies.rd.LatchNext()
+	ies.rs1V.LatchNext()
+	ies.rs2V.LatchNext()
 
 	ies.pcPlus4.LatchNext()
 	ies.branchAddress.LatchNext()
@@ -268,11 +287,17 @@ func (ies *ExecuteStage) LatchNext() {
 }
 
 type ExecutedValues struct {
-	isAluOp   bool
-	isStoreOp bool
-	isLoadOp  bool
-	isLuiOp   bool
-	isJumpOp  bool
+	isAluOp    bool
+	isStoreOp  bool
+	isLoadOp   bool
+	isLuiOp    bool
+	isJumpOp   bool
+	isSystemOp bool
+
+	csrAddress     uint32
+	csrSource      uint32
+	csrShouldWrite bool
+	csrShouldRead  bool
 
 	writeBackValue uint32
 	rd             byte
@@ -289,11 +314,17 @@ type ExecutedValues struct {
 
 func (ies *ExecuteStage) GetExecutionValuesOut() ExecutedValues {
 	return ExecutedValues{
-		isAluOp:   ies.isAluOp.GetN(),
-		isStoreOp: ies.isStoreOp.GetN(),
-		isLoadOp:  ies.isLoadOp.GetN(),
-		isLuiOp:   ies.isLuiOp.GetN(),
-		isJumpOp:  ies.isJumpOp.GetN(),
+		isAluOp:    ies.isAluOp.GetN(),
+		isStoreOp:  ies.isStoreOp.GetN(),
+		isLoadOp:   ies.isLoadOp.GetN(),
+		isLuiOp:    ies.isLuiOp.GetN(),
+		isJumpOp:   ies.isJumpOp.GetN(),
+		isSystemOp: ies.isSystemOp.GetN(),
+
+		csrAddress:     ies.csrAddress.GetN(),
+		csrSource:      ies.csrSource.GetN(),
+		csrShouldWrite: ies.csrShouldWrite.GetN(),
+		csrShouldRead:  ies.csrShouldRead.GetN(),
 
 		writeBackValue: ies.aluResult.GetN(),
 		rd:             ies.rd.GetN(),

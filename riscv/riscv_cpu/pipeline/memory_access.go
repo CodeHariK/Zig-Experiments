@@ -2,21 +2,25 @@ package pipeline
 
 import (
 	"fmt"
+	. "riscv/csr"
 	. "riscv/system_interface"
 )
 
 type MemoryAccessParams struct {
 	bus SystemInterface
 
+	csr CSRInterface
+
 	shouldStall          func() bool
 	getExecutionValuesIn func() ExecutedValues
 }
 
-func NewMemoryAccessParams(bus SystemInterface, shouldStall func() bool, getExecutionValuesIn func() ExecutedValues) *MemoryAccessParams {
+func NewMemoryAccessParams(bus SystemInterface, csr CSRInterface, shouldStall func() bool, getExecutionValuesIn func() ExecutedValues) *MemoryAccessParams {
 	return &MemoryAccessParams{
 		shouldStall:          shouldStall,
 		getExecutionValuesIn: getExecutionValuesIn,
 		bus:                  bus,
+		csr:                  csr,
 	}
 }
 
@@ -38,6 +42,8 @@ type MemoryAccessStage struct {
 
 	bus SystemInterface
 
+	csr CSRInterface
+
 	writeBackValue RUint32
 	rd             RByte
 
@@ -51,6 +57,7 @@ func NewMemoryAccessStage(params *MemoryAccessParams) *MemoryAccessStage {
 	ma.shouldStall = params.shouldStall
 	ma.getExecutionValuesIn = params.getExecutionValuesIn
 	ma.bus = params.bus
+	ma.csr = params.csr
 
 	return ma
 }
@@ -64,7 +71,7 @@ func (ma *MemoryAccessStage) Compute() {
 		ma.writeBackValue.SetN(ev.writeBackValue)
 		ma.rd.SetN(ev.rd)
 
-		ma.writeBackValueValid.SetN(ev.isAluOp || ev.isLoadOp || ev.isLuiOp || ev.isJumpOp)
+		ma.writeBackValueValid.SetN(ev.isAluOp || ev.isLoadOp || ev.isLuiOp || ev.isJumpOp || ev.isSystemOp)
 
 		addr := uint32(int32(ev.rs1V) + ev.imm32)
 
@@ -141,6 +148,28 @@ func (ma *MemoryAccessStage) Compute() {
 		} else if ev.isJumpOp {
 			ma.writeBackValue.SetN(ev.pcPlus4)
 			fmt.Printf("JUMP : JAL/R  return_addr=0x%08X", ev.pcPlus4)
+		} else if ev.isSystemOp {
+			if ev.csrShouldRead {
+				csrValue := ma.csr.Read(ev.csrAddress)
+
+				ma.writeBackValue.SetN(csrValue)
+				fmt.Printf(" SYSTEM: CSR Read Addr=0x%03X Value=0x%08X -> R%02d", ev.csrAddress, csrValue, ev.rd)
+
+				switch ev.func3 {
+				case FUNC3_CSRRW, FUNC3_CSRRWI:
+					if ev.csrShouldWrite {
+						ma.csr.Write(ev.csrAddress, ev.csrSource)
+					}
+				case FUNC3_CSRRS, FUNC3_CSRRSI:
+					if ev.csrShouldWrite {
+						ma.csr.Write(ev.csrAddress, (csrValue | ev.csrSource))
+					}
+				case FUNC3_CSRRC, FUNC3_CSRRCI:
+					if ev.csrShouldWrite {
+						ma.csr.Write(ev.csrAddress, (csrValue &^ ev.csrSource))
+					}
+				}
+			}
 		}
 	}
 }
