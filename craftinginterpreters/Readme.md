@@ -9,6 +9,8 @@
 
 * https://github.com/DoctorWkt/acwj
 
+* [LLVM : Let's Make a Programming Language](https://www.youtube.com/playlist?list=PL0-BgRHrP_sNg0vYz3KUqTgGua6SYDVJj)
+
 * [Compiler Course](https://www.youtube.com/playlist?list=PLOech0kWpH8-njQpmSNGSiQBPUvl8v3IM)
 
 * [How To Build A Programming Language - Python + LLVM](https://www.youtube.com/playlist?list=PLCJHRjnsxJFoK8e-RaNZUa7R4BaPqczHX)

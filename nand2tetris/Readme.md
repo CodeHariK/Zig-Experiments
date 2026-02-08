@@ -93,6 +93,7 @@
 
 * [Core Dumped: CRAFTING A CPU TO RUN PROGRAMS](https://www.youtube.com/watch?v=GYlNoAMBY6o)
 * [Core Dumped: How computer processors run conditions and loops](https://www.youtube.com/watch?v=Ui6QyzcD3_E)
+* [Core Dumped: How CPUs Run Functions](https://www.youtube.com/watch?v=7YyALikxAlU)
 
 * [Ben Eater: Binary to decimal can’t be that hard, right?](https://www.youtube.com/watch?v=v3-a-zqKfgA)
 
