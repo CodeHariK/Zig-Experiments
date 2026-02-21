@@ -141,9 +141,14 @@ console.go ─────→ ALL (orchestrator)
 
 ## Resources
 
+* [6502 Assembly Crash Course](https://www.youtube.com/playlist?list=PLgvDB6LWam2WvoFvh8tlUqbqw92qWM0aP)
+
 * [fogleman/nes source](https://github.com/fogleman/nes) — reference implementation
 * [NES Documentation (PDF)](http://nesdev.com/NESDoc.pdf) — hardware reference
 * [NESDev Wiki](http://wiki.nesdev.com/w/index.php/NES_reference_guide) — comprehensive reference
 * [6502 CPU Reference](http://www.obelisk.me.uk/6502/reference.html) — opcode details
 * [NES Emulator (YouTube)](https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf)
 * [NES Emulator (YouTube)](https://www.youtube.com/watch?v=Dq_cpyrYI70)
+
+* [6502 Emulator in Python](https://www.youtube.com/playlist?list=PLlEgNdBJEO-kHbqZyO_BHdxulFndTvptC)
+* [6502 CPU Emulator in C++](https://www.youtube.com/playlist?list=PLLwK93hM93Z13TRzPx9JqTIn33feefl37)

@@ -30,6 +30,8 @@ func NewMapper(console *Console) (Mapper, error) {
 		return NewMapper7(cartridge), nil
 	case 40:
 		return NewMapper40(console, cartridge), nil
+	case 196:
+		return NewMapper196(console, cartridge), nil
 	case 225:
 		return NewMapper225(cartridge), nil
 	}
