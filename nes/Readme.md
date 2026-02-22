@@ -141,6 +141,8 @@ console.go ─────→ ALL (orchestrator)
 
 ## Resources
 
+* https://www.masswerk.at/6502/6502_instruction_set.html
+
 * [6502 Assembly Crash Course](https://www.youtube.com/playlist?list=PLgvDB6LWam2WvoFvh8tlUqbqw92qWM0aP)
 
 * [fogleman/nes source](https://github.com/fogleman/nes) — reference implementation
