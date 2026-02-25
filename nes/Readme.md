@@ -154,3 +154,34 @@ console.go ─────→ ALL (orchestrator)
 
 * [6502 Emulator in Python](https://www.youtube.com/playlist?list=PLlEgNdBJEO-kHbqZyO_BHdxulFndTvptC)
 * [6502 CPU Emulator in C++](https://www.youtube.com/playlist?list=PLLwK93hM93Z13TRzPx9JqTIn33feefl37)
+
+## 6502 CPU & Memory Notes
+
+### NES Memory Map
+The NES CPU uses a 16-bit address space, meaning it can access 65,536 different memory locations (`$0000` to `$FFFF`). The physical memory is mapped into this address space as follows:
+
+* **Internal RAM (`$0000` to `$1FFF`):** The NES has 2KB of internal scratchpad memory. This memory is mirrored 4 times across this range (e.g., `$0000`, `$0800`, `$1000`, and `$1800` all point to the same physical memory).
+* **PPU Registers (`$2000` to `$3FFF`):** Memory-mapped registers used by the CPU to communicate with the Picture Processing Unit (graphics chip).
+* **APU & I/O Registers (`$4000` to `$401F`):** Memory-mapped registers for the Audio Processing Unit and controller input.
+* **Cartridge SRAM (`$6000` to `$7FFF`):** Battery-backed save RAM present in some cartridges.
+* **PRG-ROM (`$8000` to `$FFFF`):** The actual game code (Program ROM) from the cartridge. For NROM (Mapper 0) games with only 16KB of PRG-ROM, the data is mirrored across the `$8000-$BFFF` and `$C000-$FFFF` ranges.
+
+### Addressing Modes and Opcode Naming
+The 6502 CPU relies on **addressing modes** to determine how an instruction should locate the data it operates on. While there are loosely 56 unique standard operations (like `LDA`, `STA`, `ADC`), the 8-bit opcode space allows for 256 instructions. 
+
+Opcodes that perform the exact same core operation but use different addressing modes share the same human-readable mnemonic name. For example, `LDA` (Load Accumulator) has 8 distinct opcodes to fetch data:
+* `LDA #$10` (Immediate): Loads the exact literal value `0x10`.
+* `LDA $10` (Zero Page): Loads from memory address `0x0010`.
+* `LDA $1234` (Absolute): Loads from memory address `0x1234`.
+* `LDA ($10),Y` (Indirect Indexed Y): Evaluates a pointer at Zero Page `$10`, adds Y to that pointer, and loads from the resulting address.
+
+### Memory Pages and Crossing Boundaries
+Because the CPU operates strictly with 16-bit addresses split into an 8-bit high byte and an 8-bit low byte, the 64KB memory space is logically grouped into 256 blocks of 256 bytes each. Each 256-byte block is called a **page**.
+* The high byte of an address is the **Page Number** (e.g., `0x12` in `0x1234`).
+* The low byte of an address is the **Offset** within that page (e.g., `0x34` in `0x1234`).
+
+**Page Boundaries:** When an address calculation (such as adding the `X` register to a base address) causes the low byte to overflow past `0xFF`, the CPU must carry the 1 over to the high byte to calculate the new Page Number. This extra hardware math takes the CPU **1 extra clock cycle**, known as a page-cross penalty cycle.
+
+**Special Pages:**
+* **Page 0 (Zero Page, `$0000` to `$00FF`):** Fast scratchpad area. Instructions referencing the zero page only require an 8-bit address, making them faster and smaller in compiled code.
+* **Page 1 (The Stack, `$0100` to `$01FF`):** Hardwired memory range used for `push` and `pull` operations during hardware interrupts or `JSR`/`RTS` subroutine calls.
