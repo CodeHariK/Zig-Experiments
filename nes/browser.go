@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/codeharik/nes/src"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -68,6 +69,21 @@ func ShowROMBrowser(directory string) (string, error) {
 			}
 		}
 
+		if rl.IsKeyPressed(rl.KeyD) {
+			err := src.DisassembleROM(roms[selectedIndex])
+			if err != nil {
+				fmt.Printf("Error disassembling: %v\n", err)
+			}
+		}
+
+		if rl.IsKeyPressed(rl.KeyC) {
+			ShowSpriteViewer(roms[selectedIndex])
+		}
+
+		if rl.IsKeyPressed(rl.KeyA) {
+			ShowAudioInfo(roms[selectedIndex])
+		}
+
 		if rl.IsKeyPressed(rl.KeyEnter) {
 			return roms[selectedIndex], nil
 		}
@@ -116,7 +132,7 @@ func ShowROMBrowser(directory string) (string, error) {
 		helpY := int32(rl.GetScreenHeight()) - margin - 50
 
 		rl.DrawText("D-Pad: Arrows    [Z]    [X]    Start: Enter    Select: R-Shift", margin, helpY, 20, rl.RayWhite)
-		rl.DrawText("[S] Save   |   [L] Load   |   [Esc] Menu", margin, helpY+30, 20, rl.SkyBlue)
+		rl.DrawText("[C] View Sprites | [A] Audio Info | [D] Extract Code", margin, helpY+30, 20, rl.SkyBlue)
 		rl.EndDrawing()
 	}
 

@@ -53,8 +53,8 @@ var instructionModes = [256]byte{
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 }
 
-// instructionSizes indicates the size of each instruction in bytes
-var instructionSizes = [256]byte{
+// InstructionSizes indicates the size of each instruction in bytes
+var InstructionSizes = [256]byte{
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -115,8 +115,8 @@ var instructionPageCycles = [256]byte{
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 }
 
-// instructionNames indicates the name of each instruction
-var instructionNames = [256]string{
+// InstructionNames indicates the name of each instruction
+var InstructionNames = [256]string{
 	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
 	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -267,8 +267,7 @@ func (cpu *CPU) Reset() {
 // PrintInstruction prints the current CPU state
 func (cpu *CPU) PrintInstruction() {
 	opcode := cpu.Read(cpu.PC)
-	bytes := instructionSizes[opcode]
-	name := instructionNames[opcode]
+	bytes := InstructionSizes[opcode]
 	w0 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+0))
 	w1 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+1))
 	w2 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+2))
@@ -281,7 +280,7 @@ func (cpu *CPU) PrintInstruction() {
 	fmt.Printf(
 		"%4X  %s %s %s  %s %28s"+
 			"A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n",
-		cpu.PC, w0, w1, w2, name, "",
+		cpu.PC, w0, w1, w2, InstructionNames[opcode], "",
 		cpu.A, cpu.X, cpu.Y, cpu.Flags(), cpu.SP, (cpu.Cycles*3)%341)
 }
 
@@ -480,7 +479,7 @@ func (cpu *CPU) Step() int {
 		address = uint16(cpu.Read(cpu.PC+1)+cpu.Y) & 0xff
 	}
 
-	cpu.PC += uint16(instructionSizes[opcode])
+	cpu.PC += uint16(InstructionSizes[opcode])
 	cpu.Cycles += uint64(instructionCycles[opcode])
 	if pageCrossed {
 		cpu.Cycles += uint64(instructionPageCycles[opcode])
