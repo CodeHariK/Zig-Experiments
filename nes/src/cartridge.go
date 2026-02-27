@@ -2,6 +2,7 @@ package src
 
 import (
 	"encoding/binary"
+	"encoding/gob"
 	"errors"
 	"io"
 	"os"
@@ -21,12 +22,42 @@ type iNESFileHeader struct {
 
 // Cartridge holds the parsed ROM data
 type Cartridge struct {
-	PRG     []byte // PRG-ROM banks
-	CHR     []byte // CHR-ROM banks
-	SRAM    []byte // Save RAM
-	Mapper  byte   // mapper type
-	Mirror  byte   // mirroring mode
-	Battery byte   // battery present
+	PRG      []byte // PRG-ROM banks
+	CHR      []byte // CHR-ROM banks
+	SRAM     []byte // Save RAM
+	Mapper   byte   // mapper type
+	Mirror   byte   // mirroring mode
+	Battery  byte   // battery present
+	CHRIsRAM bool   // determines if CHR must be serialized
+}
+
+//func ReadRAM(cartridge *Cartridge, address uint16) byte {
+//	return cartridge.SRAM[address-0x6000]
+//}
+
+func WriteRAM(cartridge *Cartridge, address uint16, value byte) {
+	cartridge.SRAM[address-0x6000] = value
+}
+
+func (cartridge *Cartridge) Save(encoder *gob.Encoder) error {
+	encoder.Encode(cartridge.SRAM)
+	encoder.Encode(cartridge.Mirror)
+	encoder.Encode(cartridge.CHRIsRAM)
+	if cartridge.CHRIsRAM {
+		encoder.Encode(cartridge.CHR)
+	}
+	return nil
+}
+
+func (cartridge *Cartridge) Load(decoder *gob.Decoder) error {
+	decoder.Decode(&cartridge.SRAM)
+	decoder.Decode(&cartridge.Mirror)
+	var chrIsRAM bool
+	decoder.Decode(&chrIsRAM)
+	if chrIsRAM {
+		decoder.Decode(&cartridge.CHR)
+	}
+	return nil
 }
 
 // LoadROM reads an iNES file (.nes) and returns a Cartridge
@@ -80,10 +111,12 @@ func LoadROM(path string) (*Cartridge, error) {
 	}
 
 	// provide chr-rom/ram if not in file
+	chrIsRAM := false
 	if header.NumCHR == 0 {
 		chr = make([]byte, 8192)
+		chrIsRAM = true
 	}
 
 	sram := make([]byte, 0x2000)
-	return &Cartridge{prg, chr, sram, mapper, mirror, battery}, nil
+	return &Cartridge{prg, chr, sram, mapper, mirror, battery, chrIsRAM}, nil
 }

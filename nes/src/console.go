@@ -1,8 +1,11 @@
 package src
 
 import (
+	"encoding/gob"
 	"image"
 	"image/color"
+	"os"
+	"path"
 )
 
 // Console is the overarching hardware structure. It orchestrates the CPU and PPU
@@ -118,3 +121,57 @@ func (console *Console) Buffer() *image.RGBA {
 
 // BackgroundColor returns the current universal background color from Palette memory $3F00
 func (console *Console) BackgroundColor() color.RGBA { return Palette[console.PPU.readPalette(0)%64] }
+
+// SaveState saves the current console state to a binary file
+func (console *Console) SaveState(filename string) error {
+	dir, _ := path.Split(filename)
+	if dir != "" {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+	}
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	encoder := gob.NewEncoder(file)
+	return console.Save(encoder)
+}
+
+// Save serializes all hardware components internally
+func (console *Console) Save(encoder *gob.Encoder) error {
+	encoder.Encode(console.RAM)
+	console.CPU.Save(encoder)
+	console.APU.Save(encoder)
+	console.PPU.Save(encoder)
+	console.Cartridge.Save(encoder)
+	console.Mapper.Save(encoder)
+	return encoder.Encode(true)
+}
+
+// LoadState loads a previously saved binary state
+func (console *Console) LoadState(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	decoder := gob.NewDecoder(file)
+	return console.Load(decoder)
+}
+
+// Load deserializes the saved hardware state to overwrite current payload
+func (console *Console) Load(decoder *gob.Decoder) error {
+	decoder.Decode(&console.RAM)
+	console.CPU.Load(decoder)
+	console.APU.Load(decoder)
+	console.PPU.Load(decoder)
+	console.Cartridge.Load(decoder)
+	console.Mapper.Load(decoder)
+	var dummy bool
+	if err := decoder.Decode(&dummy); err != nil {
+		return err
+	}
+	return nil
+}
